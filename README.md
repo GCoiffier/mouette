@@ -1,6 +1,4 @@
-# pygeomesh
-
-Geometry Processing and Mesh handling made simple using python
+`pygeomesh` is a geometry processing and mesh handling made simple using python
 
 ### Install
 
