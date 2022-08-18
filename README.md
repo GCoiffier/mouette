@@ -1,4 +1,4 @@
-# pygeomesh
+# pygeomesh
 
 Geometry Processing and Mesh handling made simple using python
 
