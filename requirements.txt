@@ -1,0 +1,5 @@
+numpy
+scipy
+aenum
+osqp
+tqdm

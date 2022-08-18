@@ -1,0 +1,104 @@
+[HEAD]
+"GEOGRAM"
+"1.0"
+[ATTS]
+"GEO::Mesh::vertices" # this is the name of this attribute set
+9 # this is the number of items in this attribute set
+[ATTR]
+"GEO::Mesh::vertices" # this is the name of the attribute set this attribute belongs to
+"point" # this is the name of this attribute
+"double" # this is the type of the elements in this attribute
+8 # this is the size of an element (in bytes)
+3 # this is the number of elements per item
+-1
+1
+0
+0
+1
+0
+1
+1
+0
+-1
+0
+0
+0
+0
+0
+1
+0
+0
+-1
+-1
+0
+0
+-1
+0
+1
+-1
+0
+[ATTS]
+"GEO::Mesh::facets" # this is the name of this attribute set
+5 # this is the number of items in this attribute set
+[ATTR]
+"GEO::Mesh::facets" # this is the name of the attribute set this attribute belongs to
+"GEO::Mesh::facets::facet_ptr" # this is the name of this attribute
+"index_t" # this is the type of the elements in this attribute
+4 # this is the size of an element (in bytes)
+1 # this is the number of elements per item
+0
+4
+8
+12
+15
+[ATTS]
+"GEO::Mesh::facet_corners" # this is the name of this attribute set
+18 # this is the number of items in this attribute set
+[ATTR]
+"GEO::Mesh::facet_corners" # this is the name of the attribute set this attribute belongs to
+"GEO::Mesh::facet_corners::corner_vertex" # this is the name of this attribute
+"index_t" # this is the type of the elements in this attribute
+4 # this is the size of an element (in bytes)
+1 # this is the number of elements per item
+0
+1
+4
+3
+3
+4
+7
+6
+4
+5
+8
+7
+5
+4
+1
+1
+2
+5
+[ATTR]
+"GEO::Mesh::facet_corners" # this is the name of the attribute set this attribute belongs to
+"GEO::Mesh::facet_corners::corner_adjacent_facet" # this is the name of this attribute
+"index_t" # this is the type of the elements in this attribute
+4 # this is the size of an element (in bytes)
+1 # this is the number of elements per item
+4294967295
+3
+1
+4294967295
+0
+2
+4294967295
+4294967295
+3
+4294967295
+4294967295
+1
+2
+0
+4
+4294967295
+4294967295
+3

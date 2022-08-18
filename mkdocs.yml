@@ -1,0 +1,7 @@
+site_name: Pygeomesh
+
+theme:
+  name: material
+
+repo_url: https://github.com/GCoiffier/pygeomesh
+repo_name: GCoiffier/pygeomesh
