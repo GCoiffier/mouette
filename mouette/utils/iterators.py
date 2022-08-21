@@ -1,5 +1,5 @@
 """
-pygeomesh.utils.iterators
+mouette.utils.iterators
 Various iterators on list to make life easier
 """
 

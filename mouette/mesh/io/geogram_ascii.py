@@ -60,9 +60,9 @@ class Chunk:
             if self.data_type == Attribute.Type.Float:
                 self.data = [np.float64(x) for x in chunk_data[6:]]
             elif self.data_type == Attribute.Type.Int:
-                self.data = [np.int(x) for x in chunk_data[6:]]
+                self.data = [int(x) for x in chunk_data[6:]]
             elif self.data_type == Attribute.Type.Bool:
-                self.data = [np.bool(int(x)) for x in chunk_data[6:]]
+                self.data = [bool(int(x)) for x in chunk_data[6:]]
             else:
                 # Attribute type cannot be exported
                 self.data = chunk_data[6:]

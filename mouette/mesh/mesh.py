@@ -1,4 +1,4 @@
-from pygeomesh.mesh.mesh_data import RawMeshData
+from .mesh_data import RawMeshData
 from .datatypes import Mesh, PointCloud, PolyLine, SurfaceMesh, VolumeMesh
 from .io.io import read_by_extension, write_by_extension
 

@@ -1,5 +1,5 @@
 """
-GEO.processing
+M.processing
 submodule for algorithms applied on meshes
 """
 

@@ -187,7 +187,7 @@ class RawMeshData:
     def prepare(self) -> None:
         """
         Prepares the data to have the correct format.
-        On vertices : casts to GEO.Vec
+        On vertices : casts to M.Vec
         On edges : sorts edge tuples to satisfy edge convention (smallest index first)
         On faces : nothing
         On cells : nothing

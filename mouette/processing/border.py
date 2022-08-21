@@ -1,5 +1,5 @@
-from pygeomesh.mesh.mesh_data import RawMeshData
-from pygeomesh.utils import keyify
+from ..mesh.mesh_data import RawMeshData
+from ..utils import keyify
 from ..mesh.datatypes import *
 from ..mesh.mesh_attributes import Attribute
 

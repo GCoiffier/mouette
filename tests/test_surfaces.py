@@ -1,9 +1,9 @@
-import pygeomesh as GEO
+import mouette as M
 from data.surfaces import *
 from utils import *
 
 def test_new():
-    m = GEO.mesh.new_surface()
+    m = M.mesh.new_surface()
     assert len(m.vertices)==0
     assert len(m.edges)==0
     assert len(m.faces)==0

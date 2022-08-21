@@ -8,7 +8,7 @@ class Worker(Logger, ABC):
 
     @abstractmethod
     def run(self, *args, **kwargs):
-        """A GEO.Worker implements a `.run()` method where the algorithm is run on an input mesh"""
+        """A M.Worker implements a `.run()` method where the algorithm is run on an input mesh"""
         pass
 
     def __call__(self, *args, **kwargs):

@@ -10,7 +10,7 @@ class PolyLine(Mesh):
         self.connectivity = PolyLine._Connectivity(self) 
 
     def __str__(self):
-        out = "pygeomesh.mesh.Polyline object\n"
+        out = "mouette.mesh.Polyline object\n"
         out += "| {} vertices\n".format(len(self.vertices))
         out += "| {} edges\n".format(len(self.edges))
         return out

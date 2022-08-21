@@ -26,7 +26,7 @@ class SurfaceMesh(Mesh):
         self._interior_vertices : list = None
 
     def __str__(self):
-        out = "pygeomesh.mesh.SurfaceMesh object\n"
+        out = "mouette.mesh.SurfaceMesh object\n"
         out += "| {} vertices\n".format(len(self.vertices))
         out += "| {} edges\n".format(len(self.edges))
         out += "| {} faces\n".format(len(self.faces))

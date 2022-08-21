@@ -1,6 +1,7 @@
-"""Pygeomesh
-    
-A simple library for handling meshes in python    
+"""Mouette
+
+Maillages, Outils Et Traitement auTomatique de la géométriE
+(Meshes, Tools and Geometry Processing)
 """
 
 from . import config

@@ -41,7 +41,7 @@ class FeatureEdgeDetector(Worker):
         self.corner_order: int = corner_order
         self.compute_feature_graph: bool = compute_feature_graph
         
-        self.border_cycles : list = None # result of 'GEO.processing.extract_border_cycle_all'
+        self.border_cycles : list = None # result of 'M.processing.extract_border_cycle_all'
         
         self.fnormals : Attribute = None # face normals
 
@@ -145,6 +145,7 @@ class FeatureEdgeDetector(Worker):
             for T in mesh.connectivity.vertex_to_face(v):
                 c = mesh.connectivity.vertex_to_corner_in_face(v,T)
                 angle_v += angles[c]
+
             if abs(angle_v) < pi/self.corner_order:
                 self.corners[v] = 1 if angle_v>=0 else -1
             else:

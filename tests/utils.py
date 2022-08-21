@@ -1,4 +1,4 @@
-import pygeomesh as GEO
+import mouette as M
 import numpy as np
 
 def compare_container(cont1, cont2):
@@ -23,6 +23,6 @@ def compare_mesh(mesh1, mesh2):
 
 def build_test_io(mesh, tmp_path, fmt, dim=None):
     filepath = tmp_path / f"test_mesh.{fmt}"
-    GEO.mesh.save(mesh, str(filepath))
-    mesh2 = GEO.mesh.load(str(filepath), dim)
+    M.mesh.save(mesh, str(filepath))
+    mesh2 = M.mesh.load(str(filepath), dim)
     return compare_mesh(mesh, mesh2)

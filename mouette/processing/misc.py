@@ -80,7 +80,7 @@ def smooth(mesh : SurfaceMesh, n_iter=100, mode="cotan", keep_border=False, damp
     dist_begin = distance(V[0], V[1])
 
     if keep_border:
-        mask = np.array([not mesh.is_vertex_on_border(i) for i in mesh.id_vertices]).astype(np.bool)
+        mask = np.array([not mesh.is_vertex_on_border(i) for i in mesh.id_vertices]).astype(bool)
 
     for _ in range(n_iter):
         if keep_border:

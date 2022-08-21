@@ -1,5 +1,3 @@
-from pygeomesh.mesh.mesh_data import RawMeshData
-
 from ..mesh_data import RawMeshData
 
 class Mesh: 

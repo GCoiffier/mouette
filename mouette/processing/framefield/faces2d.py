@@ -1,6 +1,6 @@
-from pygeomesh.mesh.mesh_attributes import Attribute, ArrayAttribute
 from .base import FrameField
 from ...mesh.datatypes import *
+from ...mesh.mesh_attributes import Attribute, ArrayAttribute
 from ... import geometry as geom
 from ...geometry import Vec
 from ... import operators

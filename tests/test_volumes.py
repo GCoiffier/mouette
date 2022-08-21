@@ -1,9 +1,9 @@
-import pygeomesh as GEO
+import mouette as M
 from data.volumes import *
 from utils import *
 
 def test_new():
-    m = GEO.mesh.new_volume()
+    m = M.mesh.new_volume()
     assert len(m.vertices)==0
     assert len(m.edges)==0
     assert len(m.faces)==0

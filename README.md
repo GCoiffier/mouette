@@ -1,8 +1,8 @@
-Pygeomesh is a geometry processing and mesh handling made simple using python
+Mouette is a geometry processing and mesh handling made simple using python
 
 ### Install
 
-`pip install pygeomesh`
+`pip install mouette`
 
 ### Run tests
 

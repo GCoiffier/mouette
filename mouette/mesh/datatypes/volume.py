@@ -31,7 +31,7 @@ class VolumeMesh(Mesh):
         self.boundary_connectivity = VolumeMesh._BoundaryConnectivity(self)
 
     def __str__(self):
-        out = "pygeomesh.mesh.VolumeMesh object\n"
+        out = "mouette.mesh.VolumeMesh object\n"
         out += "| {} vertices\n".format(len(self.vertices))
         out += "| {} edges\n".format(len(self.edges))
         out += "| {} faces\n".format(len(self.faces))

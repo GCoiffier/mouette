@@ -1,7 +1,7 @@
-site_name: Pygeomesh
+site_name: Mouette
 
 theme:
   name: material
 
-repo_url: https://github.com/GCoiffier/pygeomesh
-repo_name: GCoiffier/pygeomesh
+repo_url: https://github.com/GCoiffier/mouette
+repo_name: GCoiffier/mouette

@@ -1,4 +1,4 @@
-from pygeomesh.processing import framefield as GEOFF
+from mouette.processing import framefield as GEOFF
 from data import *
 
 @pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])

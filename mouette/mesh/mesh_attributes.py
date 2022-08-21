@@ -36,19 +36,19 @@ class BaseAttribute(ABC):
     ################ Typing ################
 
     SUPPORTED_TYPES = {
-        np.bool, bool, 
-        int, np.int, np.uint8, np.int32, np.int64, 
-        float, np.float, np.float32, np.float64, 
-        np.complex, complex, 
-        np.str, str
+        bool, 
+        int, np.uint8, np.int32, np.int64, 
+        float, np.float32, np.float64, 
+        complex, 
+        str
     }
 
     class Type(MultiValueEnum):
-        Bool = np.bool
-        Int = np.int32, np.uint8, np.int64, int
-        Float = np.float32, np.float64, float
-        Complex = np.complex
-        String = np.str
+        Bool = bool
+        Int = int, np.int32, np.uint8, np.int64
+        Float = float, np.float32, np.float64
+        Complex = complex
+        String = str
 
         @classmethod
         def from_string(cls, txt : str):
@@ -84,11 +84,11 @@ class BaseAttribute(ABC):
 
         def default_value(self,n=1):
             if n==1:
-                if self == Attribute.Type.Bool: return np.bool(False)
-                if self == Attribute.Type.Int: return np.int64(0)
-                if self == Attribute.Type.Float: return np.float64(0.)
-                if self == Attribute.Type.Complex : return np.complex(0.,0.)
-                if self == Attribute.Type.String : return np.str("")
+                if self == Attribute.Type.Bool: return False
+                if self == Attribute.Type.Int: return int(0)
+                if self == Attribute.Type.Float: return float(0.)
+                if self == Attribute.Type.Complex : return complex(0.,0.)
+                if self == Attribute.Type.String : return ""
                 raise Attribute.InvalidTypeError(self)
             return Vec([self.default_value(1)]*n)
 

@@ -27,7 +27,7 @@ export_edges_in_obj = True
 sort_neighborhoods = True
 
 """
-When creating an attribute that already exists on a mesh, pygeomesh prints a warning in the console and returns the attribute currently carrying this name.
+When creating an attribute that already exists on a mesh, mouette prints a warning in the console and returns the attribute currently carrying this name.
 If this flag is set to True, no warning is printed. We then assume that you know what you are doing
 """
 disable_duplicate_attribute_warning = True

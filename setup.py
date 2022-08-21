@@ -4,15 +4,15 @@ with open("README.md", "r") as file_handle:
     long_description = file_handle.read()
 
 setuptools.setup(
-    name='pygeomesh',
+    name="mouette",
     version='1.0.0',
     author="GCoiffier",
-    description="GEO::Mesh like interface for python",
-    long_description=long_description,
+    description="Mesh, Tools and Geometry Processing",
+    long_description="Mesh, tools and geometry processing",
     long_description_content_type="text/markdown",
-    url="https://github.com/GCoiffier/pygeomesh",
+    url="https://github.com/GCoiffier/mouette",
     license="MIT",
-    packages=["pygeomesh"],
+    packages=["mouette"],
     install_requires=[
         'numpy',
         'scipy',

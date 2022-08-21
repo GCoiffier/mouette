@@ -1,6 +1,6 @@
-from pygeomesh.mesh.mesh import copy
 
 from ...mesh.datatypes import *
+from ...mesh.mesh import copy
 from ...mesh.mesh_attributes import Attribute, ArrayAttribute
 from ...geometry import Vec
 from ..worker import Worker

@@ -7,7 +7,7 @@ class PointCloud(Mesh):
         Mesh.__init__(self, 0, data)
 
     def __str__(self):
-        out = "pygeomesh.mesh.PointCloud object\n"
+        out = "mouette.mesh.PointCloud object\n"
         out += "| {} vertices\n".format(len(self.vertices))
         return out
 

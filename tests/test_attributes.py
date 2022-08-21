@@ -1,10 +1,10 @@
 import pytest
-import pygeomesh as GEO
+import mouette as M
 from utils import *
 
 @pytest.fixture
 def test_container():
-    container = GEO.mesh.mesh_data.DataContainer(id="test")
+    container = M.mesh.mesh_data.DataContainer(id="test")
     container.append([0,1,2])
     container.append([4,5,6])
     container.append([0,3,4])
@@ -29,7 +29,8 @@ def test_attribute_as_array(test_container):
     attr[0] = 42.
     attr[1] = 76.52
     attr[2] = -26.5
-    assert (attr.as_array() == np.array([42., 76.52, -26.5])).all()
+    diff = abs(attr.as_array() - np.array([42., 76.52, -26.5]))
+    assert np.all(diff < 1e-8)
 
 def test_attribute_sparse_cast(test_container):
     attr = test_container.create_attribute("test_attr",float,1)
@@ -119,21 +120,21 @@ def test_attribute_out_of_bounds(test_container):
     try:
         attr[4] = 42.
         assert False
-    except GEO.mesh.mesh_attributes.Attribute.OutOfBoundsError:
+    except M.mesh.mesh_attributes.Attribute.OutOfBoundsError:
         assert True
 
     try:
         attr[-1] = 42.
         assert False
-    except GEO.mesh.mesh_attributes.Attribute.OutOfBoundsError:
+    except M.mesh.mesh_attributes.Attribute.OutOfBoundsError:
         assert True
 
 def test_attribute_types_dense(test_container):
-    attr_bool    = test_container.create_attribute("test_bool",bool,1, dense=True)
-    attr_int     = test_container.create_attribute("test_int",int,1, dense=True)
-    attr_float   = test_container.create_attribute("test_float",float,1, dense=True)
-    attr_complex = test_container.create_attribute("test_complex",complex,1, dense=True)
-    attr_str     = test_container.create_attribute("test_str",str, 1, dense=True)
+    attr_bool    = test_container.create_attribute("test_bool",    bool,    1, dense=True)
+    attr_int     = test_container.create_attribute("test_int",     int,     1, dense=True)
+    attr_float   = test_container.create_attribute("test_float",   float,   1, dense=True)
+    attr_complex = test_container.create_attribute("test_complex", complex, 1, dense=True)
+    attr_str     = test_container.create_attribute("test_str",     str,     1, dense=True)
 
     attr_bool[0] = True
     assert attr_bool[0] == True
@@ -152,11 +153,11 @@ def test_attribute_types_dense(test_container):
 
 
 def test_attribute_types_vec_dense(test_container):
-    attr_bool    = test_container.create_attribute("test_bool",bool,2, dense=True)
-    attr_int     = test_container.create_attribute("test_int",int,2, dense=True)
-    attr_float   = test_container.create_attribute("test_float",float,2, dense=True)
-    attr_complex = test_container.create_attribute("test_complex",complex,2, dense=True)
-    attr_str     = test_container.create_attribute("test_str",str,2, dense=True)
+    attr_bool    = test_container.create_attribute("test_bool",    bool,    2, dense=True)
+    attr_int     = test_container.create_attribute("test_int",     int,     2, dense=True)
+    attr_float   = test_container.create_attribute("test_float",   float,   2, dense=True)
+    attr_complex = test_container.create_attribute("test_complex", complex, 2, dense=True)
+    attr_str     = test_container.create_attribute("test_str",     str,     2, dense=True)
 
     attr_bool[0] = [True, False]
     assert (attr_bool[0] == [True, False]).all()
@@ -166,6 +167,7 @@ def test_attribute_types_vec_dense(test_container):
     
     attr_float[0] = [23.52, 35.12]
     assert (attr_float[0] == [23.52, 35.12]).all()
+
     attr_float[0][0] = 11.111
     assert (attr_float[0] == [11.111, 35.12]).all()
 
