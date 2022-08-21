@@ -51,12 +51,12 @@ class SurfaceDistortion(Worker):
             self._det = self.mesh.faces.create_attribute("det", float, dense=True)
         else:
             N = len(self.mesh.faces)
-            self._conformal = ArrayAttribute(float, N, dense=True)
-            self._area = ArrayAttribute(float, N, dense=True)
-            self._stretch = ArrayAttribute(float, N, dense=True)
-            self._shear = ArrayAttribute(float, N, dense=True)
-            self._iso = ArrayAttribute(float, N, dense=True)
-            self._det = ArrayAttribute(float, N, dense=True)
+            self._conformal = ArrayAttribute(float, N)
+            self._area = ArrayAttribute(float, N)
+            self._stretch = ArrayAttribute(float, N)
+            self._shear = ArrayAttribute(float, N)
+            self._iso = ArrayAttribute(float, N)
+            self._det = ArrayAttribute(float, N)
 
     def _run_triangle_mesh(self):
         xy_area = 0.
