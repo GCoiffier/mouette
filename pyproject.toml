@@ -1,12 +1,20 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = [
+  "setuptools>=61.0",
+  "aenum",
+  "tqdm",
+  "numpy",
+  "scipy",
+  "osqp"
+]
 build-backend = "setuptools.build_meta"
 
+
 [project]
-name = "Mouette"
+name = "mouette"
 version = "1.0.0"
 authors = [
-  { name="Guillaume Coiffier", email = "" },
+  { name="Guillaume Coiffier" },
 ]
 description = "Geometry Processing and mesh handling in python"
 readme = "README.md"
@@ -17,6 +25,15 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+  "aenum",
+  "tqdm",
+  "numpy",
+  "scipy",
+  "osqp"
+]
+
 
 [project.urls]
 "Homepage" = "https://github.com/GCoiffier/mouette"
+"Documentation" = "https://GCoiffier.github.io/mouette"

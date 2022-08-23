@@ -60,8 +60,8 @@ def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None,
     Args:
         mesh (SurfaceMesh): input mesh
         cotan (bool) : whether to compute real cotan values for more precise discretization or only 0/1 values as a graph laplacian. Defaults to True.
-        parallel_transport (dict, optional): [description]. Defaults to None.
-        order (int, optional): [description]. Defaults to 4.
+        parallel_transport (dict, optional): For a laplacian on 1-forms, gives the angle in local bases of all adjacent edges. Defaults to None.
+        order (int, optional): ORder of the parallel transport (usefull when computing frame fields). Does nothing if parallel_transport is set to None. Defaults to 4.
 
     Returns:
         scipy.sparse.lil_matrix : the Laplacian operator as a sparse matrix

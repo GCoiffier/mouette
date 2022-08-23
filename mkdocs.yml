@@ -3,5 +3,9 @@ site_name: Mouette
 theme:
   name: material
 
+  features:
+    - navigation.sections
+    - navigation.indexes
+
 repo_url: https://github.com/GCoiffier/mouette
 repo_name: GCoiffier/mouette

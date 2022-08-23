@@ -23,7 +23,6 @@ def test_attribute_dense(test_container):
     assert attr[1] == 0.
     assert attr[2] == 0.
 
-
 def test_attribute_as_array(test_container):
     attr = test_container.create_attribute("test_attr",float,1)
     attr[0] = 42.

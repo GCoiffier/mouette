@@ -1,16 +1,24 @@
-Mouette is a small python library for handling point clouds, polylines, surface and volume meshes. It also contains various geometry processing algorithm that I re-implemented over the years.
+[![Coverage Status](https://coveralls.io/repos/github/GCoiffier/mouette/badge.svg?branch=main)](https://coveralls.io/github/GCoiffier/mouette?branch=main)
+
+
+Mouette is a small python library for handling point clouds, polylines, surface and volume meshes. It also contains various geometry processing algorithm, like shortest-paths, old-school parametrization or frame field computations.
 
 Mouette (French for seagull) stands for _Maillages, OUtils Et Traitement auTomatique de la géométriE_ (French for "Meshes, Tools and Geometry Processing).
 
 ## Installation
 
-TODO
+Using pip: 
+```pip install mouette```
 
 ## Overview
 
 ```python
-import mouette as 
+import mouette as M
 
+mesh = M.mesh.load("path/to/my/mesh/mesh.obj")
+M.mesh.save(mesh,"path/to/export/mesh.obj")
 ```
 
-## Dependencies
+### Run tests
+
+`python -m pytest tests/`
