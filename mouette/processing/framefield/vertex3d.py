@@ -247,7 +247,7 @@ class FrameField3DVertices(FrameField):
         Exports the frame field as a mesh for visualization.
 
         Returns:
-            SurfaceMesh: the frame field as a mesh object
+            SurfaceMesh: the frame field as a mesh object, where small cubes represent frames
         """
         self._check_init()
         L = attributes.mean_edge_length(self.mesh,50)

@@ -1,8 +1,7 @@
 from .vector import Vec
-import numpy as np
 from scipy.spatial.transform import Rotation
 import math
-from ..geometry import cross, angle_2vec3D
+from .. import geometry as geom
 
 def rotate_2d(v : Vec, angle : float) -> Vec:
     """Rotates a 2D vector in the plane
@@ -36,8 +35,8 @@ def axis_rot_from_z(v : Vec) -> Vec:
     """The (smallest) rotation to align the z axis (0,0,1) with the vector v
     """
     Z = Vec(0.,0.,1.)
-    axis = cross(Z, v)
-    angle = angle_2vec3D(Z, v)
+    axis = geom.cross(Z, v)
+    angle = geom.angle_2vec3D(Z, v)
     if axis.norm()>1e-8: axis = Vec.normalized(axis) * angle
     return axis
 

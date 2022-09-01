@@ -23,16 +23,22 @@ from ...geometry import transform
 from ...operators.laplacian import *
 from ...procedural import axis_aligned_cube
 
+
 class FrameField3DCells(FrameField):
-    
+
+    class FileParsingError(Exception):
+        def __init__(self, line, message):
+            message = f"Reading error at line {line}: {message}"
+            super().__init__(message)
+
     def __init__(self, supporting_mesh : VolumeMesh, verbose=True):
         super().__init__(verbose=verbose)
         self.mesh : VolumeMesh = supporting_mesh
         self.mesh.enable_boundary_connectivity()
-        self.boundary_mesh : SurfaceMesh = None
+        self._boundary_mesh : SurfaceMesh = None
 
-        self.fnormals : ArrayAttribute = None
-        self.cell_on_bnd : Attribute = None
+        self._fnormals : ArrayAttribute = None
+        self._cell_on_bnd : Attribute = None
 
         self.frames : list = None # raw representation of frames as scipy.Rotation objects
         self.var = np.zeros(9*len(self.mesh.cells))
@@ -40,25 +46,74 @@ class FrameField3DCells(FrameField):
         self._singul_vertices : Attribute = None
         self._singul_edges : Attribute = None
 
+    def read_from_file(self, file_path :str):
+        """Reads the values of the frames from a .frame file
+
+        file is supposed to have the following syntax:
+
+            FRAME
+            number_of_frames
+            a1x a1y a1z b1x b1y b1z c1x c1y c1z
+            a2x a2y a2z b2x b2y b2z c2x c2y c2z
+            ...
+            anx any anz bnx bny bnz cnx cny cnz
+            END
+
+        Args:
+            file_name (str): path to the file
+
+        Raises:
+            FrameField3DCells.FileParsingError: if the file is not of the correct format
+        """
+        if self.initialized:
+            self.log("Warning: reading frame field from file has erased current frames.")
+            self.var = np.zeros(9*len(self.mesh.cells))
+        self.frames = []
+        with open(file_path, "r") as f:
+            data = [l.strip() for l in f.readlines()]
+        
+        if data[0] != "FRAME":
+            # Line 1 should only contain the word "FRAME"
+            raise FrameField3DCells.FileParsingError(1,"Invalid frame field file.")
+        
+        try:
+            # Line 2 should only contain the total number of frames
+            n_frames = int(data[1])
+        except:
+            raise FrameField3DCells.FileParsingError(2, f"Invalid number of frames '{data[1]}'")
+        
+        if n_frames != len(self.mesh.cells):
+            raise FrameField3DCells.FileParsingError(2, f"Read number of frames ({n_frames}) does not match number of cells in the mesh ({len(self.mesh.cells)})")
+        
+        for line in range(n_frames):
+            try:
+                mat = np.array([float(x) for x in data[line+2].split()]).reshape((3,3)).T
+                frame = Rotation.from_matrix(mat)
+                self.frames.append(frame)
+                self.var[9*line:9*(line+1)] = SphericalHarmonics.from_frame(frame)
+            except:
+                raise FrameField3DCells.FileParsingError(line+3, f"Invalid frame {data[line+2]}")
+        self.initialized = True
+
     def initialize(self):
         self.frames = [Rotation.identity() for _ in self.mesh.id_cells]
         
         self.log(" | Compute boundary manifold")
-        self.boundary_mesh = self.mesh.boundary_connectivity.mesh
-        self.fnormals = attributes.face_normals(self.boundary_mesh)
-        self.cell_on_bnd = attributes.cell_faces_on_boundary(self.mesh)
+        self._boundary_mesh = self.mesh.boundary_connectivity.mesh
+        self._fnormals = attributes.face_normals(self._boundary_mesh)
+        self._cell_on_bnd = attributes.cell_faces_on_boundary(self.mesh)
 
         self.log(" | Compute spherical harmonics coordinates on the boundary")
         face_bases_sh = Attribute(float, 9)
-        for iF,F in enumerate(self.boundary_mesh.faces):
-            NF = self.fnormals[iF]
+        for iF,F in enumerate(self._boundary_mesh.faces):
+            NF = self._fnormals[iF]
             axis = geom.cross(Vec(0.,0.,1.), NF)
             if abs(NF.z)<0.99:
                 axis = Vec.normalized(axis) * atan2(axis.norm(), NF.z)
                 face_bases_sh[iF] = SphericalHarmonics.from_vec3(axis)
             else:
                 face_bases_sh[iF] = Vec(0., 0., 0., 0., 1., 0., 0., 0., 0.)
-        for iFb in self.boundary_mesh.id_faces:
+        for iFb in self._boundary_mesh.id_faces:
             iF = self.mesh.boundary_connectivity.b2m_face[iFb]
             iC = self.mesh.connectivity.face_to_cell(iF)[0]
             f,a = SphericalHarmonics.project_to_frame(face_bases_sh[iFb])
@@ -66,7 +121,7 @@ class FrameField3DCells(FrameField):
             self.frames[iC] *= f
         
         # normalization
-        for iC in self.cell_on_bnd:
+        for iC in self._cell_on_bnd:
             nrm = geom.norm(self.var[9*iC:9*(iC+1)])
             if nrm > 1e-8 : self.var[9*iC:9*(iC+1)] /= nrm
         self.initialized = True
@@ -95,16 +150,16 @@ class FrameField3DCells(FrameField):
                 self.var[9*iC:9*(iC+1)] /= nrm
 
         for iC in tqdm(self.mesh.id_cells,desc="normalize1"):
-            if self.cell_on_bnd[iC]==0:
+            if self._cell_on_bnd[iC]==0:
                 frame, a = SphericalHarmonics.project_to_frame(self.var[9*iC:9*(iC+1)], stop_threshold=1e-3)
                 self.var[9*iC:9*(iC+1)] = a
                 self.frames[iC] = frame
 
-        for iFb in tqdm(self.boundary_mesh.id_faces, desc="normalize2"):
+        for iFb in tqdm(self._boundary_mesh.id_faces, desc="normalize2"):
             iF = self.mesh.boundary_connectivity.b2m_face[iFb]
             iC = self.mesh.connectivity.face_to_cell(iF)[0]
             # if self.cell_on_bnd[iC]!=1 : continue
-            nrml = self.fnormals[iFb]
+            nrml = self._fnormals[iFb]
             frame, a = SphericalHarmonics.project_to_frame(self.var[9*iC:9*(iC+1)], stop_threshold=1e-3, nrml_cstr=nrml)
             self.var[9*iC:9*(iC+1)] = a
             self.frames[iC] = frame
@@ -121,8 +176,8 @@ class FrameField3DCells(FrameField):
         cstrRHS = []
 
         Z = Vec(0.,0.,1.)
-        for iC in self.cell_on_bnd:
-            if self.cell_on_bnd[iC]>1 :
+        for iC in self._cell_on_bnd:
+            if self._cell_on_bnd[iC]>1 :
                 # completely lock the frame
                 rows += [ncstr + _r for _r in range(9)]
                 cols += [9*iC + _c for _c in range(9)]
@@ -130,12 +185,12 @@ class FrameField3DCells(FrameField):
                 cstrRHS += [self.var[9*iC+_c] for _c in range(9)]
                 ncstr += 9
 
-        for iFb in self.boundary_mesh.id_faces:
+        for iFb in self._boundary_mesh.id_faces:
             iF = self.mesh.boundary_connectivity.b2m_face[iFb]
             iC = self.mesh.connectivity.face_to_cell(iF)[0]
-            if self.cell_on_bnd[iC] != 1 : continue
-            axis = geom.cross(Z, self.fnormals[iFb])
-            angle = geom.angle_2vec3D(Z, self.fnormals[iFb])
+            if self._cell_on_bnd[iC] != 1 : continue
+            axis = geom.cross(Z, self._fnormals[iFb])
+            angle = geom.angle_2vec3D(Z, self._fnormals[iFb])
             if axis.norm()>1e-8: axis = Vec.normalized(axis) * angle
             nrml_frame = SphericalHarmonics.from_vec3(axis)
             rows += [ncstr]*9
@@ -220,13 +275,36 @@ class FrameField3DCells(FrameField):
             self._singul_vertices[A] = True
             self._singul_vertices[B] = True
 
+    def export_frames_to_file(self, file_path :str):
+        """
+        Exports the frames as 3x3 matrices in a .frame file, with syntax:
 
-    def export_as_mesh(self) -> Mesh:
+            FRAME
+            number_of_frames
+            a1x a1y a1z b1x b1y b1z c1x c1y c1z
+            a2x a2y a2z b2x b2y b2z c2x c2y c2z
+            ...
+            anx any anz bnx bny bnz cnx cny cnz
+            END
+
+        Args:
+            file_name (str): path to the file
+        """
+        self.compute_frame_from_sh()
+        with open(file_path, 'w') as f:
+            f.write("FRAME\n")
+            f.write(f"{len(self.mesh.cells)}\n")
+            for ic in self.mesh.id_cells:
+                mat = self.frames[ic].as_matrix()
+                f.write(f"{mat[0][0]} {mat[1][0]} {mat[2][0]} {mat[0][1]} {mat[1][1]} {mat[2][1]} {mat[0][2]} {mat[1][2]} {mat[2][2]}\n")
+            f.write("END\n")
+
+    def export_as_mesh(self) -> SurfaceMesh:
         """
         Exports the frame field as a mesh for visualization.
-
+        
         Returns:
-            Mesh: the frame field as a mesh object, either SurfaceMesh for cube mode, or Polyline for frame mode
+            The frame field as a surface mesh object, where small cubes represent frames
         """
         self._check_init()
         L = attributes.mean_edge_length(self.mesh,100)
