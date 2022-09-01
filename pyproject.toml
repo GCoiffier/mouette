@@ -30,7 +30,8 @@ dependencies = [
   "tqdm",
   "numpy",
   "scipy",
-  "osqp"
+  "osqp",
+  "mkdocstrings[python]>=0.18",
 ]
 
 
