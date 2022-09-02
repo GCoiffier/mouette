@@ -4,6 +4,7 @@ from math import atan2
 import cmath
 
 from ..geometry import *
+from ..utils.maths import principal_angle
 from ..mesh.datatypes import *
 from ..attributes.misc_faces import face_area
 from ..attributes.misc_cells import cell_volume
@@ -61,7 +62,7 @@ def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None,
         mesh (SurfaceMesh): input mesh
         cotan (bool) : whether to compute real cotan values for more precise discretization or only 0/1 values as a graph laplacian. Defaults to True.
         parallel_transport (dict, optional): For a laplacian on 1-forms, gives the angle in local bases of all adjacent edges. Defaults to None.
-        order (int, optional): ORder of the parallel transport (usefull when computing frame fields). Does nothing if parallel_transport is set to None. Defaults to 4.
+        order (int, optional): Order of the parallel transport (useful when computing frame fields). Does nothing if parallel_transport is set to None. Defaults to 4.
 
     Returns:
         scipy.sparse.lil_matrix : the Laplacian operator as a sparse matrix
@@ -80,22 +81,22 @@ def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None,
     cols = np.zeros(n_coeffs, dtype=np.int32)
     coeffs = np.zeros(n_coeffs, dtype=(complex if parallel_transport else np.float64))
     _c = 0
-
+    
     for iT, (p,q,r) in enumerate(mesh.faces):
         if cotan:
             a,b,c = (cot[mesh.connectivity.vertex_to_corner_in_face(_v,iT)]/2 for _v in (p,q,r))
         else:
             a,b,c = 0.5, 0.5, 0.5
         for (i, j, v) in [(p, q, c), (q, r, a), (r, p, b)]:
-            rows[_c], cols[_c], coeffs[_c], _c = i, i, -v, _c+1
-            rows[_c], cols[_c], coeffs[_c], _c = j, j, -v, _c+1
+            rows[_c], cols[_c], coeffs[_c], _c = i, i, v, _c+1
+            rows[_c], cols[_c], coeffs[_c], _c = j, j, v, _c+1
             if parallel_transport is not None:
                 ai, aj = parallel_transport[(i,j)], parallel_transport[(j,i)]
-                rows[_c], cols[_c], coeffs[_c], _c = i, j, v * cmath.rect(1., order*(ai-aj)), _c+1
-                rows[_c], cols[_c], coeffs[_c], _c = j, i, v * cmath.rect(1., order*(aj-ai)), _c+1
+                rows[_c], cols[_c], coeffs[_c], _c = i, j, - v * cmath.rect(1., order*(ai - aj - math.pi)), _c+1
+                rows[_c], cols[_c], coeffs[_c], _c = j, i, - v * cmath.rect(1., order*(aj - ai - math.pi)), _c+1
             else:
-                rows[_c], cols[_c], coeffs[_c], _c = i, j, v, _c+1
-                rows[_c], cols[_c], coeffs[_c], _c = j, i, v, _c+1 
+                rows[_c], cols[_c], coeffs[_c], _c = i, j, -v, _c+1
+                rows[_c], cols[_c], coeffs[_c], _c = j, i, -v, _c+1 
     
     mat = sp.csc_matrix((coeffs,(rows,cols)), dtype= (complex if parallel_transport else np.float64))
     return mat

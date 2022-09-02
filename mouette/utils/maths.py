@@ -15,5 +15,14 @@ def roots(c : complex, pow: int, normalize=True):
     r = 1 if normalize else r**(1/pow)
     return [cmath.rect(r, (t + 2*k*pi)/pow) for k in range(pow)]
 
-def angle_diff(a,b):
+def angle_diff(a : float, b : float) -> float:
     return (a - b + pi) % (2*pi) - pi
+
+def principal_angle(a : float) -> float :
+    """
+    From an arbitrary angle value, returns the equivalent angle which values lays in [-pi, pi[
+    """
+    b = a%(2*pi)
+    if b>pi:
+        b-=2*pi
+    return b

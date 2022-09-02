@@ -1,4 +1,4 @@
-from .utils import *
+from .utilities import *
 from .unionfind import UnionFind
 from .priority_queue import PriorityQueue
 from .iterators import *
