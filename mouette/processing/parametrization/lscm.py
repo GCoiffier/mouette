@@ -9,8 +9,10 @@ from ...attributes.glob import euler_characteristic
 
 import numpy as np
 from math import atan2
-from scipy.sparse.linalg import lsqr, eigsh
-from scipy.sparse import coo_matrix
+
+from osqp import OSQP
+import scipy.sparse as sp
+from scipy.sparse import linalg
 
 class LSCM(Worker):
     """
@@ -39,31 +41,28 @@ class LSCM(Worker):
         self._flat_mesh : SurfaceMesh = None
         self.uvs : Attribute = None # attribute on vertices 
 
-    def run(self, eigen=True, save_on_mesh = True, axis_align = True, verbose=True):
-        self.verbose = verbose
+    def run(self, eigen=True, save_on_mesh = True, solver_verbose=False):
         if euler_characteristic(self.mesh)!=1:
             raise Exception("Mesh is not a topological disk. Cannot run LSCM.")
         if eigen:
             U = self._solve_eigen()
         else:
-            U = self._solve()
+            U = self._solve(verbose=solver_verbose)
         U = U.reshape((U.size//2, 2))
-        if axis_align:
-            U = self._align_with_axes(U)
         U = self._scale(U)
         if save_on_mesh:
-            self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
+            self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
         else:
             self.uvs = ArrayAttribute(float, len(self.mesh.vertices), 2)
-        for v in self.mesh.id_vertices:
-            self.uvs[v] = Vec(U[v])
+        for T in self.mesh.id_faces:
+            for i,v in enumerate(self.mesh.faces[T]):
+                self.uvs[3*T+i] = Vec(U[v])
 
     def _build_system(self):
         n = len(self.mesh.vertices)
         m = len(self.mesh.faces)
         cols, rows, vals = (np.zeros(12*m) for _ in range(3))
-        for t,T in enumerate(self.mesh.faces):
-            i,j,k = T
+        for t,(i,j,k) in enumerate(self.mesh.faces):
             Pi, Pj, Pk = (self.mesh.vertices[_v] for _v in (i,j,k))
             X,Y,_ = geom.face_basis(Pi,Pj,Pk)
             Qi, Qj, Qk = ( Vec(X.dot(_P), Y.dot(_P)) for _P in (Pi,Pj,Pk))
@@ -85,45 +84,46 @@ class LSCM(Worker):
                 (2*t+1, 2*k+1, Qi[0] - Qj[0])
             ]):
                 rows[12*t+_i], cols[12*t+_i], vals[12*t+_i] = r, c, v 
-        A = coo_matrix((vals, (rows, cols)),  shape=(2*m,2*n)).tolil()
+        A = sp.csc_matrix((vals, (rows, cols)),  shape=(2*m,2*n))
         self.log("Size of system :", A.shape)
+        self.log(f"({A.nnz} non zero values)")
         return A
 
-    def _solve(self):
+    def _solve(self, verbose:bool):
         self.log("Building system...")
         n = len(self.mesh.vertices)
         A = self._build_system()
 
         # index locked 1 has value (0,0) and index locked2 has value (1,1)
-        locked1 = np.random.randint(0,n)
-        locked2 = np.random.randint(0,n)
-        while locked2 == locked1:
-            locked2 = np.random.randint(0,n)
+        e = self.mesh.boundary_edges[0]
+        locked1, locked2 = self.mesh.edges[e]
         locked1, locked2 = min(locked1, locked2), max(locked1, locked2)
 
-        B = np.squeeze(np.array(A.getcol(2*locked2).todense() + A.getcol(2*locked2+1).todense()))
-        inds = [x for x in range(A.shape[1]) if x not in {2*locked1, 2*locked1+1, 2*locked2, 2*locked2+1}]
-        A = A[:, inds] # remove corresponding columns 
+        instance = OSQP()
+        Q = A.transpose() @ A
+        Cst = sp.lil_matrix((4,2*n))
+        Cst[0, 2*locked1] = 1
+        Cst[1, 2*locked1+1] = 1
+        Cst[2, 2*locked2] = 1
+        Cst[3, 2*locked2+1] = 1
+        Cst = Cst.tocsc()
+        Cst_rhs = np.array([0.,0.,1.,0.])
+        
         self.log("Solving system...")
-        res = lsqr(A, -B)
-        U_int = res[0]
-        self.log("Done. Residual norm ||AX-B||=",res[3])
-        U = np.zeros((2*n,))
-        U[:2*locked1] = U_int[:2*locked1]
-        U[2*locked1+2:2*locked2] = U_int[2*locked1:2*locked2-2]
-        U[2*locked2] = 1
-        U[2*locked2 + 1] = 1
-        U[2*locked2+2:] = U_int[2*locked2-2:]
-        return U
+        instance.setup(Q, A=Cst, l=Cst_rhs, u=Cst_rhs, verbose=verbose)
+        res = instance.solve()
+        self.log("Done")
+        return res.x
 
     def _solve_eigen(self):
         self.log("Building system...")
         A = self._build_system()
-        B = A.transpose() @ A
         self.log("Solving for eigenvector...")
-        egv, U = eigsh(B, 3, which="SM", tol=1e-4)
-        self.log("Done. Smallest eigenvalues:", egv)
-        U = U[:,0]
+        # u,s,v = linalg.svds(A, 2, which="SM", solver="lobpcg", maxiter=1000)
+        # U = v[0]
+        eigs, U = linalg.eigsh(A.transpose() @ A, 2, which="SM", tol=1e-2)
+        self.log("Smallest eigenvalues:", eigs)
+        U = U[:,1]
         return U
 
     def _scale(self, U):
@@ -141,19 +141,6 @@ class LSCM(Worker):
         # apply scale
         return U/scale
 
-    def _align_with_axes(self,U):
-        # rotate I.UVs so that feature edges are axis aligned
-        orig = U[0]
-        e = self.mesh.boundary_edges[0] # should exist since mesh is disk topology
-        A,B = self.mesh.edges[e]
-        vec = U[A] - U[B]
-        angle = -atan2(vec[1], vec[0])
-        # apply transformation
-        for v in self.mesh.id_vertices:
-            uvi = Vec(U[v]-orig)
-            U[v] = geom.rotate_2d(uvi, angle) + orig
-        return U
-
     @property
     def flat_mesh(self):
         if self.uvs is None:
@@ -161,6 +148,7 @@ class LSCM(Worker):
         if self._flat_mesh is None:
             # build the flat mesh : vertex coordinates are uv of original mesh
             self._flat_mesh = copy(self.mesh)
-            for i in self.mesh.id_vertices:
-                self._flat_mesh.vertices[i] = Vec(self.uvs[i][0], self.uvs[i][1], 0.)
+            for T in self.mesh.id_faces:
+                for i,v in enumerate(self.mesh.faces[T]):
+                    self._flat_mesh.vertices[v] = Vec(self.uvs[3*T+i][0], self.uvs[3*T+i][1], 0.)
         return self._flat_mesh
