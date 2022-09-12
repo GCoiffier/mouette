@@ -121,7 +121,8 @@ class _BaseFrameField2DVertices(FrameField):
                 self.var[B] += cmath.rect(1,self.parallel_transport[(B,A)])**self.order
 
         for A in self.feat.feature_vertices:
-            self.var[A] /= abs(self.var[A])
+            if abs(self.var[A])>1e-8:
+                self.var[A] /= abs(self.var[A])
 
     def _compute_attach_weight(self, A, fail_value=1e-3):
         return fail_value
@@ -465,7 +466,7 @@ class CurvatureVertices(_BaseFrameField2DVertices):
         self._initialize_variables()
         self.initialized = True
 
-    def optimize(self, n_smooth: int = 1, normalize:bool = True):
+    def optimize(self, n_smooth: int = 0, normalize:bool = True):
         for v in self.mesh.id_vertices:
             if v in self.feat.feature_vertices: continue # do not override frames on boundary
             
@@ -488,7 +489,7 @@ class CurvatureVertices(_BaseFrameField2DVertices):
             lap = operators.laplacian(self.mesh, parallel_transport=self.parallel_transport, order=4)
             A = operators.area_weight_matrix(self.mesh)
             alpha = 0.1*attributes.mean_edge_length(self.mesh)
-            self.log("Attach weight:", alpha)
+            # self.log("Attach weight:", alpha)
 
             if len(self.feat.feature_vertices)>0:
                 # Build fixed/free vertex partition

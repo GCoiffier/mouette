@@ -11,6 +11,8 @@ Using pip:
 
 Mouette allows to easily load data from various file format and access geometrical primitives
 
+#### Import and Export made simple
+
 ```python
 import mouette as M
 
@@ -19,7 +21,10 @@ print(mesh.vertices[0])
 print(mesh.faces[2])
 M.mesh.save(mesh,"path/to/export/mesh.obj")
 ```
-It is possible to define any quantity
+
+#### Define quantities over meshes and work with it
+
+It is possible to define any quantity on mesh elements
 
 ```python
 my_v_attribute = mesh.vertices.create_attribute("my_attribute", float) # an attribute storing one floating-point number per vertex
@@ -30,6 +35,16 @@ m_f_attribute[2] = [1,3]
 ```
 
 Attributes can store booleans, integers, floating-point numbers, complex numbers and strings, using the provided python types `bool`, `int`, `float`, `complex` and `str`.
+
+#### Call Geometry Processing Algorithms
+
+```python
+
+ff = M.processing.framefield.FrameField2DVertices(mesh)
+ff.run()
+ffmesh = ff.export_as_mesh()
+M.mesh.save(ffmesh, "framefield.mesh")
+```
 
 ### Run tests
 

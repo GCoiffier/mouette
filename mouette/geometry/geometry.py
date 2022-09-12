@@ -1,6 +1,7 @@
 from .vector import Vec
 import numpy as np
 import math
+from typing import Union
 
 def sign(x : float):
     """sign of x
@@ -122,10 +123,35 @@ def triangle_area_2D(A:Vec, B:Vec, C:Vec) -> float :
 def quad_area(A:Vec, B:Vec, C:Vec, D:Vec) -> float:
     return (triangle_area(A,B,C) + triangle_area(A,C,D) + triangle_area(B,C,D) + triangle_area(B,D,A))/2
 
-def det_2x2(A:np.ndarray, B:np.ndarray):
-    return A[0]*B[1] - A[1]*B[0]
+def det_2x2(A:Union[complex,np.ndarray], B:Union[complex,np.ndarray]) -> float:
+    """Computes a 2x2 determinant
 
-def det_3x3(*args):
+    Args:
+        A (Union[complex,np.ndarray]): first column vector. Can also be a complex number
+        B (Union[complex,np.ndarray]): second column vector. Can also be a complex number
+
+    Returns:
+        float: the determinant
+    """
+    if isinstance(A,complex):
+        ax,ay = A.real, A.imag
+    else:
+        ax,ay = A[0], A[1]
+    if isinstance(B,complex):
+        bx,by = B.real, B.imag
+    else:
+        bx,by = B[0], B[1]
+    return ax*by - ay*bx
+
+def det_3x3(*args) -> float:
+    """Computes a 3x3 using the rule of Sarrus
+    
+    Args:
+        Either a 3*3 numpy array representing a matrix, or 3 3*1 numpy array representing three column vectors
+
+    Returns:
+        float: the determinant
+    """
     if len(args)==1:
         mat = args[0]
         assert mat.shape == (3,3)
