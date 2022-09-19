@@ -3,6 +3,20 @@ import numpy as np
 import math
 from typing import Union
 
+def sign0(x : float):
+    """sign of x
+        1 if x >= 0
+        -1 if x < 0
+
+    Args:
+        x (float): input number
+
+    Returns:
+        [float]: the sign of x
+    """
+    if x>=0: return 1
+    return -1
+
 def sign(x : float):
     """sign of x
         1 if x > 0
@@ -79,7 +93,7 @@ def signed_angle_2vec3D(V1:Vec, V2:Vec, N:Vec) -> float:
     S = cross(V1,V2)
     s = S.norm()
     c = dot(V1,V2)
-    return sign(dot(S,N)) * math.atan2(s, c)
+    return sign0(dot(S,N)) * math.atan2(s, c)
 
 def signed_angle_3pts(A:Vec, B:Vec, C:Vec, N:Vec) -> float:
     """Signed angle between three points ABC with orientation givne by normal N

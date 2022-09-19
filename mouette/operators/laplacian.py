@@ -162,7 +162,7 @@ def laplacian_triangles(mesh : SurfaceMesh, cotan=True, parallel_transport:bool=
                 angle2 = atan2( dot(E,Y2), dot(E,X2))
 
                 Nabla[ie,T1] = -1
-                Nabla[ie,T2] = cmath.rect(1, order*(angle1 - angle2))
+                Nabla[ie,T2] = cmath.rect(1, order*(angle1 - angle2 + math.pi))
     else:
          for ie,(ei,ej) in enumerate(mesh.edges):
             T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)

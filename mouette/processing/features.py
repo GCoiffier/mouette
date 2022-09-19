@@ -149,7 +149,7 @@ class FeatureEdgeDetector(Worker):
             if abs(angle_v) < pi/self.corner_order:
                 self.corners[v] = 1 if angle_v>=0 else -1
             else:
-                self.corners[v] = round(angle_v / (2 * pi / self.corner_order ))
+                self.corners[v] = round(angle_v * self.corner_order / ( 1 * pi))
 
 ##### Main detect function #####
 

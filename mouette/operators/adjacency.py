@@ -52,3 +52,21 @@ def adjacency_matrix(mesh : Mesh, weights="one"):
         cols[2*e+1] = a
 
     return sp.coo_matrix( (vals, (rows,cols)), shape=(n,n))
+
+@forbidden_mesh_types(PointCloud)
+def vertex_to_edge_operator(mesh : Mesh):
+    """Vertices to edges operator. Matrix M of size |V|x|E| where:
+        M[v,e] = 1 if and only if v is one extremity of edge e.
+
+    Args:
+        mesh (Mesh): the input mesh
+
+    Returns:
+        scipy.sparse.lil_matrix
+    """
+    n,m = len(mesh.vertices), len(mesh.edges)
+    mat = sp.lil_matrix((n,m))
+    for e,(A,B) in enumerate(mesh.edges):
+        mat[A,e] = 1
+        mat[B,e] = 1
+    return mat
