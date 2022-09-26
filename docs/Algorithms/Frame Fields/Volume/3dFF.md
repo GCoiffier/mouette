@@ -2,6 +2,8 @@
 title: "3D Frame Fields"
 ---
 
+# 3D Frame Fields
+
 ```python
 from mouette.processing import framefield
 ```
@@ -9,9 +11,9 @@ from mouette.processing import framefield
 In mouette, two algorithms of smoothest frame field in 3D have been implemented : `FrameField3DCells` and `FrameField3DVertices`
 
 
-# Frame field on vertices
+## Frame field on vertices
 
-# Frame field on cells
+## Frame field on cells
 
 ```python
 import mouette as M
