@@ -1,12 +1,11 @@
 from .base import FrameField
 from ...mesh.mesh_attributes import ArrayAttribute, Attribute, Attribute
 from ...mesh.datatypes import *
-from ...import attributes
+from ... import operators, utils, attributes, processing
+from...utils import maths
 from ..features import FeatureEdgeDetector
 from ... import geometry as geom
 from ...geometry import Vec
-from ...utils.maths import *
-from ... import operators
 
 from math import pi
 import numpy as np
@@ -15,10 +14,20 @@ import scipy.sparse as sp
 from scipy.sparse import linalg
 from osqp import OSQP
 
-class _BaseFrameField2DVertices(FrameField): 
+class _BaseFrameField2DVertices(FrameField):
+    """
+    Base class for any frame field defined on the vertices of a surface mesh. Is not meant to be instanciated as is.
+    """
 
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, supporting_mesh : SurfaceMesh, order:int= 4, feature_edges:bool=False, verbose=True):
+        """
+        Parameters:
+            supporting_mesh (SurfaceMesh): the mesh (surface) on which to calculate the frame field
+            order (int, optional): Order of the frame field (number of branches). Defaults to 4.
+            feature_edges (bool, optional): _description_. Defaults to False.
+            verbose (bool, optional): _description_. Defaults to True.
+        """
         super().__init__(verbose=verbose)
         self.mesh : SurfaceMesh = supporting_mesh
         self.order : int = order
@@ -183,9 +192,9 @@ class _BaseFrameField2DVertices(FrameField):
         for ie,(A,B) in enumerate(self.mesh.edges):
             fA,fB = self.var[A], self.var[B] # representation complex for A and B
             aA,aB = self.parallel_transport[(A,B)], self.parallel_transport[(B,A)] # local basis orientation for A and B
-            uB = roots(fB, self.order)[0]
-            abs_angles = [abs( angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA)) for uA in roots(fA, self.order)]
-            angles = [angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA) for uA in roots(fA, self.order)]
+            uB = maths.roots(fB, self.order)[0]
+            abs_angles = [abs(maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA)) for uA in maths.roots(fA, self.order)]
+            angles = [maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA) for uA in maths.roots(fA, self.order)]
             i_angle = np.argmin(abs_angles)
             edge_rot[(A,B)] = angles[i_angle]
             edge_rot[(B,A)] = -angles[i_angle]
@@ -236,9 +245,19 @@ class _BaseFrameField2DVertices(FrameField):
         return FFMesh
 
 class FrameField2DVertices(_BaseFrameField2DVertices):
-    
+    """
+    n-RoSy frame field defined on the vertices of a surface mesh
+    """
+
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, supporting_mesh : SurfaceMesh, order : int = 4, feature_edges : bool = False, verbose=True):
+        """
+        Parameters:
+            supporting_mesh (SurfaceMesh): the mesh (surface) on which to calculate the frame field
+            order (int, optional): Order of the frame field (number of branches). Defaults to 4.
+            feature_edges (bool, optional): _description_. Defaults to False.
+            verbose (bool, optional): _description_. Defaults to True.
+        """
         super().__init__(supporting_mesh, order, feature_edges, verbose)
                 
     def initialize(self):
@@ -317,22 +336,36 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             self.normalize()
 
 class CadFF2DVertices(FrameField2DVertices):
+    """
+    Implementation of 'Frame Fields for CAD models', Desobry et al, 2021.
+
+    This frame field on vertices has a modified parallel transport so avoid placing singularities in very sharp corners of the mesh.
+    """
 
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, supporting_mesh : SurfaceMesh, order:int = 4, verbose=True):
+        """
+        Parameters:
+            supporting_mesh (SurfaceMesh): the mesh (surface) on which to calculate the frame field
+            order (int, optional): Order of the frame field (number of branches). Defaults to 4.
+            verbose (bool, optional): _description_. Defaults to True.
+
+        Note:
+            Feature edges are automatically set to True and cannot be disabled with CadFF
+        """
         super().__init__(supporting_mesh, order, feature_edges=True, verbose=verbose)
-        self.target_w : dict = None
+        self.target_w : dict = None # the modified parallel transport
 
     def _initialize_target_w(self):
-        self.target_w = dict()
+        self.target_w = dict() 
         for e in self.feat.feature_edges:
             A,B = self.mesh.edges[e]
             aA,aB = self.parallel_transport[(A,B)], self.parallel_transport[(B,A)] # local basis orientation for A and B
             fA = self.var[A] # representation complex for frame field at A
             fB = self.var[B] # representation complex for frame field at B
-            uB = roots(fB, self.order)[0]
-            abs_angles = [abs(angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA)) for uA in roots(fA, self.order)]
-            angles = [angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA) for uA in roots(fA, self.order)]
+            uB = maths.roots(fB, self.order)[0]
+            abs_angles = [abs(maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA)) for uA in maths.roots(fA, self.order)]
+            angles = [maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA) for uA in maths.roots(fA, self.order)]
             i_angle = np.argmin(abs_angles)
             self.target_w[e] = angles[i_angle]
 
@@ -387,7 +420,7 @@ class CadFF2DVertices(FrameField2DVertices):
         self._initialize_target_w()
         self.initialized = True
 
-    def _cotan_laplacian_parallel_transport(self):
+    def _cotan_laplacian_parallel_transport(self)-> sp.lil_matrix :
         """For CadFF, the cotan laplacian operator is modified by the target angles computed at the initialization
 
         Returns:
@@ -407,8 +440,10 @@ class CadFF2DVertices(FrameField2DVertices):
                 mat[j,i] += v * cmath.rect(1., self.order*(aj - ai + pi - w))
         return mat
 
-    def _adj_laplacian_parallel_transport(self):
-        """Laplacian with classic +- 1 weights 
+    def _adj_laplacian_parallel_transport(self) -> sp.lil_matrix :
+        """
+        Returns:
+            scipy.sparse.lil_matrix: laplacian with classic +- 1 weights 
         """
         n = len(self.mesh.vertices)
         mat = sp.lil_matrix((n,n), dtype=complex)
@@ -422,3 +457,52 @@ class CadFF2DVertices(FrameField2DVertices):
                 mat[i,j] += cmath.rect(1., self.order*(ai - aj + pi + w))
                 mat[j,i] += cmath.rect(1., self.order*(aj - ai + pi - w))
         return mat
+
+class TrivialConnectionVertices(_BaseFrameField2DVertices):
+    """
+    Implementation of 'Trivial Connections on Discrete Surfaces' by Keenan Crane and Mathieu Desbrun and Peter Schröder, 2010
+    
+    A frame field on vertices that computes the smoothest possible frame field with prescribed singularity cones at some vertices.
+    Does not constraint non-contractible cycles
+    """
+
+    @allowed_mesh_types(SurfaceMesh)
+    def __init__(self, supporting_mesh : SurfaceMesh, singus_indices:Attribute, order:int = 4, verbose:bool=True):
+        super().__init__(supporting_mesh, order, feature_edges=False, verbose=verbose)
+        self.singus = singus_indices
+        self.rotations : np.ndarray = None
+
+    def initialize(self):
+        self._initialize_attributes()
+        self._initialize_basis()
+        self.var = np.zeros(len(self.mesh.vertices), dtype=complex)
+        self.initialized = True
+        
+    def optimize(self):
+        nvar = len(self.mesh.edges)
+        ncstr = len(self.mesh.faces)
+        CstM = sp.lil_matrix((ncstr,nvar))
+        CstX = np.zeros(ncstr)
+        for F,face in enumerate(self.mesh.faces):
+            for u,v in utils.cyclic_pairs(face):
+                e = self.mesh.connectivity.edge_id(u,v)
+                CstM[F,e] = 1 if (u<v) else -1
+            CstX[F] = self.curvature[F] - 2* pi * self.singus[F] / self.order
+        CstM = CstM.tocsc()
+        A = sp.eye(nvar, format="csc")
+        instance = OSQP()
+        instance.setup(P=A, q=None, A=CstM, u=CstX, l=CstX)
+        res = instance.solve()
+        self.rotations = res.x
+
+        tree = processing.trees.EdgeSpanningTree(self.mesh)()
+        for vertex,parent in tree.traverse():
+            if parent is None:
+                self.var[vertex] = complex(1.,0.)
+                continue
+            zf = self.var[parent]
+            e = self.mesh.connectivity.edge_id(parent,vertex)
+            pt = self.parallel_transport[(vertex,parent)] - self.parallel_transport[(parent,vertex)] + pi
+            w = self.rotations[e] if vertex<parent else -self.rotations[e]
+            zv = zf * cmath.rect(1, 4*(w + pt))
+            self.var[vertex] = zv

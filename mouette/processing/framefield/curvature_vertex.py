@@ -24,6 +24,11 @@ def aggregate_mats(curvV, curvE, areas, iV,iE, n):
     return curvV
 
 class CurvatureVertices(_BaseFrameField2DVertices):
+    """
+    Principal curvature direction estimation using a frame field on vertices.
+
+    Implementation based on 'Restricted Delaunay Triangulations and Normal Cycle',  David Cohen-Steiner and Jean-Marie Morvan, 2003
+    """
 
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, 
@@ -32,6 +37,17 @@ class CurvatureVertices(_BaseFrameField2DVertices):
         patch_size : int = 3,
         curv_threshold : float = 0.01,
         verbose : bool = True):
+        """
+        Parameters:
+            mesh (SurfaceMesh): the surface mesh on which to perform the estimation
+            feature_edges (bool, optional): Flag to take into account feature edges. Defaults to False.
+            patch_size (int, optional): Neighborhood size in curvature estimation. Greater means more averaging but also more computation. Defaults to 3.
+            curv_threshold (float, optional): Minimal mean curvature value for the directions to be computed. Defaults to 0.01.
+            verbose (bool, optional): verbose mode. Defaults to True.
+        
+        Note:
+            Order of the frame field is fixed at 4 since principal curvature directions form an orthonormal basis.
+        """
         
         super().__init__(mesh, 
             4, # order is always 4 

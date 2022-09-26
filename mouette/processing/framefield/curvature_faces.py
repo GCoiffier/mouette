@@ -3,18 +3,31 @@ from ...mesh.datatypes import *
 from ...attributes import curvature_matrices
 from ... import operators
 import numpy as np
-import scipy.sparse as sp
 from scipy.sparse import linalg
 
 class CurvatureFaces(_BaseFrameField2DFaces):
+    """
+    Principal curvature direction estimation using a frame field on vertices.
 
-    def __init__(self, supporting_mesh : SurfaceMesh, verbose :bool = False):
+    Implementation based on 'Restricted Delaunay Triangulations and Normal Cycle',  David Cohen-Steiner and Jean-Marie Morvan, 2003
+    """
+
+    def __init__(self, 
+        supporting_mesh : SurfaceMesh, 
+        verbose :bool = False):
+        """
+        Parameters:
+            supporting_mesh (SurfaceMesh): the surface mesh on which to perform the estimation
+            verbose (bool, optional): verbose mode. Defaults to True.
+        
+        Note:
+            Order of the frame field is fixed at 4 since principal curvature directions form an orthonormal basis.
+        """
         super().__init__(supporting_mesh, 4, False, verbose)
-        self.curv_mat_edges : np.ndarray = None # shape (|E|,3,3)
         self.curv_mat_faces : np.ndarray = None # shape (|T|,3,3)
 
     def _initialize_curvature(self):
-        self.curv_mat_edges = curvature_matrices(self.mesh)
+        curv_mat_edges = curvature_matrices(self.mesh)
         adj_e = dict([(e,set()) for e in self.mesh.id_edges])
         for T in self.mesh.id_faces:
             for T2 in self.mesh.connectivity.face_to_face(T):
@@ -24,7 +37,7 @@ class CurvatureFaces(_BaseFrameField2DFaces):
         self.curv_mat_faces = np.zeros((len(self.mesh.faces),3,3))
         for e in self.mesh.id_edges:
             for T in adj_e[e]:
-                self.curv_mat_faces[T] += self.curv_mat_edges[e]
+                self.curv_mat_faces[T] += curv_mat_edges[e]
 
     def run(self, n_smooth=0):
         self.initialize()

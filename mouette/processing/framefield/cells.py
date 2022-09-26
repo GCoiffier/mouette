@@ -32,6 +32,11 @@ class FrameField3DCells(FrameField):
             super().__init__(message)
 
     def __init__(self, supporting_mesh : VolumeMesh, verbose=True):
+        """
+        Parameters:
+            supporting_mesh (VolumeMesh): the input mesh
+            verbose (bool, optional): verbose mode. Defaults to True.
+        """
         super().__init__(verbose=verbose)
         self.mesh : VolumeMesh = supporting_mesh
         self.mesh.enable_boundary_connectivity()
@@ -59,8 +64,8 @@ class FrameField3DCells(FrameField):
             anx any anz bnx bny bnz cnx cny cnz
             END
 
-        Args:
-            file_name (str): path to the file
+        Parameters:
+            file_path (str): path to the file
 
         Raises:
             FrameField3DCells.FileParsingError: if the file is not of the correct format
@@ -287,8 +292,8 @@ class FrameField3DCells(FrameField):
             anx any anz bnx bny bnz cnx cny cnz
             END
 
-        Args:
-            file_name (str): path to the file
+        Parameters:
+            file_path (str): path to the file
         """
         self.compute_frame_from_sh()
         with open(file_path, 'w') as f:
@@ -304,7 +309,7 @@ class FrameField3DCells(FrameField):
         Exports the frame field as a mesh for visualization.
         
         Returns:
-            The frame field as a surface mesh object, where small cubes represent frames
+            SurfaceMesh: The frame field as a surface mesh object, where small cubes represent frames
         """
         self._check_init()
         L = attributes.mean_edge_length(self.mesh,100)

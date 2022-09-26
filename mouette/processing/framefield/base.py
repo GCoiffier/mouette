@@ -3,6 +3,7 @@ from ..worker import Worker
 
 class FrameField(Worker):
     """
+    Abstract base class for any frame field implementations.
     A frame field is a set of vector fields defined on a surface or volume mesh.
     """
 
