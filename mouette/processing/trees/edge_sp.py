@@ -21,7 +21,7 @@ class EdgeSpanningTree(SpanningTree):
         /!\\ Considers a unique starting point and stops when all reachable vertices are visited. 
         If the mesh is disconnected, the tree will be incomplete. In this case, use EdgeSpanningForest class instead.
 
-        Args:
+        Parameters:
             mesh (Mesh): the input mesh (Polyline, Surface or Volume)
             starting_vertex (int, optional): Index of the root of the tree. If None is provided, root is chosen at random. Defaults to None.
             avoid_boundary (bool, optional): If True, boundary edges of a SurfaceMesh will not be traversed by the tree. Defaults to False.
@@ -44,7 +44,7 @@ class EdgeSpanningTree(SpanningTree):
     def _avoid_edge(self, a: int, b:int) -> bool:
         """If avoid_boundary was set to True, checks if the edge is on the boundary and should not be considered in the search.
         Always returns False otherwise.
-        Args:
+        Parameters:
             a (int): index of first vertex of edge
             b (int): index of second vertex of edge
 
@@ -112,7 +112,7 @@ class EdgeMinimalSpanningTree(EdgeSpanningTree):
 
         /!\\ Considers a unique starting point and stops when all reachable vertices are visited. 
         If the mesh is disconnected, the tree will be incomplete. In this case, use EdgeSpanningForest class instead.
-        Args:
+        Parameters:
             mesh (Mesh): the input mesh (Polyline, Surface or Volume)
             starting_vertex (int, optional): Index of the root of the tree. If None is provided, root is chosen at random. Defaults to None.
             avoid_boundary (bool, optional): If True, boundary edges will not be traversed by the tree. Defaults to False.

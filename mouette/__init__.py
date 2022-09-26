@@ -14,6 +14,7 @@ from . import geometry
 from . import processing
 
 from .processing import framefield
+from .processing import parametrization
 
 from .geometry.vector import Vec
 from .geometry import transform

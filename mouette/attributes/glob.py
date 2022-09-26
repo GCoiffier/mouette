@@ -6,10 +6,12 @@ from .misc_cells import cell_volume
 @allowed_mesh_types(SurfaceMesh)
 def euler_characteristic(mesh : SurfaceMesh) -> int:
     """
-    Computes the Euler characteristic of a mesh, given as V-E+F
+    Computes the Euler characteristic of a surface mesh, given as V-E+F
+    
+    See https://en.wikipedia.org/wiki/Euler_characteristic
 
-    Args:
-        mesh (Mesh): the mesh
+    Parameters:
+        mesh (SurfaceMesh): the mesh
 
     Returns:
         (int): the Euler characteristic
@@ -26,7 +28,7 @@ def genus(mesh : SurfaceMesh) -> int:
     The genus is the number of "holes" a surface contains. It is linked to the euler characteristic X by
     X = 2 - 2g
 
-    Args:
+    Parameters:
         mesh (Mesh): the mesh
 
     Returns:
@@ -40,7 +42,7 @@ def mean_edge_length(mesh : Mesh, n : int = None) -> float:
     """
     Estimation of mean edge length
 
-    Args:
+    Parameters:
         mesh (Mesh): input mesh
         n (int, optional): 
             Early stopping for number of edges to consider in mean computation. 
@@ -61,7 +63,7 @@ def mean_edge_length(mesh : Mesh, n : int = None) -> float:
 def mean_face_area(mesh : SurfaceMesh, n : int = None) -> float:
     """Estimation of mean face area
 
-    Args:
+    Parameters:
         mesh (Mesh): input mesh
         n (int, optional): 
             Early stopping for number of faces to consider in mean computation. 
@@ -85,7 +87,7 @@ def mean_face_area(mesh : SurfaceMesh, n : int = None) -> float:
 def mean_cell_volume(mesh : VolumeMesh, n : int = None) -> float:
     """Estimation of mean cell volume
 
-    Args:
+    Parameters:
         mesh (VolumeMesh): input mesh
         n (int, optional): 
             Early stopping for number of cells to consider in mean computation. 
@@ -109,7 +111,7 @@ def mean_cell_volume(mesh : VolumeMesh, n : int = None) -> float:
 def total_area(mesh : SurfaceMesh) -> float:
     """Sum of face areas
 
-    Args:
+    Parameters:
         mesh (Mesh): input mesh
 
     Returns:

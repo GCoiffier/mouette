@@ -20,7 +20,7 @@ def import_off(path : str):
         /////////////////
 
         if surfacic, 3 is given at beginning of each simplex line (triangle), otherwise 4 (tetrahedron)
-    Args:
+    Parameters:
         path (str): the input file path
     """
 

@@ -8,7 +8,7 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None) -> Pol
     """
     Extracts a list of vertices that are on the border of the mesh.
 
-    Args:
+    Parameters:
         mesh (Mesh): The mesh
         starting_point (int): Origin point. Should be on border
     
@@ -43,7 +43,7 @@ def extract_border_cycle_all(mesh : SurfaceMesh) -> list:
     """
     Extracts all the border cycles of a mesh and returns a list of list of vertices
 
-    Args:
+    Parameters:
         mesh (Mesh): The mesh
     
     Returns:

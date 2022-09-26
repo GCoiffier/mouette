@@ -6,7 +6,7 @@ Various iterators on list to make life easier
 def cyclic_pairs(L: list):
     """pairs of form (L[i], L[i+1]) that wraps at the end
 
-    Args:
+    Parameters:
         L (list): list
     """
     n = len(L)
@@ -16,7 +16,7 @@ def cyclic_pairs(L: list):
 def cyclic_pairs_enumerate(L : list):
     """pairs of form ((i,i+1),(L[i], L[i+1]) that wraps at the end
 
-    Args:
+    Parameters:
         L (list): list
     """
     n = len(L)
@@ -26,7 +26,7 @@ def cyclic_pairs_enumerate(L : list):
 def consecutive_pairs(L : list):
     """pairs of form (L[i], L[i+1]) that does not wrap at the end
 
-    Args:
+    Parameters:
         L (list): list
     """
     for i in range(len(L)-1):
@@ -35,7 +35,7 @@ def consecutive_pairs(L : list):
 def cyclic_permutations(L):
     """All the cyclic permutations of elements of L
 
-    Args:
+    Parameters:
         L (list): list
     """
     n = len(L)
@@ -45,7 +45,7 @@ def cyclic_permutations(L):
 def cyclic_perm_enumerate(L):
     """All the cyclic permutations of elements of L with the index of the first element.
 
-    Args:
+    Parameters:
         L (list): list
     """
     n = len(L)

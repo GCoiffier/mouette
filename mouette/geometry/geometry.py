@@ -8,7 +8,7 @@ def sign0(x : float):
         1 if x >= 0
         -1 if x < 0
 
-    Args:
+    Parameters:
         x (float): input number
 
     Returns:
@@ -23,7 +23,7 @@ def sign(x : float):
         -1 if x < 0
         0 if x = 0
 
-    Args:
+    Parameters:
         x (float): input number
 
     Returns:
@@ -64,7 +64,7 @@ def cotan(A:Vec, B:Vec, C:Vec):
 def angle_3pts(A:Vec, B:Vec, C:Vec) -> float:
     """Angle ABC between three points
 
-    Args:
+    Parameters:
         A (Vec): first point
         B (Vec): central point
         C (Vec): second point
@@ -82,7 +82,7 @@ def angle_3pts(A:Vec, B:Vec, C:Vec) -> float:
 def signed_angle_2vec3D(V1:Vec, V2:Vec, N:Vec) -> float:
     """Signed angle between two vectors with orientation given by normal N
 
-    Args:
+    Parameters:
         V1 (Vec): First vector
         V2 (Vec): Second vector
         N (Vec): reference normal direction
@@ -98,7 +98,7 @@ def signed_angle_2vec3D(V1:Vec, V2:Vec, N:Vec) -> float:
 def signed_angle_3pts(A:Vec, B:Vec, C:Vec, N:Vec) -> float:
     """Signed angle between three points ABC with orientation givne by normal N
 
-    Args:
+    Parameters:
         A (Vec): first point
         B (Vec): central point
         C (Vec): second point
@@ -140,7 +140,7 @@ def quad_area(A:Vec, B:Vec, C:Vec, D:Vec) -> float:
 def det_2x2(A:Union[complex,np.ndarray], B:Union[complex,np.ndarray]) -> float:
     """Computes a 2x2 determinant
 
-    Args:
+    Parameters:
         A (Union[complex,np.ndarray]): first column vector. Can also be a complex number
         B (Union[complex,np.ndarray]): second column vector. Can also be a complex number
 
@@ -160,7 +160,7 @@ def det_2x2(A:Union[complex,np.ndarray], B:Union[complex,np.ndarray]) -> float:
 def det_3x3(*args) -> float:
     """Computes a 3x3 using the rule of Sarrus
     
-    Args:
+    Parameters:
         Either a 3*3 numpy array representing a matrix, or 3 3*1 numpy array representing three column vectors
 
     Returns:
@@ -192,7 +192,7 @@ def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
 
     /!\ circumcenter of triangle (v1,v2,v3) may not lay inside the triangle
 
-    Args:
+    Parameters:
         v1 (Vec): first point
         v2 (Vec): second point
         v3 (Vec): third point

@@ -25,7 +25,7 @@ def shortest_path(mesh : Mesh, start : int, targets : list, weights = "length", 
     Computes the shortest path from 'start' vertex to all given targets.
     Uses Dijsktra's algorithm
 
-    Args:
+    Parameters:
         mesh (Union[Polyline, SurfaceMesh, VolumeMesh]): The mesh
         start (int): Vertex index of starting point on the mesh
         targets (int | list | set): 
@@ -100,7 +100,7 @@ def shortest_path_to_vertex_set(mesh : PolyLine, start : int, targets : list, we
     """Computes the shortest path from 'start' vertex to the closest vertex in the target set
     The idea is to add fictionnal edges between all vertices of targets to a representent vertex, with weight 0, and call Dijsktra's algorithm to reach this vertex.
 
-    Args:
+    Parameters:
         mesh (Union[Polyline, SurfaceMesh, VolumeMesh]): The mesh
         start (int): Vertex index of starting point on the mesh
         targets (list): list of vertices to reach
@@ -207,7 +207,7 @@ def shortest_path_to_border(mesh : SurfaceMesh, start : int, weights = "length",
     Computes the shortest path from 'start' vertex to the boundary of the mesh.
     Call to shortest_path_to_vertex_set with the set of boundary vertices
 
-    Args:
+    Parameters:
         mesh (SurfaceMesh): The mesh
         start (int): Vertex index of starting point on the mesh
         weights (str | dict | Attribute) : provided weights of each edge. Options are:

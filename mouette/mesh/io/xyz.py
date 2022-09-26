@@ -5,7 +5,7 @@ from ..mesh import PointCloud
 def import_xyz(filepath : str) -> RawMeshData:
     """Imports a point cloud from a .xyz file on the disk
 
-    Args:
+    Parameters:
         filepath (str): path to the .xyz file
 
     Returns:
@@ -21,7 +21,7 @@ def import_xyz(filepath : str) -> RawMeshData:
 def export_xyz(mesh : PointCloud, filepath : str) -> None:
     """Exports a Point Cloud to a .xyz file
 
-    Args:
+    Parameters:
         mesh (PointCloud): the object to be exported
         filepath (str): path to the .xyz file
     """

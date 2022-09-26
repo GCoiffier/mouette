@@ -6,18 +6,18 @@ from .. import geometry as geom
 from ..geometry import Vec
 
 @allowed_mesh_types(SurfaceMesh, VolumeMesh)
-def face_area(mesh : Mesh, name="area", persistent:bool=True, dense:bool=True):
+def face_area(mesh : Mesh, name="area", persistent:bool=True, dense:bool=True) -> Attribute:
     """
     Computes the barycenter point of each face.
 
-    Args:
-        mesh (SurfaceMesh)
+    Parameters:
+        mesh (SurfaceMesh): the input mesh
         name (str, optional): Name given to the attribute. Defaults to "area".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
-        Attribute[float] on faces
+        Attribute: a float per faces
     """
     if persistent:
         area = mesh.faces.create_attribute(name, float, dense=dense)
@@ -39,18 +39,18 @@ def face_area(mesh : Mesh, name="area", persistent:bool=True, dense:bool=True):
     return area
 
 @allowed_mesh_types(SurfaceMesh)
-def face_normals(mesh : SurfaceMesh, name="normals", persistent:bool=True, dense:bool=True):
+def face_normals(mesh : SurfaceMesh, name="normals", persistent:bool=True, dense:bool=True) -> Attribute:
     """
     Computes the barycenter point of each face.
 
-    Args:
-        mesh (SurfaceMesh)
+    Parameters:
+        mesh (SurfaceMesh): the input mesh
         name (str, optional): Name given to the attribute. Defaults to "normals".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
-        Attribute[float, 3] on faces
+        Attribute: 3 floats per faces
     """
     if persistent :
         normals = mesh.faces.create_attribute(name, float, 3)
@@ -62,18 +62,18 @@ def face_normals(mesh : SurfaceMesh, name="normals", persistent:bool=True, dense
     return normals
 
 @allowed_mesh_types(SurfaceMesh, VolumeMesh)
-def face_barycenter(mesh : SurfaceMesh, name="barycenter", persistent:bool = True, dense:bool = True):
+def face_barycenter(mesh : SurfaceMesh, name="barycenter", persistent:bool = True, dense:bool = True) -> Attribute:
     """
     Computes the barycenter point of each face.
 
-    Args:
-        mesh (SurfaceMesh)
+    Parameters:
+        mesh (SurfaceMesh): the input mesh
         name (str, optional): Name given to the attribute. Defaults to "barycenter".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
-        Attribute[float, 3] on faces
+        Attribute: one 3D vector per face
     """
     if persistent :
         bary = mesh.faces.create_attribute(name, float, 3)
@@ -84,18 +84,18 @@ def face_barycenter(mesh : SurfaceMesh, name="barycenter", persistent:bool = Tru
     return bary
 
 @allowed_mesh_types(SurfaceMesh, VolumeMesh)
-def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=True, dense:bool=True):
+def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=True, dense:bool=True) -> Attribute:
     """
     Computes the circumcenter point of each face.
 
-    Args:
-        mesh (SurfaceMesh)
+    Parameters:
+        mesh (SurfaceMesh): the input mesh
         name (str, optional): Name given to the attribute. Defaults to "barycenter".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
-        Attribute[float, 3] on faces
+        Attribute: one float per face
     """
     if persistent :
         circum = mesh.faces.create_attribute(name, float, 3)
@@ -107,19 +107,19 @@ def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=T
         circum[iF] = geom.circumcenter(*(mesh.vertices[u] for u in F))
 
 @allowed_mesh_types(SurfaceMesh)
-def faces_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", persistent:bool = True, dense:bool = False):
+def faces_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", persistent:bool = True, dense:bool = False) -> Attribute:
     """Returns the faces that are at most at 'dist' neighbours from the boundary.
     Proceeds by region growing, starting from all faces touching the boundary and going inwards.
 
-    Args:
-        mesh (SurfaceMesh): input mesh
+    Parameters:
+        mesh (SurfaceMesh): the input mesh
         dist (int, optional): Extend to which we flag the faces. All faces with a path of length < dist to the boundary will be returned. Defaults to 2.
         name (str, optional): Name given to the attribute. Defaults to "barycenter".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to False
 
     Returns:
-        Attribute[bool] on faces. If not persistent, returns a set.
+        Attribute: one bool per faces. If not persistent, returns a set.
     """
     
     near = set()

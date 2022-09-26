@@ -6,17 +6,14 @@ from ..geometry import Vec
 import numpy as np
 
 @forbidden_mesh_types(PointCloud)
-def edge_length(mesh : Mesh, name = "length", persistent:bool=True, dense:bool = True):
+def edge_length(mesh : Mesh, name = "length", persistent:bool=True, dense:bool = True) -> Attribute:
     """Compute edge lengths across the mesh.
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh. PointClouds are forbidden (no edges).
         name (str, optional): name of the attribute. Defaults to "length".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
-
-    Returns:
-        _type_: _description_
     """
     if persistent:
         length = mesh.edges.create_attribute(name, float, dense=True)
@@ -28,10 +25,12 @@ def edge_length(mesh : Mesh, name = "length", persistent:bool=True, dense:bool =
     return length
 
 @allowed_mesh_types(SurfaceMesh)
-def curvature_matrices(mesh : SurfaceMesh):
+def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
     """
-    Curvature matrix for each edge on the mesh.
-    Can be assembled on triangles or vertices depending on the application
+    Curvature matrix for each edge on the mesh, as defined in 'Restricted Delaunay Triangulations and Normal Cycle', David Cohen-Steiner and Jean-Marie Morvan, 2003
+
+    Note:
+        See Curvature Frame Fields for their aggregation on triangles or vertices
     """
 
     data = np.zeros((len(mesh.edges), 3,3), dtype=np.float64)
@@ -47,11 +46,11 @@ def curvature_matrices(mesh : SurfaceMesh):
     return data
 
 @allowed_mesh_types(SurfaceMesh)
-def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent:bool = True, dense:bool = True):
+def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent:bool = True, dense:bool = True)-> Attribute:
     """ Compute the cotan weights of edges.
     The weight of an edge separating T1 and T2 is the sum of cotangent of opposite angles in T1 and T2
 
-     Args:
+    Parameters:
         mesh (Mesh): the input mesh.
         name (str, optional): name of the attribute. Defaults to "cotan_weight".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.

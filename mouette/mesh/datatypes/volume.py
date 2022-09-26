@@ -121,7 +121,7 @@ class VolumeMesh(Mesh):
     
     def is_edge_on_border(self, *args) -> bool:
         """
-        Args:
+        Parameters:
             Either an integer index representing an edge, or two integer indices representing two (adjacent) vertices
 
         Returns:
@@ -379,7 +379,7 @@ class VolumeMesh(Mesh):
         def in_cell_index(self, C, V):
             """Index of vertex V in cell C. None if V is not in cell C
 
-            Args:
+            Parameters:
                 C (int): cell index
                 V (int): vertex index
 
@@ -525,7 +525,7 @@ class VolumeMesh(Mesh):
         def in_face_index(self, F, V):
             """Index of vertex V in face F. None if V is not in face F
 
-            Args:
+            Parameters:
                 F (int): face index
                 V (int): vertex index
 

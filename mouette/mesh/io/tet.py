@@ -17,7 +17,7 @@ def import_tet(path : str):
         ...
         4 vm_1 vm_2 vm_3 vm_3					
         /////////////////
-    Args:
+    Parameters:
         path (str): the input file path
     """
 

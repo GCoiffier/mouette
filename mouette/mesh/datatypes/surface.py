@@ -399,7 +399,7 @@ class SurfaceMesh(Mesh):
         def in_face_index(self, F, V):
             """Index of vertex V in face F. None if V is not in face F
 
-            Args:
+            Parameters:
                 F (int): face index
                 V (int): vertex index
 

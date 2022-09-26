@@ -11,7 +11,7 @@ def adjacency_matrix(mesh : Mesh, weights="one"):
         M[i,j] = 0 otherwise
 
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh
         weights (str, optional): How to weight the edges of the matrix. Options are:
             - "one" : every edge is 1
@@ -58,7 +58,7 @@ def vertex_to_edge_operator(mesh : Mesh):
     """Vertices to edges operator. Matrix M of size |V|x|E| where:
         M[v,e] = 1 if and only if v is one extremity of edge e.
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh
 
     Returns:

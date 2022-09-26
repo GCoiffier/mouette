@@ -36,7 +36,7 @@ class SurfaceSubdivision(Logger):
     def triangulate_face(self, face_id:int) :
         """Triangulates the face "face_id"
 
-        Args:
+        Parameters:
             face_id (int): the face to triangulate
         """
         F = self.mesh.faces[face_id]
@@ -52,7 +52,7 @@ class SurfaceSubdivision(Logger):
         """
         Adds a vertex at the barycenter of face 'face_id' and create a fan of triangles that replaces the face
 
-        Args:
+        Parameters:
             face_id (int): the face to split
         """
         
@@ -79,7 +79,7 @@ class SurfaceSubdivision(Logger):
         """Subdivides triangles of a mesh in 4 triangles by spliting along middle of edges.
             If the mesh is not triangulated, will triangulate the mesh first.
 
-        Args:
+        Parameters:
             n (int, optional): Number of times the subdivision is applied. Defaults to 1.
         """
         self.triangulate()
@@ -114,7 +114,7 @@ class SurfaceSubdivision(Logger):
         """Subdivides triangles of a mesh in 6 triangles by adding a point at the barycenter and three middles of edges.
             If the mesh is not triangulated, will triangulate the mesh first.
 
-        Args:
+        Parameters:
             n (int, optional): number of successive subdivisions. Eventual first triangulation does not count. Defaults to 1.
         """
         self.triangulate()
@@ -182,7 +182,7 @@ class VolumeSubdivision(Logger):
         Adds a vertex at the barycenter of cell 'cell_id' and create a fan of tetrahedra that replaces the cell.
         If the cell 'cell_id' is not a tetrahedron, does nothing.
 
-        Args:
+        Parameters:
             mesh (VolumeMesh): the input mesh
             cell_id (int): the (tetrahedral) cell to split
 

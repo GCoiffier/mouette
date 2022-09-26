@@ -33,7 +33,7 @@ def cylinder(P1 : Vec, P2 : Vec, radius: float = 1., N=50, fill_caps=True) -> Su
 def cylindrify_edges( mesh : PolyLine, radius: float = 5e-2, N=50) -> SurfaceMesh:
     """ Transforms edges of a polyline as cylinder surface
 
-    Args:
+    Parameters:
         mesh (PolyLine): the input mesh
         radius (float, optional): Radius of the output cylinders. Defaults to 5e-2.
         N (int, optional): Number of points inside each circle of the cylinders. Defaults to 50.

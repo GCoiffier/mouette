@@ -16,7 +16,7 @@ from ..attributes.misc_corners import cotangent
 def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
     """Simplest Laplacian defined on a graph. uses uniform weights for connectivity.
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh
 
     Returns:
@@ -58,7 +58,7 @@ def area_weight_matrix(mesh : SurfaceMesh):
 def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None, order:int=4) -> sp.csc_matrix:
     """Cotan laplacian
 
-    Args:
+    Parameters:
         mesh (SurfaceMesh): input mesh
         cotan (bool) : whether to compute real cotan values for more precise discretization or only 0/1 values as a graph laplacian. Defaults to True.
         parallel_transport (dict, optional): For a laplacian on 1-forms, gives the angle in local bases of all adjacent edges. Defaults to None.
@@ -139,7 +139,7 @@ def area_weight_matrix_faces(mesh : SurfaceMesh):
 def laplacian_triangles(mesh : SurfaceMesh, cotan=True, parallel_transport:bool=True, order:int=4) -> sp.lil_matrix:
     """ Laplacian defined on face connectivity (ie on the dual mesh)
 
-    Args:
+    Parameters:
         mesh (SurfaceMesh)
 
     Returns:
@@ -198,7 +198,7 @@ def volume_laplacian(mesh : VolumeMesh):
     See https://cseweb.ucsd.edu/~alchern/projects/ConformalVolume/
     and https://www.cs.cmu.edu/~kmcrane/Projects/Other/nDCotanFormula.pdf
 
-    Args:
+    Parameters:
         mesh (VolumeMesh) : the input mesh
 
     Returns:
@@ -228,7 +228,7 @@ def volume_laplacian(mesh : VolumeMesh):
 def laplacian_tetrahedra(mesh : VolumeMesh):
     """Laplacian defined on cell connectivity (ie on the dual volume mesh)
 
-    Args:
+    Parameters:
         mesh (SurfaceMesh)
 
     Returns:

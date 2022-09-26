@@ -13,7 +13,7 @@ from ..geometry import Vec
 def degree(mesh : Mesh, name : str = "degree", persistent:bool = True, dense:bool = True) -> Attribute :
     """Computes the degree of each vertex, that is the number of vertex that are adjacent.
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh. Pointclouds are forbidden
         name (str, optional): _description_. Defaults to "degree".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
@@ -40,7 +40,7 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
     This function relies on the computation of cotangents on the mesh.
     WARNING: only works for triangulated meshes
 
-    Args:
+    Parameters:
         mesh (SurfaceMesh): the mesh
         zero_border (bool): if set to true, ignores the defect on the boundary of the mesh. Defaults to False.
         name (str, optional): Name given to the attribute. Defaults to "angleDefect".
@@ -79,7 +79,7 @@ def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpol
     """Computes normal directions as 3d vectors for each vertex.
     Normal at a vertex is a weighted sum of normals of adjacent faces. This function essentially interpolates the face normals.
 
-    Args:
+    Parameters:
         mesh (SurfaceMesh): the input mesh
         name (str, optional): Name given to the attribute. Defaults to "normals".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
@@ -91,7 +91,7 @@ def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpol
         custom_fnormals (Attribute, optional): custom values for the face normals to be interpolated. Defaults to None.
 
     Raises:
-        Exception if 'interpolation' is not one of {'uniform', 'area', 'angles'}
+        Exception: if 'interpolation' is not one of {'uniform', 'area', 'angles'}
 
     Returns:
         Attribute(float, 3) on vertices
@@ -121,7 +121,7 @@ def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpol
 def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = True, dense:bool = False) -> Attribute :
     """Computes the normal direction of the boundary curve.
 
-    Args:
+    Parameters:
         mesh (SurfaceMesh): the mesh
         name (str, optional): Name given to the attribute. Defaults to "borderNormals".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.

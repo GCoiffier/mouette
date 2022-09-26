@@ -29,7 +29,7 @@ class SpanningTree(ABC):
         Iterator on the nodes of a tree. 
         Returns tuple of form (node, parent)
         
-        Args:
+        Parameters:
             order (str, optional):  BFS or DFS order. Defaults to "BFS".
         """
         if order not in ["BFS", "DFS"]:
@@ -92,7 +92,7 @@ class SpanningForest(ABC):
         """
         Iterator on the nodes of a tree 
         
-        Args:
+        Parameters:
             order (str, optional):  BFS or DFS order. Defaults to "BFS".
         """
         for tree in self.trees:

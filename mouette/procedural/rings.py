@@ -9,7 +9,7 @@ def ring(N : int, defect : float, open :bool = False, n_cover:int = 1) -> Surfac
     """
     Computes a ring of triangles with prescribed number of triangles and angle defect at the center.
 
-    Args:
+    Parameters:
         N (int): number of triangles in the ring
         defect (float): target angle defect to achieve. Position of the central point is adjusted via dichotomy to match this value.
         open (bool) : whether to connect the last vertex to the first.

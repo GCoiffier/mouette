@@ -8,12 +8,12 @@ from .misc_faces import face_area
 def interpolate_vertices_to_faces(
     mesh : Mesh,
     vattr : Attribute, 
-    fattr : Attribute):
+    fattr : Attribute) -> Attribute:
     
     """Given an attribute on vertices, interpolates its value onto faces
 
-    Args:
-        mesh  (Union[SurfaceMesh, VolumeMesh])
+    Parameters:
+        mesh (Union[SurfaceMesh, VolumeMesh]): the input mesh
         vattr (Attribute): input vertex attribute 
         fattr (Attribute): output face attribute
     Returns:
@@ -32,17 +32,20 @@ def interpolate_faces_to_vertices(
     mesh : SurfaceMesh,
     fattr : Attribute, 
     vattr : Attribute,
-    weight : str = "uniform"):
+    weight : str = "uniform")-> Attribute:
     """Given an attribute on vertices, interpolates its value onto faces
 
-    Args:
-        mesh  (SurfaceMesh): the mesh
+    Parameters:
+        mesh (SurfaceMesh): the mesh
         fattr (Attribute): input face attribute
         vattr (Attribute): output face attribute
         weight (str): the way attributes are weighted in the sum.
             three possibilities :
+
             - uniform: every face will have weight 1
+            
             - area: face have a weight proportionnal to their area
+            
             - angle: face contribute to a vertex depending on the interior angle at this vertex
     Returns:
         Attribute: modified vattr
@@ -88,17 +91,17 @@ def interpolate_faces_to_vertices(
             vattr[v] /= defects[v]
     return vattr
 
-@allowed_mesh_types(VolumeMesh)
-def interpolate_vertices_to_cells(mesh : Mesh, vattr : Attribute, cattr : Attribute):
-    """
-    Given an attribute on vertices, interpolates its value onto cells
+# @allowed_mesh_types(VolumeMesh)
+# def interpolate_vertices_to_cells(mesh : Mesh, vattr : Attribute, cattr : Attribute)-> Attribute:
+#     """
+#     Given an attribute on vertices, interpolates its value onto cells
 
-    Args:
-        mesh (VolumeMesh): [description]
-        vattr (Attribute): [description]
-        cattr (Attribute): [description]
+#     Parameters:
+#         mesh (VolumeMesh): the input mesh
+#         vattr (Attribute): input vertex attribute
+#         cattr (Attribute): output cell attribute
 
-    Raises:
-        NotImplementedError: [description]
-    """
-    raise NotImplementedError
+#     Raises:
+#         NotImplementedError: TODO
+#     """
+#     raise NotImplementedError

@@ -6,7 +6,7 @@ from ...utils import keyify
 
 def import_obj(path : str):
     """
-    Args:
+    Parameters:
         path (str): the input file path
     """
 

@@ -114,7 +114,7 @@ def project_to_frame(sh : Vec, stop_threshold : float = 1e-8, max_iter=100, nrml
         Also recomputes spherical harmonics coefficients to a perfect match.
         Uses the Cayleigh transform to approximate the 9D rotation.
 
-    Args:
+    Parameters:
         sh (Vec): the 9 coefficients representing the frame in spherical harmonics basis
         stop_threshold (float,optional) : Stoping criterion on the norm of the residual. Defaults to 1e-8.
         max_iter (int, optional): Maximum number of gradient steps. Defaults to 100.
@@ -179,7 +179,7 @@ def project_to_frame_grad(sh : Vec, lr : float = 1e-1, grad_threshold : float = 
 
         /!\\ This algorithm is less precise and less efficient than project_to_frame. Use the latter instead.
 
-    Args:
+    Parameters:
         sh (Vec): the 9 coefficients representing the frame in spherical harmonics basis
         lr (float, optional): Gradient descent learning rate. Defaults to 1.
         grad_threshold (float,optional) : Stoping criterion on the norm of the gradient. Defaults to 1e-4
@@ -237,7 +237,7 @@ def orthogonality_energy(sh : np.ndarray) -> float:
     """Computes an energy that is 0 if and only if the given spherical harmonics has octahedral symetry (ie represents an orthogonal frame)
     The energy is quadratic in terms of the harmonic coefficients
 
-    Args:
+    Parameters:
         sh (np.ndarray): a spherical harmonics (9 coefficients)
 
     Returns:

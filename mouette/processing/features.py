@@ -29,7 +29,7 @@ class FeatureEdgeDetector(Worker):
 
     def __init__(self, only_border : bool = False, flag_corners=True, corner_order:int = 4, compute_feature_graph=True, verbose=True):
         """
-        Args:
+        Parameters:
             only_border (bool, optional): If set to True, will only consider border edges as features. Defaults to False.
             flag_corners (bool, optional): If set to True, will also compute a goal angle defect (multiple of pi/2) of each detected vertices. Defaults to True.
             compute_feature_graph (bool, optional): whether to compute a Polyline object representing the feature graph. For debug and visualization purposes. Defaults to True.
@@ -94,7 +94,7 @@ class FeatureEdgeDetector(Worker):
         """The mesh may already define a set of "hard" edges, for instance if it was imported from a file where edges were specified.
         These edges should be registered as features, but we filter them if their curvature is too small.
 
-        Args:
+        Parameters:
             feature_attr (Attribute): the feature flag to fill in
 
         Returns:
@@ -117,7 +117,7 @@ class FeatureEdgeDetector(Worker):
     def _add_sharp_angles_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:
         """Flags as features all edges which dihedral angle is smaller than pi/2 or greater than 3*pi/2
 
-        Args:
+        Parameters:
             feature_attr (Attribute): the feature flag to fill in
 
         Returns:

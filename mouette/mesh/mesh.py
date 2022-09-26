@@ -52,7 +52,7 @@ def load(filename : str, dim : int = None, raw : bool = False) -> Mesh:
     """
     Loads a Mesh object from a file on the disk
 
-    Args:
+    Parameters:
         filename (str):  the path of the file
         dim (int, optional): 
             Override for the dimensionality of the resulting mesh.
@@ -71,7 +71,7 @@ def load(filename : str, dim : int = None, raw : bool = False) -> Mesh:
 def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
     """ Saves the mesh data into a file
 
-    Args:
+    Parameters:
         filename (str): The output file path
 
     Raises:
@@ -94,7 +94,7 @@ def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
 def copy(mesh : Mesh, copy_attributes=False, copy_connectivity=False, copy_half_edges=False) -> Mesh:
     """[summary]
 
-    Args:
+    Parameters:
         mesh (Mesh): [description]
         copy_attributes (bool, optional): [description]. Defaults to False.
 
@@ -133,7 +133,7 @@ def copy(mesh : Mesh, copy_attributes=False, copy_connectivity=False, copy_half_
 def merge(mesh_list : list) -> Mesh:
     """Merges a list of independents meshes as a unique mesh.
 
-    Args:
+    Parameters:
         mesh_list (list): the list of meshes. If empty, this function returns None
 
     Returns:

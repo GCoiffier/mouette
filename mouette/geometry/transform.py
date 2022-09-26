@@ -7,7 +7,7 @@ def translate(mesh : Mesh, tr : Vec) -> Mesh:
     """
     Translates all vertices of the mesh by a fixed vector
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh. Can be any mesh data structure
         tr (Vec): the translation vector
 
@@ -21,7 +21,7 @@ def translate(mesh : Mesh, tr : Vec) -> Mesh:
 def rotate(mesh : Mesh, rot : Rotation, orig : Vec = None) -> Mesh:
     """Rotates all vertices of the mesh by a given rotation around a given origin.
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh. Can be any mesh data structure
         rot (scipy.spatial.transform.Rotation): The rotation
         orig (Vec, optional): The origin of the rotation. If not provided, the function rotates around (0,0,0). Defaults to None.
@@ -48,7 +48,7 @@ def rotate(mesh : Mesh, rot : Rotation, orig : Vec = None) -> Mesh:
 def scale(mesh : Mesh, factor : float, orig : Vec = None) -> Mesh:
     """Scales the mesh by a given factor around a given origin (fixed point)
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh. Can be any mesh data structure
         factor (float): scale factor. If its magnitude is < 1e-8, will print a warning.
         orig (Vec, optional): Fixed point of the scaling. If not provided, it is set at (0,0,0). Defaults to None.
@@ -68,7 +68,7 @@ def scale_xyz(mesh : Mesh, fx : float = 1., fy : float = 1., fz : float = 1., or
     """Scales the mesh independently along three axes.
     If any factor as a magnitude < 1e-8, will print a warning.
 
-    Args:
+    Parameters:
         mesh (Mesh): the input mesh. Can be any mesh data structure
         fx (float, optional): Scale factor along x. Defaults to 1.
         fy (float, optional): Scale factor along y. Defaults to 1.
@@ -92,7 +92,7 @@ def flatten(mesh : Mesh, dim : int = None) -> Mesh:
     """
     Snaps to 0 one dimension to retrieve a flat 2D mesh.
 
-    Args:
+    Parameters:
         mesh (Mesh): input mesh
         dim (int, optional): The dimension to flatten. If None, the function chooses the dimension which has the smallest variance.
     Returns:

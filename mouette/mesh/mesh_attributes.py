@@ -107,7 +107,7 @@ class BaseAttribute(ABC):
         """
         __init__ method and the whole Attribute class are not supposed to be manipulated outside of the DataContainer class
 
-        Args:
+        Parameters:
             elem_type : the type of the attribute (bool, int, float, complex, string)
 
             elem_size (int, optional): Number of elem_type objects to be stored per element. Defaults to 1.
@@ -160,7 +160,7 @@ class BaseAttribute(ABC):
     @abstractmethod
     def _expand(self, n : int):
         """Expands the storage capacity of the attributes. Adds `n` to self.n_elem
-        Args:
+        Parameters:
             n (int) : number of new elements
         """
         pass
@@ -189,7 +189,7 @@ class Attribute(BaseAttribute):
         """
         __init__ method and the whole Attribute class are not supposed to be manipulated outside of the DataContainer class
 
-        Args:
+        Parameters:
             elem_type : the type of the attribute (bool, int, float, complex, string)
 
             elem_size (int, optional): Number of elem_type objects to be stored per element. Defaults to 1.
@@ -231,7 +231,7 @@ class Attribute(BaseAttribute):
 
     def _expand(self, n : int):
         """Expands the storage capacity of the attributes. Adds `n` to self.n_elem
-        Args:
+        Parameters:
             n (int) : number of new elements
         """
         pass # Nothing to do when data is stored in a dict
@@ -263,7 +263,7 @@ class ArrayAttribute(BaseAttribute):
         __init__ method and the whole Attribute class are not supposed to be manipulated outside of the DataContainer class.
         An ArrayAttribute stores its values in a numpy array. This is a less flexible but safer approach than Attribute.
 
-        Args:
+        Parameters:
             elem_type : the type of the attribute (bool, int, float, complex, string)
 
             n_elem (int): Total number of elements in the container. Should match the size of the DataContainer the attribute is stored in.
@@ -314,7 +314,7 @@ class ArrayAttribute(BaseAttribute):
 
     def _expand(self, n : int):
         """Expands the storage capacity of the attributes. Adds `n` to self.n_elem
-        Args:
+        Parameters:
             n (int) : number of new elements
         """
         self._data = np.concatenate((self._data, np.full((n, self.elemsize), self.default_value, dtype= self.type.dtype)))

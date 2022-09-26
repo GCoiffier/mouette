@@ -18,7 +18,7 @@ def split_double_boundary_edges_triangles(mesh : SurfaceMesh) -> SurfaceMesh:
     This function detects every occurrences of such a configuration and split the problematic
     triangle in three by adding a new vertex in the middle
 
-    Args:
+    Parameters:
         mesh (Mesh): the mesh (modified in place)
 
     Raises:
@@ -49,7 +49,7 @@ def smooth(mesh : SurfaceMesh, n_iter=100, mode="cotan", keep_border=False, damp
     """
     Applies Laplacian smoothing to a mesh
 
-    Args:
+    Parameters:
         mesh (Mesh): 
             The mesh to smooth. Operation is done in place
         

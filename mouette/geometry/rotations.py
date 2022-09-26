@@ -6,7 +6,7 @@ from .. import geometry as geom
 def rotate_2d(v : Vec, angle : float) -> Vec:
     """Rotates a 2D vector in the plane
 
-    Args:
+    Parameters:
         v (Vec): the vector to rotate
         angle (float): angle of rotation in radiants
 
@@ -44,7 +44,7 @@ def match_rotation(Ra : Rotation, Rb : Rotation, symgroup = Rotation.create_grou
     """Given two rotation matrices, compute the matching between the two: 
     the minimal rotation going from Ra to s(Rb) with s in some symmetry group (most often the octahedral group for cube symmetries)
 
-    Args:
+    Parameters:
         Ra (Rotation)
         Rb (Rotation)
         symgroup (Rotation) : a rotation group (given by the `scipy.spatial.transform.Rotation.create_group` method). 

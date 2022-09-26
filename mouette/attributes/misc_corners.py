@@ -5,17 +5,17 @@ from ..geometry import Vec
 import numpy as np
 
 @allowed_mesh_types(SurfaceMesh)
-def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, dense:bool = True):
+def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, dense:bool = True) -> Attribute:
     """Attribute storing the angles of a face at a vertex
 
-    Args:
-        mesh (SurfaceMesh)
+    Parameters:
+        mesh (SurfaceMesh): the input mesh
         name (str, optional): Name given to the attribute. Defaults to "angles".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
-        Attribute(float) on face corners
+        Attribute: one float per face corner
     """
     if persistent:
         angles = mesh.face_corners.create_attribute(name, float, dense=True)
@@ -36,14 +36,14 @@ def cotangent(mesh : SurfaceMesh, name = "cotan", persistent=True, dense=True) -
     """Attribute storing the cotangents of each face at each vertex.
     WARNING: only works if the mesh is triangulated (ie every faces are triangles)
 
-    Args:
-        mesh (SurfaceMesh)
+    Parameters:
+        mesh (SurfaceMesh): the input mesh
         name (str, optional): Name given to the attribute. Defaults to "cotan".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
-        Attribute(float) on face corners
+        Attribute(: one float per face corner
 
     Raises:
         Exception: fails if the mesh is not triangulated

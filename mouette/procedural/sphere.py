@@ -14,7 +14,7 @@ from .platonic import icosahedron
 def sphere_uv( n_lat : int, n_long : int, center : Vec = Vec(0.,0.,0.), radius : float = 1.) -> SurfaceMesh:
     """Generates a surface mesh using uv sampling of a sphere
 
-    Args:
+    Parameters:
         n_lat (int): number of different latitudes for points
         n_long (int): number of different longitudes for points
         center (Vec, optional): Center position of the sphere. Defaults to Vec(0.,0.,0.).
@@ -71,7 +71,7 @@ def spherify_vertices(points : PointCloud, radius : float = 1e-2, n_subdiv=1) ->
 def sphere_fibonacci( n_pts : int , build_surface : bool = True) -> SurfaceMesh:
     """Generates a point cloud or a surface mesh using fibonacci sampling of a sphere.
 
-    Args:
+    Parameters:
         n_pts (int): total number of vertices
         build_surface (bool, optional): If specified to True, the function will also compute a triangulation of the vertices. This is obtained through a convex hull algorithm (since points lay on a convex shape, the convex hull and the Delaunay triangulation are equivalent). Defaults to True.
 

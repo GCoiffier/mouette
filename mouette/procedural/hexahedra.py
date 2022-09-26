@@ -17,7 +17,7 @@ def axis_aligned_cube(colored=False) -> SurfaceMesh:
     |/       |/
     0--------1
 
-    Args:
+    Parameters:
         colored (bool, optional): if set to true, will add a colo rattribute on faces to determine. Defaults to False.
 
     Returns:
@@ -44,7 +44,7 @@ def hexahedron_4pts(P1 : Vec, P2 : Vec, P3 : Vec, P4 : Vec, colored=False, volum
     |/
     1--------2
 
-    Args:
+    Parameters:
         P1 to P4 (Vec): coordinates of vertices
         colored (bool, optional): if set to true, will add a color attribute on faces to determine. Defaults to False.
         volume (bool, optional): if set to true, will also generate three tetrahedra to fill the volume. Defaults to False.

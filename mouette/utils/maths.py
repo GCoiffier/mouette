@@ -3,7 +3,7 @@ from math import pi
 
 def roots(c : complex, pow: int, normalize=True):
     """Given a complex number c, compute and returns the four ^(1/4) roots 
-    Args:
+    Parameters:
         c (complex): input complex number
         pow (int): the power of the root. Returns power-th roots of c
         normalize (bool, optional): If True, roots will have module 1. Defaults to True

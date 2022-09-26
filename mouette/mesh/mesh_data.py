@@ -36,11 +36,6 @@ class DataContainer:
             warnings.warn(f"Error in attribute '{key}' : {e}")
             raise Exception("Aborting")
 
-    def __call__(self, name):
-        if name not in self._attr:
-            raise Exception("Attribute does not exist")
-        return self._attr[name]
-
     def __iter__(self):
         return self._data.__iter__()
 
