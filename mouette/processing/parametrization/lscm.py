@@ -1,4 +1,3 @@
-
 from ...mesh.datatypes import *
 from ...mesh.mesh import copy
 from ...mesh.mesh_attributes import Attribute, ArrayAttribute
@@ -41,7 +40,7 @@ class LSCM(Worker):
         self._flat_mesh : SurfaceMesh = None
         self.uvs : Attribute = None # attribute on vertices 
 
-    def run(self, eigen=True, save_on_mesh = True, solver_verbose=False):
+    def run(self, eigen=True, save_on_mesh : bool = True, solver_verbose=False):
         if euler_characteristic(self.mesh)!=1:
             raise Exception("Mesh is not a topological disk. Cannot run LSCM.")
         if eigen:
