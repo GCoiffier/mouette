@@ -2,6 +2,7 @@ from ..worker import Worker
 
 from ...geometry import distance
 from ...mesh.datatypes import *
+from ...mesh.mesh_data import RawMeshData
 from ...mesh.mesh_attributes import *
 from ...utils import keyify, UnionFind, PriorityQueue
 from ..paths import shortest_path, shortest_path_to_border, shortest_path_to_vertex_set
@@ -315,7 +316,7 @@ class SingularityCutter(Worker):
 
     def _build_cut_graph_as_mesh(self):
         # Build tree of potential cuts for debug purposes
-        self._cut_graph = PolyLine()
+        self._cut_graph = RawMeshData()
         hard_edges = self._cut_graph.edges.create_attribute("hard_edges", bool)
 
         new_v_id = dict()
@@ -334,9 +335,10 @@ class SingularityCutter(Worker):
         singuls_attr = self._cut_graph.vertices.create_attribute("selection", bool)
         for x in self.singularities:
             singuls_attr[new_v_id[x]] = True
+        self._cut_graph = PolyLine(self._cut_graph)
 
     def _build_mesh_with_cuts(self):
-        self._output_mesh = SurfaceMesh()
+        self._output_mesh = RawMeshData()
         uf = UnionFind(range(3*len(self.input_mesh.faces)))
         duplicate_vertices = dict([(v, set()) for v in self.input_mesh.id_vertices])
 
@@ -354,8 +356,8 @@ class SingularityCutter(Worker):
             if e not in self.cut_edges:
                 F1, iA1, iB1 = self.input_mesh.half_edges.adj(a,b)
                 F2, iB2, iA2 = self.input_mesh.half_edges.adj(b,a)
-                uf.union(self._output_mesh.ith_vertex_of_face(F1,iA1), self._output_mesh.ith_vertex_of_face(F2,iA2))
-                uf.union(self._output_mesh.ith_vertex_of_face(F1,iB1), self._output_mesh.ith_vertex_of_face(F2,iB2))
+                uf.union(self._output_mesh.faces[F1][iA1], self._output_mesh.faces[F2][iA2])
+                uf.union(self._output_mesh.faces[F1][iB1], self._output_mesh.faces[F2][iB2])
 
         for i,F in enumerate(self._output_mesh.faces):
             self._output_mesh.faces[i] = [uf.find(a) for a in F]
@@ -379,8 +381,6 @@ class SingularityCutter(Worker):
         self._output_mesh.vertices.clear()
         self._output_mesh.vertices += order_verts
         
-        self._output_mesh.recompute_edges()
-
         # get rid of duplicated and isolated vertices in map
         for v in duplicate_vertices:
             duplicate_vertices[v] = {imap[uf.find(u)] for u in duplicate_vertices[v]}
@@ -390,3 +390,5 @@ class SingularityCutter(Worker):
         for v in duplicate_vertices:
             for u in duplicate_vertices[v]:
                 self.ref_vertex[u] = v
+
+        self._output_mesh = SurfaceMesh(self._output_mesh)

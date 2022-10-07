@@ -12,5 +12,4 @@ from .paths import shortest_path, shortest_path_to_border, shortest_path_to_vert
 from .border import extract_border_cycle, extract_border_cycle_all, extract_curve_boundary, extract_surface_boundary
 
 from . import trees
-from .parametrization.lscm import LSCM
-from .parametrization.distortion import SurfaceDistortion
+from .parametrization import distortion

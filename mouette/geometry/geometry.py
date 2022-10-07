@@ -208,3 +208,25 @@ def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
     d2 = Vec(d2.y, -d2.x)
     S = intersect_2lines2D(p1, d1, p2, d2)
     return Vec(S.x, S.y, 0.)
+
+def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
+    """
+    Computes the aspect ratio of triangle ABC, defined as the ratio between the circumradius to twice the inradius.
+    This ratio equals 1 for equilateral triangle and goes to zero as the triangle gets close to degenerate.
+
+    Args:
+        A (Vec): first point of the triangle
+        B (Vec): second point of the triangle
+        C (Vec): third point of the triangle
+
+    Returns:
+        float: the aspect ratio of triangle ABC
+
+    Note:
+        https://stackoverflow.com/a/10290011
+    """
+    ab = distance(A,B)
+    bc = distance(B,C)
+    ca = distance(C,A)
+    s = (ab+bc+ca)/2
+    return ab*bc*ca/(8*(s-ab)*(s-bc)*(s-ca))

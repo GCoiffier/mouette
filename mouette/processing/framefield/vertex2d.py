@@ -6,6 +6,7 @@ from...utils import maths
 from ..features import FeatureEdgeDetector
 from ... import geometry as geom
 from ...geometry import Vec
+from ...optimize import inverse_power_method
 
 from math import pi
 import numpy as np
@@ -32,9 +33,9 @@ class _BaseFrameField2DVertices(FrameField):
         self.mesh : SurfaceMesh = supporting_mesh
         self.order : int = order
 
-        self.vbaseX : Attribute = None # local basis X vector (tangent)
-        self.vbaseY : Attribute = None # local basis Y vector (tangent)
-        self.vnormals : Attribute = None # local basis Z vector (normal)
+        self.vbaseX : ArrayAttribute = None # local basis X vector (tangent)
+        self.vbaseY : ArrayAttribute = None # local basis Y vector (tangent)
+        self.vnormals : ArrayAttribute = None # local basis Z vector (normal)
 
         self.angles : Attribute = None # angles of every triangle corner
         self.defect : Attribute = None # sum of angles around a vertex (/!\ not 'real' defect which is 2*pi - this)
@@ -275,12 +276,6 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
 
         if len(self.feat.feature_vertices)>0: # We have a border / feature elements -> linear solve
             self.log("Feature element detected (border and/or feature edges)")
-            # Compute attach weight as smallest eigenvalue of the laplacian
-            self.log("Compute attach weight")
-            alpha = self._compute_attach_weight(A)
-            self.log("Attach weight: {}".format(alpha))
-
-            A = A.astype(complex)
 
             # Build fixed/free vertex partition
             fixedInds,freeInds = [],[]
@@ -302,7 +297,9 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
 
             if n_renorm>0:
                 self.log(f"Solve linear system {n_renorm} times with diffusion")
-                mat = lapI - alpha * AI
+                alpha = self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian
+                self.log("Attach weight: {}".format(alpha))
+                mat = lapI - alpha * AI.astype(complex)
                 for _ in range(n_renorm):
                     self.normalize()
                     valI2 = alpha * AI.dot(self.var[freeInds])
@@ -314,20 +311,11 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             self.log("No border detected")
             self.log("Initial solve of linear system using an eigensolver")
             A = A.astype(complex)
-            try:
-                egv, U = sp.linalg.eigsh(lap, k=2, M=A, which="SM", tol=1e-3, maxiter=1000)
-            except linalg.ArpackNoConvergence as e:
-                self.log("Initial eigensolve failed :", e)
-                self.log("Retry using connectivity laplacian")
-                lap = operators.laplacian(self.mesh, cotan=False, parallel_transport=self.parallel_transport, order=self.order)
-                egv, U = sp.linalg.eigsh(lap-0.1*sp.identity(lap.shape[0]), k=2, M=A, which="SM", tol=1e-3)
-            iu = np.argmin(abs(egv))
-            alpha = abs(egv[iu])
-            self.log("Eigenvalues:", egv)
-            self.var = U[:,iu]
-
+            self.var = inverse_power_method(lap,A)
             if n_renorm>0:
                 self.log(f"Solve linear system {n_renorm} times with diffusion")
+                alpha = self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian
+                self.log("Attach weight: {}".format(alpha))
                 mat = lap  - alpha * A
                 for _ in range(n_renorm):
                     self.normalize()

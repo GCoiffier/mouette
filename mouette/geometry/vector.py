@@ -20,6 +20,10 @@ class Vec(np.ndarray):
         data = np.zeros(n)
         return Vec(data)
     
+    @staticmethod
+    def from_complex(c : complex):
+        return Vec(c.real, c.imag)
+
     ###### Accessors ######
     @property
     def x(self):

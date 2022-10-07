@@ -2,8 +2,10 @@ from .worker import Worker
 
 from ..mesh.mesh_attributes import Attribute
 from ..mesh.datatypes import *
+from ..mesh.mesh_data import RawMeshData
 from .border import extract_border_cycle_all
 from .. import geometry
+from ..utils import maths
 from ..attributes.misc_faces import face_normals
 from ..attributes.misc_corners import corner_angles
 from math import pi
@@ -50,7 +52,7 @@ class FeatureEdgeDetector(Worker):
         self.feature_edges : set = None # indexes of feature edges
         self.feature_degrees : Attribute = None # degree of each feature vertex in the feature graph
         self.local_feat_edges : dict = None # vertex -> list of local indices of edges that are feature edges
-        self.corners : Attribute = None # degree of each detected corners (as an int k such that defect is close to k*pi/2)
+        self.corners : Attribute = None # index of each detected corners (as an int k such that defect is close to k*pi/2)
 
         super().__init__("FeatureDetector", verbose)
 
@@ -65,7 +67,7 @@ class FeatureEdgeDetector(Worker):
 
     def _compute_feature_graph(self, mesh: SurfaceMesh):
         """Computes self._feature_mesh"""
-        self.feature_graph = PolyLine()
+        self.feature_graph = RawMeshData()
         fvert = list(self.feature_vertices)
         fvert = dict([(fvert[i],i) for i in range(len(self.feature_vertices))])
         degree_attr = self.feature_graph.vertices.create_attribute("degree", int)
@@ -75,6 +77,7 @@ class FeatureEdgeDetector(Worker):
         for e in self.feature_edges:
             A, B = mesh.edges[e]
             self.feature_graph.edges.append((fvert[A],fvert[B]))
+        self.feature_graph = PolyLine(self.feature_graph)
  
 ##### Feature detection subfunctions #####
 
@@ -124,7 +127,7 @@ class FeatureEdgeDetector(Worker):
             Attribute: the modified feature flag
         """
         if self.only_border : return feature_attr
-        DOT_THRESHOLD = 0.7
+        DOT_THRESHOLD = 0.5
         for e, (A,B) in enumerate(mesh.edges):
             T1,_,_ = mesh.half_edges.adj(A,B)
             T2,_,_ = mesh.half_edges.adj(B,A)
@@ -145,11 +148,10 @@ class FeatureEdgeDetector(Worker):
             for T in mesh.connectivity.vertex_to_face(v):
                 c = mesh.connectivity.vertex_to_corner_in_face(v,T)
                 angle_v += angles[c]
-
-            if abs(angle_v) < pi/self.corner_order:
+            if abs(angle_v) <  2*pi/self.corner_order:
                 self.corners[v] = 1 if angle_v>=0 else -1
             else:
-                self.corners[v] = round(angle_v * self.corner_order / ( 1 * pi))
+                self.corners[v] = round(angle_v * self.corner_order / ( 2 * pi))
 
 ##### Main detect function #####
 

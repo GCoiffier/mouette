@@ -25,9 +25,8 @@ def degree(mesh : Mesh, name : str = "degree", persistent:bool = True, dense:boo
     if persistent:
         deg = mesh.vertices.create_attribute(name, int, dense=dense)
     else:
-        deg = ArrayAttribute(float, len(mesh.vertices)) if dense else ArrayAttribute(float)
+        deg = ArrayAttribute(int, len(mesh.vertices)) if dense else Attribute(int)
     for (a,b) in mesh.edges:
-        print(deg[a])
         deg[a] = deg[a] + 1
         deg[b] = deg[b] + 1
     return deg

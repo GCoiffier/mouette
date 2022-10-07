@@ -42,20 +42,27 @@ def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
 
 
 @allowed_mesh_types(SurfaceMesh)
-def area_weight_matrix(mesh : SurfaceMesh):
+def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False) -> sp.csc_matrix:
     """
     Returns the diagonal matrix A of area weights on vertices
     Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix/
+
+    Args:
+        mesh (SurfaceMesh): input mesh
+        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
+
+    Returns:
+        sp.csc_matrix: diagonal matrix of vertices area
     """
     A = np.zeros(len(mesh.vertices))
     area = face_area(mesh)
     for iT,T in enumerate(mesh.faces):
         for u in T:
-            A[u] += area[iT]
+            A[u] += area[iT] if not inverse else 1/area[iT]
     return sp.diags(A, format="csc")
 
 @allowed_mesh_types(SurfaceMesh)
-def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None, order:int=4) -> sp.csc_matrix:
+def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None, order:int=4) -> sp.lil_matrix:
     """Cotan laplacian
 
     Parameters:

@@ -86,7 +86,7 @@ def face_barycenter(mesh : SurfaceMesh, name="barycenter", persistent:bool = Tru
 @allowed_mesh_types(SurfaceMesh, VolumeMesh)
 def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=True, dense:bool=True) -> Attribute:
     """
-    Computes the circumcenter point of each face.
+    Computes the circumcenter point of each triangular face.
 
     Parameters:
         mesh (SurfaceMesh): the input mesh
@@ -96,6 +96,9 @@ def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=T
 
     Returns:
         Attribute: one float per face
+
+    Raises:
+        Exception: fails if a face of the mesh is not a triangle
     """
     if persistent :
         circum = mesh.faces.create_attribute(name, float, 3)
@@ -141,3 +144,24 @@ def faces_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", pe
         near_attr = ArrayAttribute(bool, len(mesh.faces)) if dense else Attribute(bool)
     for f in near: near_attr[f] = True
     return near_attr
+
+@allowed_mesh_types(SurfaceMesh)
+def triangle_aspect_ratio(mesh : SurfaceMesh, name="aspect_ratio", persistent=True, dense=True) -> Attribute:
+    """Computes the aspect ratio of every triangular faces. Sets aspect ratio to -1 for every other faces
+
+    Parameters:
+        mesh (SurfaceMesh): the input mesh
+        name (str, optional): Name given to the attribute. Defaults to "aspect_ratio".
+        persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
+        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to False.
+
+    Returns:
+        Attribute: One float per face.
+    """
+    if persistent :
+        ratio = mesh.faces.create_attribute(name, float, 3)
+    else:
+        ratio = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
+    for iF,F in enumerate(mesh.faces):
+        if len(F)!=3: ratio[iF] = -1 
+        ratio[iF] = geom.aspect_ratio(*(mesh.vertices[u] for u in F))

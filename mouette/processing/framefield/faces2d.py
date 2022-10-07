@@ -5,7 +5,7 @@ from ... import geometry as geom
 from ... import operators
 
 from ...utils.maths import *
-from ... import utils
+from ... import optimize
 
 from ...attributes import cotangent, angle_defects, mean_edge_length
 from ..features import FeatureEdgeDetector
@@ -53,11 +53,11 @@ class _BaseFrameField2DFaces(FrameField) :
         self.tbaseX, self.tbaseY = ArrayAttribute(float, NF, 3), ArrayAttribute(float, NF, 3)
         self.tnormals = self.mesh.faces.create_attribute("normals", float, 3, dense=True)
         for id_face, (A,B,C) in enumerate(self.mesh.faces):
-            bnd = [self.mesh.is_edge_on_border(_u,_v) for (_u,_v) in [(A,B),(B,C), (C,A)]]
-            if np.any(bnd):
-                # face is on the boundary:
-                A,B,C = utils.offset([A,B,C],np.argmax(bnd))
-                # assert self.mesh.is_edge_on_border(A,B)
+            # bnd = [self.mesh.is_edge_on_border(_u,_v) for (_u,_v) in [(A,B),(B,C), (C,A)]]
+            # if np.any(bnd):
+            #     # face is on the boundary:
+            #     A,B,C = utils.offset([A,B,C],np.argmax(bnd))
+            #     # assert self.mesh.is_edge_on_border(A,B)
             pA,pB,pC = (self.mesh.vertices[_v] for _v in (A,B,C))
             X,Y,Z = geom.face_basis(pA,pB,pC) # local basis of the triangle
             self.tbaseX[id_face] = X
@@ -206,25 +206,16 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
         else:
             self.log("No border detected")
             self.log("Initial solve of linear system using an eigensolver")
-            try:
-                egv, U = sp.linalg.eigsh(lap, k=1, M=A, which="SM", tol=1e-3, maxiter=100)
-            except linalg.ArpackNoConvergence as e:
-                self.log("Initial eigensolve failed :", e)
-                self.log("Retry using connectivity laplacian")
-                lap = operators.laplacian_triangles(self.mesh, cotan=False).tocsc()
-                egv, U = sp.linalg.eigsh(lap-0.1*sp.identity(lap.shape[0]), k=1, M=A, which="SM", tol=1e-3)
-
-            alpha = abs(egv[0])
-            self.log("Eigenvalues:", egv)
-            self.var = U[:,0]
-
+            self.var = optimize.inverse_power_method(lap)
             if n_renorm>0:
+                alpha = 0.01
                 self.log(f"Solve linear system {n_renorm} times with diffusion")
                 mat = lap - alpha * A
+                solve = sp.linalg.factorized(mat)
                 for _ in range(n_renorm):
                     self.normalize()
                     valI2 = alpha * A.dot(self.var)
-                    self.var = linalg.spsolve(mat, -valI2)
+                    self.var = solve(-valI2)
             self.normalize()
 
 class TrivialConnectionFaces(_BaseFrameField2DFaces):

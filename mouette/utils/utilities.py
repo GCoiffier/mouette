@@ -16,6 +16,9 @@ def keyify(*args):
     key.sort()
     return tuple(key)
 
+def replace_in_list(l, x, y):
+    return [y if e==x else e for e in l]
+
 class Logger:
     def __init__(self, name = "Logger", verbose=True):
         self.name = name

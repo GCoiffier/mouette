@@ -12,6 +12,7 @@ from . import procedural
 from . import operators
 from . import geometry
 from . import processing
+from . import optimize
 
 from .processing import framefield
 from .processing import parametrization
