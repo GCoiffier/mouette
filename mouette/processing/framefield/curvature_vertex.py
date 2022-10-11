@@ -150,8 +150,8 @@ class CurvatureVertices(_BaseFrameField2DVertices):
             if lap is None:
                 lap = operators.laplacian(self.mesh, parallel_transport=self.parallel_transport, order=4)
                 A = operators.area_weight_matrix(self.mesh)
-            alpha = 10 / attributes.mean_edge_length(self.mesh)
-            self.log("Diffuse Weight", alpha)
+            alpha = 0.1
+            self.log("Attach Weight", alpha)
 
             if len(self.feat.feature_vertices)>0:
                 # Build fixed/free vertex partition
@@ -166,16 +166,16 @@ class CurvatureVertices(_BaseFrameField2DVertices):
                 AI = A[freeInds, :][:,freeInds]
                 # for lapI and lapB, only lines of freeInds are relevant : lines of fixedInds link fixed variables -> useless constraints
                 valB = lapB.dot(self.var[fixedInds]) # right hand side
-                mat = alpha * lapI -  AI
+                mat = lapI -  alpha * AI
                 for _ in range(n_smooth):
-                    valI2 = AI.dot(self.var[freeInds])
+                    valI2 = alpha * AI.dot(self.var[freeInds])
                     res = linalg.spsolve(mat, - valB - valI2)
                     self.var[freeInds] = res
                     self.normalize()
             else:
-                mat = alpha * lap - A
+                mat = lap - alpha * A
                 for _ in range(n_smooth):
-                    valI2 = A.dot(self.var)
+                    valI2 = alpha * A.dot(self.var)
                     self.var = linalg.spsolve(mat, - valI2)
                     self.normalize()
         else: 

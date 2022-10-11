@@ -140,11 +140,11 @@ class _BaseFrameField2DVertices(FrameField):
         # A is area weight matrix
         lap_no_pt = operators.laplacian(self.mesh, parallel_transport=None)
         try:
-            eigs = sp.linalg.eigsh(lap_no_pt, k=2, M=A, which="SM", tol=1e-3, maxiter=100, return_eigenvectors=False)
+            eigs = sp.linalg.eigsh(lap_no_pt, k=2, M=A, which="SM", tol=1e-3, maxiter=1000, return_eigenvectors=False)
         except Exception as e:
             try:
                 self.log("First estimation of alpha failed: {}".format(e))
-                eigs = sp.linalg.eigsh(lap_no_pt+0.1*sp.identity(lap_no_pt.shape[0]), k=2, which="SM", tol=1e-3, maxiter=100, return_eigenvectors=False)
+                eigs = sp.linalg.eigsh(lap_no_pt+0.1*sp.identity(lap_no_pt.shape[0]), M=A, k=2, which="SM", tol=1e-3, maxiter=1000, return_eigenvectors=False)
             except:
                 self.log("Second estimation of alpha failed: taking alpha = ", fail_value)
                 return fail_value
@@ -182,7 +182,7 @@ class _BaseFrameField2DVertices(FrameField):
             - an attribute "angles" on edges storing the angle of the edge, given as the difference between the two frames
         """
         self._check_init()
-        ZERO_THRESHOLD = 1e-4
+        ZERO_THRESHOLD = 1e-2
 
         edge_rot = dict() # the rotation induced by the frame field on every edge
         if self.mesh.edges.has_attribute("angles"):
@@ -358,7 +358,7 @@ class CadFF2DVertices(FrameField2DVertices):
             self.target_w[e] = angles[i_angle]
 
         ## build start w for rotation penalty energy
-        cstrfaces = attributes.faces_near_border(self.mesh, 3)
+        cstrfaces = attributes.faces_near_border(self.mesh, 4)
         # 1) constraints
         ncstr = len(self.feat.feature_edges)
         nvar = len(self.mesh.edges)
