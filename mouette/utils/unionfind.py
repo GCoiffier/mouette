@@ -251,6 +251,16 @@ class UnionFind(object):
         roots = vfind(elts)
         return set(elts[roots == self.find(x)])
 
+    def roots(self):
+        """Return the set of roots of components
+        
+        Returns
+        ------
+        set
+            A set of elements
+        """
+        return set(self.find(x) for x in self._elts)
+
     def components(self):
         """Return the list of connected components.
 
@@ -260,17 +270,14 @@ class UnionFind(object):
             A list of sets.
 
         """
-        elts = np.array(self._elts)
-        vfind = np.vectorize(self.find)
-        roots = vfind(elts)
-        distinct_roots = set(roots)
-        return [set(elts[roots == root]) for root in distinct_roots]
-        # comps = []
-        # for root in distinct_roots:
-        #     mask = (roots == root)
-        #     comp = set(elts[mask])
-        #     comps.append(comp)
-        # return comps
+        roots = self.roots()
+        root_ids = dict((r,i) for i,r in enumerate(roots))
+        components = [[] for _ in roots]
+        for e in self._elts:
+            i = root_ids[self.find(e)]
+            components[i].append(e)
+        return components
+
 
     def component_mapping(self):
         """Return a dict mapping elements to their components.
@@ -285,7 +292,7 @@ class UnionFind(object):
         memory.
 
         But this behaviour should not be relied on.  There may be
-        inconsitency arising from such assumptions or lack thereof.
+        inconsistency arising from such assumptions or lack thereof.
 
         If you want to do any operation on these sets, use caution.
         For example, instead of

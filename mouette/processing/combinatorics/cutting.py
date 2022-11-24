@@ -36,8 +36,8 @@ class SingularityCutter(Worker):
         self.feat_detector : "FeatureEdgeDetector" = features
         self._has_features : bool = None
 
-        self.cut_edges : set = None # set of edge ids
-        self.cut_adj : dict = None # vertex -> set of adjacent vertices via a cut edge
+        self.cut_edges : set = None # ids of edges of input mesh that were cut 
+        self.cut_adj : dict = None # vertex -> set of adjacent vertices in the cut graph
 
         # /!\ global ordering of vertices/edges is likely to change. Only triangles remain the same
         self.ref_vertex : dict = None # split vertex -> original vertex
@@ -298,7 +298,7 @@ class SingularityCutter(Worker):
             self.cut_adj[b].add(a)
 
     def _prune_edge_tree(self):
-        # remove leaves of cut tree until we fall on sigularities
+        # remove leaves of cut tree until we fall on singularities
         queue = deque()
         for i in self.input_mesh.id_vertices:
             d = len(self.cut_adj[i])
@@ -344,11 +344,12 @@ class SingularityCutter(Worker):
 
         # First, no faces are adjacent
         for iF,F in enumerate(self.input_mesh.faces):
-            self._output_mesh.faces.append([3*iF,3*iF+1,3*iF+2])
+            nF = len(F)
+            self._output_mesh.faces.append([nF*iF+_i for _i in range(nF)])
             for iv,v in enumerate(F):
                 pv = self.input_mesh.vertices[v]
                 self._output_mesh.vertices.append(pv)
-                duplicate_vertices[v].add(3*iF+iv)
+                duplicate_vertices[v].add(nF*iF+iv)
 
         # Fusion vertices along edges that are not a cut
         for e in self.input_mesh.interior_edges:

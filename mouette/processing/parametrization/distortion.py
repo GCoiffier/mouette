@@ -244,8 +244,8 @@ class QuadQuality(Worker):
                     P1,P2,P3 = (self.mesh.vertices[_v] for _v in (v1,v2,v3))
                     X,Y,_ = geom.face_basis(P1,P2,P3)
                     # new coordinates of the triangle
-                    u = P2 - P1
-                    v = P3 - P1
+                    u = P1 - P2
+                    v = P3 - P2
                     # jacobian
                     J = np.array([[X.dot(u), Y.dot(u)], 
                                 [X.dot(v), Y.dot(v)]])
@@ -270,7 +270,7 @@ class QuadQuality(Worker):
                     self._area[iT] += authDistT
                     authalicDist += authDistT * area[iT] / real_area
 
-                    stretchDistT = sig[0]/sig[1]/4
+                    stretchDistT = (sig[0]/sig[1])/4
                     self._stretch[iT] += stretchDistT
                     stretchDistMean += stretchDistT * area[iT] / real_area
             except ZeroDivisionError:

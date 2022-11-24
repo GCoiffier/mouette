@@ -150,7 +150,7 @@ class CurvatureVertices(_BaseFrameField2DVertices):
             if lap is None:
                 lap = operators.laplacian(self.mesh, parallel_transport=self.parallel_transport, order=4)
                 A = operators.area_weight_matrix(self.mesh)
-            alpha = 0.1
+            alpha = 1.
             self.log("Attach Weight", alpha)
 
             if len(self.feat.feature_vertices)>0:

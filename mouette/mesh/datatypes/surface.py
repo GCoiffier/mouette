@@ -376,6 +376,9 @@ class SurfaceMesh(Mesh):
                 self._compute_corner_adj()
             return self._adjVF2Cn.get((V,F), None)
 
+        def vertex_to_corner(self, V):
+            return [self.vertex_to_corner_in_face(V,_f) for _f in self.vertex_to_face(V)]
+
         def corner_to_face(self,C):
             if self._adjCn2F is None:
                 self._compute_corner_adj()
