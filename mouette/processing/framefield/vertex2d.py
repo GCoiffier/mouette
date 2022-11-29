@@ -310,13 +310,12 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
         else: # No border -> eigensolve
             self.log("No border detected")
             self.log("Initial solve of linear system using an eigensolver")
-            A = A.astype(complex)
             self.var = inverse_power_method(lap,A)
             if n_renorm>0:
                 self.log(f"Solve linear system {n_renorm} times with diffusion")
                 alpha = self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian
                 self.log("Attach weight: {}".format(alpha))
-                mat = lap  - alpha * A
+                mat = lap  - alpha * A.astype(complex)
                 for _ in range(n_renorm):
                     self.normalize()
                     valI2 = alpha * A.dot(self.var)
