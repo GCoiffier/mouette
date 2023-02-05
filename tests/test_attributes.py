@@ -28,7 +28,7 @@ def test_attribute_as_array(test_container):
     attr[0] = 42.
     attr[1] = 76.52
     attr[2] = -26.5
-    diff = abs(attr.as_array() - np.array([42., 76.52, -26.5]))
+    diff = abs(attr.as_array(len(test_container)) - np.array([42., 76.52, -26.5]))
     assert np.all(diff < 1e-8)
 
 def test_attribute_sparse_cast(test_container):
@@ -54,7 +54,7 @@ def test_attribute_has_get_delete(test_container):
     assert not test_container.has_attribute("test_attr")
     test_container.create_attribute("test_attr",float,1)
     assert test_container.has_attribute("test_attr")
-    attr = test_container("test_attr")
+    attr = test_container.get_attribute("test_attr")
     attr.clear()
     test_container.delete_attribute("test_attr")
     assert not test_container.has_attribute("test_attr")

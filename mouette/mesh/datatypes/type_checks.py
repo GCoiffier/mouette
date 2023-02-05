@@ -32,7 +32,7 @@ def forbidden_mesh_types(*forbidden_types : list):
         def wrapper(*args, **kwargs):
             for arg in args:
                 if isinstance(arg, Mesh) and type(arg) in forbidden_types:
-                    raise BadMeshTypeException("[Pygeomesh] Mesh type '{}' is forbidden for this function. Forbidden types are {}".format( type_to_str(type(arg)), [type_to_str(u) for u in forbidden_types]))
+                    raise BadMeshTypeException("[Mouette] Mesh type '{}' is forbidden for this function. Forbidden types are {}".format( type_to_str(type(arg)), [type_to_str(u) for u in forbidden_types]))
             result = function(*args, **kwargs)
             return result
         return wrapper

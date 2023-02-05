@@ -37,7 +37,7 @@ except ImportError:
             curvV[v,:,:] /= total_area[v]
         return curvV
 
-class CurvatureVertices(_BaseFrameField2DVertices):
+class PrincipalCurvatureDirectionsVertices(_BaseFrameField2DVertices):
     """
     Principal curvature direction estimation using a frame field on vertices.
 
@@ -50,7 +50,8 @@ class CurvatureVertices(_BaseFrameField2DVertices):
         feature_edges : bool = False,
         patch_size : int = 3,
         curv_threshold : float = 0.01,
-        verbose : bool = True):
+        verbose : bool = True,
+        **kwargs):
         """
         Parameters:
             mesh (SurfaceMesh): the surface mesh on which to perform the estimation
@@ -59,6 +60,9 @@ class CurvatureVertices(_BaseFrameField2DVertices):
             curv_threshold (float, optional): Minimal mean curvature value for the directions to be computed. Defaults to 0.01.
             verbose (bool, optional): verbose mode. Defaults to True.
         
+        Additionnal Parameters:
+            TODO
+        
         Note:
             Order of the frame field is fixed at 4 since principal curvature directions form an orthonormal basis.
         """
@@ -66,19 +70,21 @@ class CurvatureVertices(_BaseFrameField2DVertices):
         super().__init__(mesh, 
             4, # order is always 4 
             feature_edges,
-            verbose
+            verbose,
+            **kwargs
         )
         self.curv_threshold : float = curv_threshold
+        self.complete : bool = kwargs.get("complete", True)
         self.patch_size : int = patch_size
         self.face_areas : Attribute = None
         self.curv_mat_vert : np.ndarray = None # shape (|V|,3,3)
         self.M : sp.lil_matrix = None
 
-    def run(self, complete:bool = True, n_smooth:int=0):
+    def run(self):
         self.log("Compute curvature matrices")
         self.initialize()
         self.log("Optimize")
-        self.optimize(complete, n_smooth)
+        self.optimize()
         self.log("Done.")
         return self
 
@@ -106,14 +112,12 @@ class CurvatureVertices(_BaseFrameField2DVertices):
 
     def initialize(self):
         self._initialize_attributes()
-        self._initialize_features() # /!\ before initialize basis
-        self._initialize_basis()
         self._build_patch_connectivity_matrix()
         self._initialize_curv_matrices()
         self._initialize_variables()
         self.initialized = True
 
-    def optimize(self, complete:bool = True, n_smooth: int = 0):
+    def optimize(self):
         curvW = self.mesh.vertices.create_attribute("curvCoeff", float, dense=True)
 
         self.log("Computing curvature via SVD")
@@ -125,9 +129,9 @@ class CurvatureVertices(_BaseFrameField2DVertices):
             # eigenvalue of normal is 0
             # PC are orthogonal (eigenvects of symmetric matrix) -> we rely on the eigenvect of greatest eigenvalue and take orthog direction
 
-            X,Y = self.vbaseX[v], self.vbaseY[v]
+            X,Y = self.conn.base(v)
             curv_coeff_v = geom.norm(S)
-            if n_smooth > 0: curvW[v] = curv_coeff_v
+            if self.n_smooth > 0: curvW[v] = curv_coeff_v
 
             if curv_coeff_v<self.curv_threshold : # zero matrix -> no curvature information
                 self.var[v] = 0 + 0j
@@ -138,8 +142,8 @@ class CurvatureVertices(_BaseFrameField2DVertices):
                 self.var[v] = (c/abs(c))**4
         
         lap = None
-        if complete and self.curv_threshold>0:
-            lap = operators.laplacian(self.mesh, parallel_transport=self.parallel_transport, order=4)
+        if self.complete and self.curv_threshold>0:
+            lap = operators.laplacian(self.mesh, cotan=self.use_cotan, connection=self.conn, order=4)
             self.log("Completing curvature on flat regions")
             freeAttr = self.mesh.vertices.create_attribute("free", bool)
             A = operators.area_weight_matrix(self.mesh)
@@ -158,13 +162,13 @@ class CurvatureVertices(_BaseFrameField2DVertices):
                 res = linalg.spsolve(lapI, - valB)
                 self.var[freeInds] = res
 
-        if n_smooth > 0:
-            self.log(f"Smoothing frame field {n_smooth} times with diffusion.")
+        if self.n_smooth > 0:
+            self.log(f"Smoothing frame field {self.n_smooth} times with diffusion.")
             # diffuse the curvature results to get a smoother results (especially where curvature was not defined)
             if lap is None:
-                lap = operators.laplacian(self.mesh, parallel_transport=self.parallel_transport, order=4)
+                lap = operators.laplacian(self.mesh, cotan=self.use_cotan, connection=self.conn, order=4)
                 A = operators.area_weight_matrix(self.mesh)
-            alpha = 1.
+            alpha = self.smooth_attach_weight or  1.
             self.log("Attach Weight", alpha)
 
             if len(self.feat.feature_vertices)>0:
@@ -181,14 +185,14 @@ class CurvatureVertices(_BaseFrameField2DVertices):
                 # for lapI and lapB, only lines of freeInds are relevant : lines of fixedInds link fixed variables -> useless constraints
                 valB = lapB.dot(self.var[fixedInds]) # right hand side
                 mat = lapI -  alpha * AI
-                for _ in range(n_smooth):
+                for _ in range(self.n_smooth):
                     valI2 = alpha * AI.dot(self.var[freeInds])
                     res = linalg.spsolve(mat, - valB - valI2)
                     self.var[freeInds] = res
                     self.normalize()
             else:
                 mat = lap - alpha * A
-                for _ in range(n_smooth):
+                for _ in range(self.n_smooth):
                     valI2 = alpha * A.dot(self.var)
                     self.var = linalg.spsolve(mat, - valI2)
                     self.normalize()

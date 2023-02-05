@@ -245,8 +245,8 @@ class Attribute(BaseAttribute):
         """
         return self._data.keys().__iter__()
 
-    def as_array(self):
-        out = np.full((len(self), self.elemsize), self.default_value, dtype= self.type.dtype)
+    def as_array(self, container_size):
+        out = np.full((container_size, self.elemsize), self.default_value, dtype= self.type.dtype)
         for i,x in self._data.items():
             out[i,:] = x
         return np.squeeze(out)

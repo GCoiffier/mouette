@@ -26,7 +26,11 @@ from osqp import OSQP
 class FrameField3DVertices(FrameField): 
 
     @allowed_mesh_types(VolumeMesh)
-    def __init__(self, supporting_mesh : VolumeMesh, feature_edges : bool = True, verbose=True):
+    def __init__(self, 
+        supporting_mesh : VolumeMesh, 
+        feature_edges : bool = True, 
+        verbose=True,
+        **kwargs):
         super().__init__("FrameField3D", verbose)
         self.mesh : VolumeMesh = supporting_mesh
         supporting_mesh.enable_boundary_connectivity()
@@ -41,12 +45,12 @@ class FrameField3DVertices(FrameField):
         self._singuls_tri : Attribute = None # value of defect on every triangle
 
         self.features : bool = feature_edges # whether feature edges are enabled or not
-        self.feat : FeatureEdgeDetector = None
+        self.feat : FeatureEdgeDetector = kwargs.get("custom_boundary_features", None)
 
     def initialize(self):
         self.log(" | Compute boundary manifold")
         self.boundary_mesh = self.mesh.boundary_connectivity.mesh
-        if self.features:
+        if self.features and self.feat is None :
             self.feat = FeatureEdgeDetector(flag_corners=False, verbose=self.verbose)(self.boundary_mesh)
         self.vertex_normals = attributes.vertex_normals(self.boundary_mesh, persistent=False, interpolation="angle")
         
@@ -101,7 +105,7 @@ class FrameField3DVertices(FrameField):
         return scipy.sparse.kron(A, scipy.sparse.eye(9), format="csc")
 
     def compute_constraints(self):
-        self.log("  | Compute constraints matrix")
+        self.log(" | Compute constraints matrix")
         nvar = len(self.var)
         ncstr_normals = len(self.mesh.boundary_vertices) - (0 if self.feat is None else len(self.feat.feature_vertices))
         ncstr_features = 0 if self.feat is None else 9*len(self.feat.feature_vertices)

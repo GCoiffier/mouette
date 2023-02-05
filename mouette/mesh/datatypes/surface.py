@@ -97,20 +97,19 @@ class SurfaceMesh(Mesh):
         self._interior_edges : list = None
 
         self._is_vertex_on_border : Attribute = None 
-        self._boundary_vertices : list = None
-        self._interior_vertices : list = None
+        self._boundary_vertices : set = None
+        self._interior_vertices : set = None
 
     ##### Accessors for boundary and exterior ######
 
     def _compute_interior_boundary_edges(self):
         self._interior_edges = []
         self._boundary_edges = []
-        for (u,v) in self.half_edges:
-            id = self.connectivity.edge_id(u,v)
+        for e,(u,v) in enumerate(self.edges):
             if self.is_edge_on_border(u,v):
-                self._boundary_edges.append(id)
+                self._boundary_edges.append(e)
             else:
-                self._interior_edges.append(id)
+                self._interior_edges.append(e)
     
     def _compute_interior_boundary_vertices(self):
         self._boundary_vertices = set()

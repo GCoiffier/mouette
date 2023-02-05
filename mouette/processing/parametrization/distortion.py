@@ -49,7 +49,7 @@ class ParamDistortion(Worker):
         for T in self.mesh.id_faces:
             cnr = 3*T #self.mesh.connectivity.face_to_first_corner(T)
             xy_area += area[T]
-            uvA,uvB,uvC = ( Vec( self.UV[cnr + i].x, self.UV[cnr + i].y, 0.) for i in range(3))
+            uvA,uvB,uvC = ( Vec( self.UV[cnr + i][0], self.UV[cnr + i][1], 0.) for i in range(3))
             uv_area += geom.triangle_area(uvA,uvB,uvC)
 
         scale_ratio = (xy_area / uv_area)
@@ -84,8 +84,8 @@ class ParamDistortion(Worker):
                             [u0.imag, v0.imag]])
                 J0 = np.linalg.inv(J0)
 
-                J1 = np.array([[u.x, v.x], 
-                            [u.y, v.y]])
+                J1 = np.array([[u[0], v[0]], 
+                               [u[1], v[1]]])
                 
                 J = J1 @ J0
 

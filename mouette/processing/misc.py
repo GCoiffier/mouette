@@ -40,7 +40,7 @@ def split_double_boundary_edges_triangles(mesh : SurfaceMesh) -> SurfaceMesh:
     if pb_faces:
         with SurfaceSubdivision(mesh) as subdv:
             for f in pb_faces: # Triangulate face with a vertex in the middle
-                subdv.triangulate_face(f)
+                subdv.split_face_as_fan(f)
     return mesh
 
 

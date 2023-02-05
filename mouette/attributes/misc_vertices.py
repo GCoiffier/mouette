@@ -4,7 +4,7 @@ from math import pi, atan2
 from ..mesh.datatypes import *
 from ..mesh.mesh_attributes import Attribute, ArrayAttribute, Attribute
 from .misc_faces import face_normals
-from .misc_corners import cotangent
+from .misc_corners import corner_angles
 from .interpolate import interpolate_faces_to_vertices
 from .. import geometry as geom
 from ..geometry import Vec
@@ -63,14 +63,14 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
     for i in mesh.boundary_vertices:
         defects[i] = 0 if zero_border else pi
 
-    if mesh.face_corners.has_attribute("cotan"):
-        cot = mesh.face_corners.get_attribute("cotan")
+    if mesh.face_corners.has_attribute("angles"):
+        ang = mesh.face_corners.get_attribute("angles")
     else:
-        cot = cotangent(mesh, persistent=persistent)
+        ang = corner_angles(mesh, persistent=persistent)
 
     for C,V in enumerate(mesh.face_corners):
         if mesh.is_vertex_on_border(V) and zero_border: continue
-        defects[V] -= atan2(1, cot[C])
+        defects[V] -= ang[C]
     return defects
 
 @allowed_mesh_types(SurfaceMesh)

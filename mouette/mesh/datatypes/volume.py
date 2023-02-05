@@ -3,6 +3,7 @@ from ..mesh_attributes import Attribute
 from .base import Mesh
 from .surface import SurfaceMesh
 from ...utils import keyify
+from ...geometry.geometry import det_3x3
 from ... import config
 
 import numpy as np
@@ -111,7 +112,7 @@ class VolumeMesh(Mesh):
         if len(args)==1:
             n = self.connectivity.n_F2C(args[0])
         else:
-            n = self.connectivity.n_F2C(self.connectivity.face_id(args[0], args[1], args[2]))
+            n = self.connectivity.n_F2C(self.connectivity.face_id(*args))
         return n<2
     
     def is_vertex_on_border(self, V) -> bool:
@@ -253,7 +254,7 @@ class VolumeMesh(Mesh):
 
         def _compute_cell_adj(self):
             self._adjC2F = dict([(i,[]) for i in self.mesh.id_cells ])
-            self._adjF2C = dict([(i,[]) for i in self.mesh.id_faces])
+            self._adjF2C = dict([(i,[]) for i in self.mesh.id_faces ])
 
             for iC,C in enumerate(self.mesh.cells):
                 if len(C)==4: # tetrahedra : every subset of 3 elements is a face
@@ -329,7 +330,6 @@ class VolumeMesh(Mesh):
                     keys_cell[nextC] = kc
                     iC = nextC
                     p2 = [x for x in self.mesh.cells[iC] if x not in (A,B,p2)][0]
-
                 self._adjE2C[e].sort(key= lambda c : keys_cell[c])
                 self._adjE2F[e].sort(key= lambda f : keys_face[f])
 
@@ -456,30 +456,38 @@ class VolumeMesh(Mesh):
                 self.b2m_edge[be] = e            
 
         def _extract_surface_boundary(self):
-            bound = RawMeshData()
+            boundary = RawMeshData()
             # indirection maps
             self.m2b_vertex, self.b2m_vertex = dict(), dict()
             self.m2b_edge, self.b2m_edge = dict(), dict()
             self.m2b_face, self.b2m_face = dict(), dict()
             vertex_set = set()
-            for iF in self.complete_mesh.boundary_faces:
-                self.m2b_face[iF] = len(bound.faces)
-                self.b2m_face[len(bound.faces)] = iF
-                bound.faces.append(iF) # index for now, change to list of vertices later
+            bnd_faces = []
+            for i,iF in enumerate(self.complete_mesh.boundary_faces):
+                self.m2b_face[iF] = i
+                self.b2m_face[i] = iF
+                bnd_faces.append(iF)
                 for v in self.complete_mesh.faces[iF]:
                     vertex_set.add(v)
 
             # re order vertices
             for i,v in enumerate(vertex_set):
-                bound.vertices.append(self.complete_mesh.vertices[v])
+                boundary.vertices.append(self.complete_mesh.vertices[v])
                 self.m2b_vertex[v] = i
                 self.b2m_vertex[i] = v
 
-            # apply ordering to faces
-            for i, iF in enumerate(bound.faces):
-                bound.faces[i] = tuple(( self.m2b_vertex[v] for v in self.complete_mesh.faces[iF]))
-            bound.prepare() # ordering will be propagated to edges
-            return SurfaceMesh(bound)
+            # generate set of faces and check for orientation
+            for iF in bnd_faces:
+                iC = self.complete_mesh.connectivity.face_to_cell(iF)[0]
+                pA,pB,pC = (self.complete_mesh.vertices[_x] for _x in self.complete_mesh.faces[iF])
+                bA,bB,bC = (self.m2b_vertex[v] for v in self.complete_mesh.faces[iF])
+                D = [x for x in self.complete_mesh.cells[iC] if x not in self.complete_mesh.faces[iF]][0] # fourth point in cell but not on face
+                pD = self.complete_mesh.vertices[D]
+                if det_3x3(pA-pD,pB-pD,pC-pD)>0:
+                    boundary.faces.append((bA,bB,bC))
+                else:
+                    boundary.faces.append((bA,bC,bB))
+            return SurfaceMesh(boundary)
         
         ##### Vertex to Vertex #####
 
@@ -498,7 +506,8 @@ class VolumeMesh(Mesh):
         def vertex_to_edge(self, V : int) :
             Vb = self.m2b_vertex.get(V,None)
             if Vb is None: return []
-            return [self.b2m_edge[_e] for _e in super().vertex_to_edge(Vb)]
+            edges = [self.edge_id(Vb,Wb) for Wb in super().vertex_to_vertex(Vb)]
+            return [self.b2m_edge[e] for e in edges]
 
         ##### Vertex to faces #####
 

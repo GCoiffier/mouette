@@ -108,7 +108,7 @@ def rotate_frame(sh : np.ndarray, r : Rotation) -> np.ndarray :
         return Vec(rot_matrix_from_euler(r.as_rotvec()).dot(sh))
     return Vec(rot_matrix_from_euler(r).dot(sh))
 
-def project_to_frame(sh : Vec, stop_threshold : float = 1e-8, max_iter=100, nrml_cstr: Vec = None):
+def project_to_frame(sh : Vec, stop_threshold : float = 1e-8, max_iter=1000, nrml_cstr: Vec = None):
     """Given the coefficients in the spherical harmonic basis, finds the frames that correspond the most.
 
         Also recomputes spherical harmonics coefficients to a perfect match.

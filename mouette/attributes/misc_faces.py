@@ -1,4 +1,5 @@
 import numpy as np
+import cmath
 
 from ..mesh.mesh_attributes import ArrayAttribute, Attribute
 from ..mesh.datatypes import *
@@ -146,7 +147,7 @@ def faces_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", pe
     return near_attr
 
 @allowed_mesh_types(SurfaceMesh)
-def triangle_aspect_ratio(mesh : SurfaceMesh, name="aspect_ratio", persistent=True, dense=True) -> Attribute:
+def triangle_aspect_ratio(mesh : SurfaceMesh, name : str="aspect_ratio", persistent : bool = True, dense : bool =True) -> Attribute:
     """Computes the aspect ratio of every triangular faces. Sets aspect ratio to -1 for every other faces
 
     Parameters:
@@ -165,3 +166,29 @@ def triangle_aspect_ratio(mesh : SurfaceMesh, name="aspect_ratio", persistent=Tr
     for iF,F in enumerate(mesh.faces):
         if len(F)!=3: ratio[iF] = -1 
         ratio[iF] = geom.aspect_ratio(*(mesh.vertices[u] for u in F))
+
+@allowed_mesh_types(SurfaceMesh)
+def parallel_transport_curvature(mesh : SurfaceMesh, PT:"SurfaceConnectionFaces", name : str="curvature", persistent : bool=True, dense : bool = True):
+    """
+    Compute the curvature of each face associated to a given parallel transport pT
+
+    Args:
+        mesh (SurfaceMesh): _description_
+        PT (dict): parallel transport. Dictionnary of keys (A,B) -> direction (angle) of edge (A,B) in local basis of A
+        name (str, optional): Name given to the attribute.. Defaults to "curvature".
+        persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
+        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to False.
+    
+    Returns:
+        Attribute: One float per face.
+    """
+    if persistent :
+        curv = mesh.faces.create_attribute(name, float)
+    else:
+        curv = ArrayAttribute(float, len(mesh.faces)) if dense else Attribute(float)
+    for iF, (A,B,C) in enumerate(mesh.faces):
+        v = 1+0j
+        for a,b in [(A,B) ,(B,C), (C,A)]:
+            v *= cmath.rect(1., PT.transport(b,a) - PT.transport(a,b) - np.pi)
+        curv[iF] = cmath.phase(v)
+    return curv

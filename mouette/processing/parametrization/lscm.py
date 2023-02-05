@@ -23,14 +23,17 @@ class LSCM(Worker):
     lscm = LSCM(mesh)
     lscm.run([options])
     ```
-
     or
-
     ```
     lscm = LSCM(mesh)([options]) # directly calls run
     ```
 
-    This fills the self.uvs container
+    Options are:
+    'eigen' (bool) : whether to solve a linear system with two fixed points or use an eigen solver. Defaults to True
+    'save_on_corner' (bool) : whether to store the results on face corners or vertices. Defaults to True
+    'solver_verbose' (bool) : verbose level. Defaults to True.
+
+    Computed UVs are stored in the self.uvs container
     """
 
     @allowed_mesh_types(SurfaceMesh)
@@ -38,9 +41,10 @@ class LSCM(Worker):
         super().__init__("LSCM", verbose=verbose)
         self.mesh : SurfaceMesh = mesh
         self._flat_mesh : SurfaceMesh = None
-        self.uvs : Attribute = None # attribute on vertices 
+        self.uvs : ArrayAttribute = None # attribute on corners
+        self.residual : float = None # Final value of LSCM energy (residual of least square)
 
-    def run(self, eigen=True, save_on_mesh : bool = True, solver_verbose=False):
+    def run(self, eigen=True, save_on_corners : bool = True, solver_verbose=False):
         if euler_characteristic(self.mesh)!=1:
             raise Exception("Mesh is not a topological disk. Cannot run LSCM.")
         if eigen:
@@ -48,14 +52,16 @@ class LSCM(Worker):
         else:
             U = self._solve(verbose=solver_verbose)
         U = U.reshape((U.size//2, 2))
-        U = self._scale(U)
-        if save_on_mesh:
+        U = self._scale(U)        
+        # Retrieve uvs and write them in attribute
+        if save_on_corners:
             self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
+            for c,v in enumerate(self.mesh.face_corners):
+                self.uvs[c] = Vec(U[v])
         else:
-            self.uvs = ArrayAttribute(float, len(self.mesh.vertices), 2)
-        for T in self.mesh.id_faces:
-            for i,v in enumerate(self.mesh.faces[T]):
-                self.uvs[3*T+i] = Vec(U[v])
+            self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
+            for v in self.mesh.id_vertices:
+                self.uvs[v] = Vec(U[v])
 
     def _build_system(self):
         n = len(self.mesh.vertices)
@@ -109,9 +115,11 @@ class LSCM(Worker):
         Cst_rhs = np.array([0.,0.,1.,0.])
         
         self.log("Solving system...")
-        instance.setup(Q, A=Cst, l=Cst_rhs, u=Cst_rhs, verbose=verbose)
+        instance.setup(Q, A=Cst, l=Cst_rhs, u=Cst_rhs, eps_abs=0., verbose=verbose)
         res = instance.solve()
-        self.log("Done")
+        self.log(f"System solved in {res.info.run_time} s")
+        self.residual = res.info.obj_val
+        self.log(f"Residual: {self.residual}")
         return res.x
 
     def _solve_eigen(self):

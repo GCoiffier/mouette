@@ -4,11 +4,12 @@ from ...mesh.datatypes import *
 from ... import operators, utils, attributes, processing
 from...utils import maths
 from ..features import FeatureEdgeDetector
+from ..connection import SurfaceConnectionVertices
 from ... import geometry as geom
-from ...geometry import Vec
 from ...optimize import inverse_power_method
 
 from math import pi
+from copy import copy
 import numpy as np
 import cmath
 import scipy.sparse as sp
@@ -21,7 +22,13 @@ class _BaseFrameField2DVertices(FrameField):
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, supporting_mesh : SurfaceMesh, order:int= 4, feature_edges:bool=False, verbose=True):
+    def __init__(self, 
+        supporting_mesh : SurfaceMesh, 
+        order : int,
+        features : bool = True,
+        verbose : bool = True,
+        **kwargs
+    ):
         """
         Parameters:
             supporting_mesh (SurfaceMesh): the mesh (surface) on which to calculate the frame field
@@ -32,21 +39,23 @@ class _BaseFrameField2DVertices(FrameField):
         super().__init__(verbose=verbose)
         self.mesh : SurfaceMesh = supporting_mesh
         self.order : int = order
+        
+        self.use_cotan : bool = kwargs.get("use_cotan",True)
+        self.cad_correction : bool = kwargs.get("cad_correction", False)
+        self.n_smooth : int = kwargs.get("n_smooth", 10)
+        self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None) # either None or the provided value
+        self.conn = kwargs.get("custom_connection", None) # (A,B) -> direction (angle) of edge (A,B) in local basis of A
+        self.features : bool = features # whether feature edges are enabled or not
+        self.feat : FeatureEdgeDetector = kwargs.get("custom_features", None) # either a FeatureEdgeDetector or None
 
-        self.vbaseX : ArrayAttribute = None # local basis X vector (tangent)
-        self.vbaseY : ArrayAttribute = None # local basis Y vector (tangent)
         self.vnormals : ArrayAttribute = None # local basis Z vector (normal)
 
         self.angles : Attribute = None # angles of every triangle corner
         self.defect : Attribute = None # sum of angles around a vertex (/!\ not 'real' defect which is 2*pi - this)
         self.cot : Attribute = None
-        self.parallel_transport = dict() # (A,B) -> direction (angle) of edge (A,B) in local basis of A
-        self._curvature : Attribute = None # gaussian curvature of each triangle (computed from the parallel transport)
 
         self.var = np.zeros(len(self.mesh.vertices), dtype=complex)
 
-        self.features : bool = feature_edges # whether feature edges are enabled or not
-        self.feat : FeatureEdgeDetector = None
 
     def _initialize_attributes(self):
         self.angles = attributes.corner_angles(self.mesh)
@@ -56,56 +65,11 @@ class _BaseFrameField2DVertices(FrameField):
         self.defect = ArrayAttribute(float, len(self.mesh.vertices))
         for iC, C in enumerate(self.mesh.face_corners):
             self.defect[C] = self.defect[C] + self.angles[iC]
-
-    def _initialize_features(self):
-        self.feat = FeatureEdgeDetector(only_border = not self.features, corner_order=self.order, verbose=self.verbose)(self.mesh)
-
-    def _initialize_basis(self):
-        """Init self.vbaseX, self.vbaseY and self.edge_angles"""
-        self.log("Initialize parallel transport")
-        n_vert = len(self.mesh.vertices)
-        self.vbaseX = ArrayAttribute(float, n_vert, 3)
-        self.vbaseY = ArrayAttribute(float, n_vert, 3)
-
-        for u in range(n_vert):
-            # find basis vector -> first edge
-            P = Vec(self.mesh.vertices[u])
-            N = self.vnormals[u]
-            # extract basis edge
-            v = self.mesh.connectivity.vertex_to_vertex(u)[0]
-            E = self.mesh.vertices[v] - P
-            X = Vec.normalized(E - np.dot(E,N)*N) # project on tangent plane
-            self.vbaseX[u] = X
-            self.vbaseY[u] = geom.cross(N,X)
-
-            # initialize angles of every edge in this basis
-            ang = 0.
-            vert_u = self.mesh.connectivity.vertex_to_vertex(u)
-            if self.mesh.is_vertex_on_border(u):
-                # for v in self.mesh.connectivity.vertex_to_vertex(u):
-                #     T,iu,_ = self.mesh.half_edges.adj(u,v)
-                #     self.parallel_transport[(u,v)] = ang
-                #     ang += self.angles[(T,iu)]
-
-                fst, lst = vert_u[0], vert_u[-1]
-                pfst, plst = (self.mesh.vertices[x] for x in (fst, lst))
-                comp_angle = geom.signed_angle_3pts(plst,P,pfst, N) # complementary angle, ie "exterior" angle between two edges on the boundary
-                comp_angle = 2*pi + comp_angle if comp_angle<0 else comp_angle
-                
-                for v in vert_u:
-                    T = self.mesh.half_edges.adj(u,v)[0]
-                    self.parallel_transport[(u,v)] = ang * 2 * pi / (self.defect[u] + comp_angle)
-                    # self.parallel_transport[(u,v)] = ang * pi / self.defect[u]
-                    if T is None : continue
-                    c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
-                    ang += self.angles[c]
-            else:
-                for v in vert_u:
-                    T = self.mesh.half_edges.adj(u,v)[0]
-                    c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
-                    self.parallel_transport[(u,v)] = ang * 2 * pi / self.defect[u]
-                    ang += self.angles[c]
-
+        if self.feat is None:
+            self.feat = FeatureEdgeDetector(only_border = not self.features, corner_order=self.order, verbose=self.verbose)
+            self.feat.run(self.mesh)
+        self.conn = self.conn or SurfaceConnectionVertices(self.mesh, self.feat, vnormal=self.vnormals, angles=self.angles)
+    
     def _initialize_variables(self, mean_normals=True):
         """Init self.var for feature vertices
         
@@ -115,13 +79,15 @@ class _BaseFrameField2DVertices(FrameField):
             for e in self.feat.feature_edges:
                 A,B = self.mesh.edges[e]
                 edge = self.mesh.vertices[B] - self.mesh.vertices[A]
-                vx,vy = np.dot(edge, self.vbaseX[B]), np.dot(edge, self.vbaseY[B])
+                XB,YB = self.conn.base(B)
+                vx,vy = np.dot(XB, edge), np.dot(YB, edge)
                 v = complex(vx, vy)
                 vpow = (v/abs(v)) ** self.order
                 if abs(self.var[B] + vpow)>1e-10:
                     self.var[B] += vpow
 
-                vx,vy = np.dot(edge, self.vbaseX[A]), np.dot(edge, self.vbaseY[A])
+                XA,YA = self.conn.base(A)
+                vx,vy = np.dot(XA, edge), np.dot(YA, edge)
                 v = complex(vx, vy)
                 vpow = (v/abs(v)) ** self.order
                 if abs(self.var[A] + vpow)>1e-10:
@@ -129,8 +95,8 @@ class _BaseFrameField2DVertices(FrameField):
         else:
             for e in self.feat.feature_edges:
                 A,B = self.mesh.edges[e]
-                self.var[A] += cmath.rect(1,self.parallel_transport[(A,B)])**self.order
-                self.var[B] += cmath.rect(1,self.parallel_transport[(B,A)])**self.order
+                self.var[A] += cmath.rect(1,self.conn.transport(A,B))**self.order
+                self.var[B] += cmath.rect(1,self.conn.transport(B,A))**self.order
 
         for A in self.feat.feature_vertices:
             if abs(self.var[A])>1e-8:
@@ -138,7 +104,7 @@ class _BaseFrameField2DVertices(FrameField):
 
     def _compute_attach_weight(self, A, fail_value=1e-3):
         # A is area weight matrix
-        lap_no_pt = operators.laplacian(self.mesh, parallel_transport=None)
+        lap_no_pt = operators.laplacian(self.mesh)
         try:
             eigs = sp.linalg.eigsh(lap_no_pt, k=2, M=A, which="SM", tol=1e-3, maxiter=1000, return_eigenvectors=False)
         except Exception as e:
@@ -153,25 +119,6 @@ class _BaseFrameField2DVertices(FrameField):
             return fail_value
         return abs(min(eigs_non_zero))
 
-    @property
-    def curvature(self):
-        """Angle defect of each triangles of the mesh, computed from the parallel transport
-
-        Returns:
-            Attribute: an attribute on faces
-        """
-        if self._curvature is None:
-            # compute curvature on the mesh
-            if self.mesh.faces.has_attribute("curvature"):
-                self._curvature = self.mesh.faces.get_attribute("curvature")
-            else:
-                self._curvature = self.mesh.faces.create_attribute("curvature", float)
-                for iF, (A,B,C) in enumerate(self.mesh.faces):
-                    v = 1+0j
-                    for a,b in [(A,B) ,(B,C), (C,A)]:
-                        v *= cmath.rect(1., self.parallel_transport[(b,a)] - self.parallel_transport[(a,b)] - pi)
-                    self._curvature[iF] = cmath.phase(v)
-        return self._curvature
 
     def flag_singularities(self, singul_attr_name:str = "singuls"):
         """Compute singularity data.
@@ -182,6 +129,7 @@ class _BaseFrameField2DVertices(FrameField):
             - an attribute "angles" on edges storing the angle of the edge, given as the difference between the two frames
         """
         self._check_init()
+        curvature = attributes.parallel_transport_curvature(self.mesh, self.conn, persistent=False)
         ZERO_THRESHOLD = 1e-2
 
         edge_rot = dict() # the rotation induced by the frame field on every edge
@@ -192,7 +140,7 @@ class _BaseFrameField2DVertices(FrameField):
             edge_rot_attr = self.mesh.edges.create_attribute("angles", float, 1)
         for ie,(A,B) in enumerate(self.mesh.edges):
             fA,fB = self.var[A], self.var[B] # representation complex for A and B
-            aA,aB = self.parallel_transport[(A,B)], self.parallel_transport[(B,A)] # local basis orientation for A and B
+            aA,aB = self.conn.transport(A,B), self.conn.transport(B,A) # local basis orientation for A and B
             uB = maths.roots(fB, self.order)[0]
             abs_angles = [abs(maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA)) for uA in maths.roots(fA, self.order)]
             angles = [maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA) for uA in maths.roots(fA, self.order)]
@@ -209,7 +157,7 @@ class _BaseFrameField2DVertices(FrameField):
             angle = 0
             for u,v in [(A,B), (B,C), (C,A)]:
                 angle += edge_rot[(u,v)]
-            angle += self.curvature[id_face]
+            angle += curvature[id_face]
             if angle>ZERO_THRESHOLD:
                 singuls[id_face] = 1
             elif angle<-ZERO_THRESHOLD:
@@ -227,7 +175,8 @@ class _BaseFrameField2DVertices(FrameField):
         L = attributes.mean_edge_length(self.mesh)/3
         n = self.order + 1
         for id_vertex, P in enumerate(self.mesh.vertices):
-            E,N = self.vbaseX[id_vertex], self.vnormals[id_vertex]
+            E,_ = self.conn.base(id_vertex)
+            N = self.vnormals[id_vertex]
             if repr_vector:
                 # Representation vector only: 
                 angle = cmath.phase(self.var[id_vertex])
@@ -251,7 +200,13 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, supporting_mesh : SurfaceMesh, order : int = 4, feature_edges : bool = False, verbose=True):
+    def __init__(self, 
+        supporting_mesh : SurfaceMesh, 
+        order : int = 4, 
+        feature_edges : bool = False, 
+        verbose=True,
+        **kwargs
+    ):
         """
         Parameters:
             supporting_mesh (SurfaceMesh): the mesh (surface) on which to calculate the frame field
@@ -259,19 +214,83 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             feature_edges (bool, optional): _description_. Defaults to False.
             verbose (bool, optional): _description_. Defaults to True.
         """
-        super().__init__(supporting_mesh, order, feature_edges, verbose)
+        super().__init__(supporting_mesh, order, feature_edges, verbose, **kwargs)
                 
     def initialize(self):
         self._initialize_attributes()
-        self._initialize_features() # /!\ before initialize basis
-        self._initialize_basis()
         self._initialize_variables()
+        if self.features and self.cad_correction:
+            self._modify_parallel_transport()
         self.initialized = True
 
-    def optimize(self, n_renorm=10):
+    def _modify_parallel_transport(self):
+        """
+        Implementation of 'Frame Fields for CAD models', Desobry et al, 2021.
+
+        This frame field on vertices has a modified parallel transport so avoid placing singularities in very sharp corners of the mesh.
+        """
+        curvature = attributes.parallel_transport_curvature(self.mesh, self.conn, persistent=False)
+        target_w = dict()
+
+        for e in self.feat.feature_edges:
+            A,B = self.mesh.edges[e]
+            aA,aB = self.conn.transport(A,B), self.conn.transport(B,A) # local basis orientation for A and B
+            fA = self.var[A] # representation complex for frame field at A
+            fB = self.var[B] # representation complex for frame field at B
+            uB = maths.roots(fB, self.order)[0]
+            abs_angles = [abs(maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA)) for uA in maths.roots(fA, self.order)]
+            angles = [maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA) for uA in maths.roots(fA, self.order)]
+            i_angle = np.argmin(abs_angles)
+            target_w[e] = angles[i_angle]
+
+        ## build start w for rotation penalty energy
+        cstrfaces = attributes.faces_near_border(self.mesh, 4)
+        # 1) constraints
+        ncstr = len(self.feat.feature_edges)
+        nvar = len(self.mesh.edges)
+        Cstr = sp.lil_matrix((ncstr, nvar))
+        Rhs = np.zeros(ncstr)
+        for i,e in enumerate(self.feat.feature_edges):
+            Cstr[i,e] = 1
+            Rhs[i] = target_w[e]
+
+        # objective
+        D1 = sp.lil_matrix((len(self.mesh.faces), nvar))
+        b1 = np.zeros(len(self.mesh.faces))
+        for iT,T in enumerate(self.mesh.faces):
+            A,B,C = T
+            for u,v in [(A,B), (B,C), (C,A)]:
+                e = self.mesh.connectivity.edge_id(u,v)
+                D1[iT, e]= 1 if u<v else -1
+            b1[iT] = -curvature[iT]
+        
+        D2 = sp.lil_matrix((len(cstrfaces), nvar))
+        b2 = np.zeros(len(cstrfaces))
+        for i,T in enumerate(cstrfaces):
+            A,B,C = self.mesh.faces[T]
+            for u,v in [(A,B), (B,C), (C,A)]:
+                e = self.mesh.connectivity.edge_id(u,v)
+                D2[i,e] = 1e3 if (u<v) else -1e3
+            b2[i] = -1e3*curvature[T]
+
+        I = sp.identity(len(self.mesh.edges), format="csc")
+        b3 = np.zeros(len(self.mesh.edges))
+
+        P = sp.vstack((D1,D2,I))
+        b = np.concatenate([b1,b2,b3])
+        b = P.transpose().dot(b)
+        P = P.transpose().dot(P)
+        osqp_instance = OSQP()
+        osqp_instance.setup(P, b, A=Cstr.tocsc(), l=Rhs, u=Rhs, verbose=False)
+        res = osqp_instance.solve().x
+        for e,(A,B) in enumerate(self.mesh.edges):
+            self.conn._transport[(A,B)] +=  res[e]/2
+            self.conn._transport[(B,A)] -=  res[e]/2
+
+    def optimize(self):
         self._check_init()
         self.log("Build laplacian operator")
-        lap = operators.laplacian(self.mesh, parallel_transport=self.parallel_transport, order=self.order)
+        lap = operators.laplacian(self.mesh, cotan=self.use_cotan, connection=self.conn, order=self.order)
         A = operators.area_weight_matrix(self.mesh).tocsc()
 
         if len(self.feat.feature_vertices)>0: # We have a border / feature elements -> linear solve
@@ -295,12 +314,12 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             res = linalg.spsolve(lapI, -valB) # first system solved without diffusion
             self.var[freeInds] = res
 
-            if n_renorm>0:
-                self.log(f"Solve linear system {n_renorm} times with diffusion")
-                alpha = self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian
+            if self.n_smooth>0:
+                self.log(f"Solve linear system {self.n_smooth} times with diffusion")
+                alpha = self.smooth_attach_weight or self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian if not provided as argument
                 self.log("Attach weight: {}".format(alpha))
                 mat = lapI - alpha * AI.astype(complex)
-                for _ in range(n_renorm):
+                for _ in range(self.n_smooth):
                     self.normalize()
                     valI2 = alpha * AI.dot(self.var[freeInds])
                     res = linalg.spsolve(mat, - valB - valI2)
@@ -311,139 +330,16 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             self.log("No border detected")
             self.log("Initial solve of linear system using an eigensolver")
             self.var = inverse_power_method(lap,A)
-            if n_renorm>0:
-                self.log(f"Solve linear system {n_renorm} times with diffusion")
-                alpha = self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian
+            if self.n_smooth>0:
+                self.log(f"Solve linear system {self.n_smooth} times with diffusion")
+                alpha = self.smooth_attach_weight or self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian
                 self.log("Attach weight: {}".format(alpha))
                 mat = lap  - alpha * A.astype(complex)
-                for _ in range(n_renorm):
+                for _ in range(self.n_smooth):
                     self.normalize()
                     valI2 = alpha * A.dot(self.var)
                     self.var = linalg.spsolve(mat, - valI2)
             self.normalize()
-
-class CadFF2DVertices(FrameField2DVertices):
-    """
-    Implementation of 'Frame Fields for CAD models', Desobry et al, 2021.
-
-    This frame field on vertices has a modified parallel transport so avoid placing singularities in very sharp corners of the mesh.
-    """
-
-    @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, supporting_mesh : SurfaceMesh, order:int = 4, verbose=True):
-        """
-        Parameters:
-            supporting_mesh (SurfaceMesh): the mesh (surface) on which to calculate the frame field
-            order (int, optional): Order of the frame field (number of branches). Defaults to 4.
-            verbose (bool, optional): _description_. Defaults to True.
-
-        Note:
-            Feature edges are automatically set to True and cannot be disabled with CadFF
-        """
-        super().__init__(supporting_mesh, order, feature_edges=True, verbose=verbose)
-        self.target_w : dict = None # the modified parallel transport
-
-    def _initialize_target_w(self):
-        self.target_w = dict() 
-        for e in self.feat.feature_edges:
-            A,B = self.mesh.edges[e]
-            aA,aB = self.parallel_transport[(A,B)], self.parallel_transport[(B,A)] # local basis orientation for A and B
-            fA = self.var[A] # representation complex for frame field at A
-            fB = self.var[B] # representation complex for frame field at B
-            uB = maths.roots(fB, self.order)[0]
-            abs_angles = [abs(maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA)) for uA in maths.roots(fA, self.order)]
-            angles = [maths.angle_diff( cmath.phase(uB) - aB - pi, cmath.phase(uA)-aA) for uA in maths.roots(fA, self.order)]
-            i_angle = np.argmin(abs_angles)
-            self.target_w[e] = angles[i_angle]
-
-        ## build start w for rotation penalty energy
-        cstrfaces = attributes.faces_near_border(self.mesh, 4)
-        # 1) constraints
-        ncstr = len(self.feat.feature_edges)
-        nvar = len(self.mesh.edges)
-        Cstr = sp.lil_matrix((ncstr, nvar))
-        Rhs = np.zeros(ncstr)
-        for i,e in enumerate(self.feat.feature_edges):
-            Cstr[i,e] = 1
-            Rhs[i] = self.target_w[e]
-
-        # objective
-        D1 = sp.lil_matrix((len(self.mesh.faces), nvar))
-        b1 = np.zeros(len(self.mesh.faces))
-        for iT,T in enumerate(self.mesh.faces):
-            A,B,C = T
-            for u,v in [(A,B), (B,C), (C,A)]:
-                e = self.mesh.connectivity.edge_id(u,v)
-                D1[iT, e]= 1 if u<v else -1
-            b1[iT] = -self.curvature[iT]
-        
-        D2 = sp.lil_matrix((len(cstrfaces), nvar))
-        b2 = np.zeros(len(cstrfaces))
-        for i,f in enumerate(cstrfaces):
-            A,B,C = self.mesh.faces[f]
-            for u,v in [(A,B), (B,C), (C,A)]:
-                e = self.mesh.connectivity.edge_id(u,v)
-                D2[i,e] = 1e3 if (u<v) else -1e3
-            b2[i] = -1e3*self.curvature[f]
-
-        I = sp.identity(len(self.mesh.edges), format="csc")
-        b3 = np.zeros(len(self.mesh.edges))
-
-        P = sp.vstack((D1,D2,I))
-        b = np.concatenate([b1,b2,b3])
-        b = P.transpose().dot(b)
-        P = P.transpose().dot(P)
-        osqp_instance = OSQP()
-        osqp_instance.setup(P, b, A=Cstr.tocsc(), l=Rhs, u=Rhs, verbose=False)
-        res = osqp_instance.solve().x
-        for e in self.mesh.id_edges:
-            self.target_w[e] = res[e]
-
-    def initialize(self):
-        self._initialize_attributes()
-        self._initialize_features() # /!\ before initialize basis
-        self._initialize_basis()
-        self._initialize_variables()
-        self._initialize_target_w()
-        self.initialized = True
-
-    def _cotan_laplacian_parallel_transport(self)-> sp.lil_matrix :
-        """For CadFF, the cotan laplacian operator is modified by the target angles computed at the initialization
-
-        Returns:
-            scipy.sparse.lil_matrix: cotan laplacian as sparse matrix
-        """
-        n = len(self.mesh.vertices)
-        mat = sp.lil_matrix((n,n), dtype=complex)
-        for it, (p,q,r) in enumerate(self.mesh.faces):
-            a,b,c = (self.cot[(it, k)]/2 for k in range(3))
-            for (i, j, v) in [(p, q, c), (q, r, a), (r, p, b)]:
-                ai, aj = self.parallel_transport[(i,j)], self.parallel_transport[(j,i)]
-                e = self.mesh.connectivity.edge_id(i,j)
-                w = self.target_w[e] if i<j else -self.target_w[e]
-                mat[i,i] -= v
-                mat[j,j] -= v
-                mat[i,j] += v * cmath.rect(1., self.order*(ai - aj + pi + w))
-                mat[j,i] += v * cmath.rect(1., self.order*(aj - ai + pi - w))
-        return mat
-
-    def _adj_laplacian_parallel_transport(self) -> sp.lil_matrix :
-        """
-        Returns:
-            scipy.sparse.lil_matrix: laplacian with classic +- 1 weights 
-        """
-        n = len(self.mesh.vertices)
-        mat = sp.lil_matrix((n,n), dtype=complex)
-        for (p,q,r) in self.mesh.faces:
-            for (i, j) in [(p, q), (q, r), (r, p)]:
-                ai, aj = self.parallel_transport[(i,j)], self.parallel_transport[(j,i)]
-                e = self.mesh.connectivity.edge_id(i,j)
-                w = self.target_w[e] if i<j else -self.target_w[e]
-                mat[i,i] -= 1
-                mat[j,j] -= 1
-                mat[i,j] += cmath.rect(1., self.order*(ai - aj + pi + w))
-                mat[j,i] += cmath.rect(1., self.order*(aj - ai + pi - w))
-        return mat
 
 class TrivialConnectionVertices(_BaseFrameField2DVertices):
     """
@@ -454,27 +350,32 @@ class TrivialConnectionVertices(_BaseFrameField2DVertices):
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, supporting_mesh : SurfaceMesh, singus_indices:Attribute, order:int = 4, verbose:bool=True):
-        super().__init__(supporting_mesh, order, feature_edges=False, verbose=verbose)
+    def __init__(self, 
+        supporting_mesh : SurfaceMesh, 
+        singus_indices:Attribute, 
+        order:int = 4, 
+        verbose:bool=True,
+        **kwargs):
+        super().__init__(supporting_mesh, order, feature_edges=False, verbose=verbose, **kwargs)
         self.singus = singus_indices
         self.rotations : np.ndarray = None
 
     def initialize(self):
         self._initialize_attributes()
-        self._initialize_basis()
         self.var = np.zeros(len(self.mesh.vertices), dtype=complex)
         self.initialized = True
         
     def optimize(self):
         nvar = len(self.mesh.edges)
         ncstr = len(self.mesh.faces)
+        curvature = attributes.parallel_transport_curvature(self.mesh, self.conn, persistent=False)
         CstM = sp.lil_matrix((ncstr,nvar))
         CstX = np.zeros(ncstr)
         for F,face in enumerate(self.mesh.faces):
             for u,v in utils.cyclic_pairs(face):
                 e = self.mesh.connectivity.edge_id(u,v)
                 CstM[F,e] = 1 if (u<v) else -1
-            CstX[F] = self.curvature[F] - 2* pi * self.singus[F] / self.order
+            CstX[F] = curvature[F] - 2* pi * self.singus[F] / self.order
         CstM = CstM.tocsc()
         A = sp.eye(nvar, format="csc")
         instance = OSQP()
@@ -489,7 +390,7 @@ class TrivialConnectionVertices(_BaseFrameField2DVertices):
                 continue
             zf = self.var[parent]
             e = self.mesh.connectivity.edge_id(parent,vertex)
-            pt = self.parallel_transport[(vertex,parent)] - self.parallel_transport[(parent,vertex)] + pi
+            pt = self.conn.transport(vertex,parent) - self.conn.transport(parent,vertex) + pi
             w = self.rotations[e] if vertex<parent else -self.rotations[e]
             zv = zf * cmath.rect(1, 4*(w + pt))
             self.var[vertex] = zv

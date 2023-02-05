@@ -13,3 +13,8 @@ from .border import extract_border_cycle, extract_border_cycle_all, extract_curv
 
 from . import trees
 from .parametrization import distortion
+from .connection import SurfaceConnectionFaces, SurfaceConnectionVertices
+
+from .framefield.framefield_main import SurfaceFrameField, VolumeFrameField
+from .framefield.curvature_faces import PrincipalCurvatureDirectionsFaces
+from .framefield.curvature_vertex import PrincipalCurvatureDirectionsVertices

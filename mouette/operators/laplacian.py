@@ -1,10 +1,8 @@
 import numpy as np
 import scipy.sparse as sp
-from math import atan2
 import cmath
 
 from ..geometry import *
-from ..utils.maths import principal_angle
 from ..mesh.datatypes import *
 from ..attributes.misc_faces import face_area
 from ..attributes.misc_cells import cell_volume
@@ -35,8 +33,9 @@ def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
 
     k = 0
     for l in mesh.id_vertices:
-        k = add(k,l,l,mesh.connectivity.n_VtoV(l))
-        for b in mesh.connectivity.vertex_to_vertex(l):
+        adj = mesh.connectivity.vertex_to_vertex(l)
+        k = add(k,l,l,len(adj))
+        for b in adj:
             k = add(k, l, b, -1)
     return sp.csc_matrix((data, (rows,cols)), shape=(n,n))
 
@@ -62,13 +61,17 @@ def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False) -> sp.csc_matri
     return sp.diags(A, format="csc")
 
 @allowed_mesh_types(SurfaceMesh)
-def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None, order:int=4) -> sp.lil_matrix:
-    """Cotan laplacian
+def laplacian(
+    mesh : SurfaceMesh, 
+    cotan : bool=True, 
+    connection : "SurfaceConnectionVertices" = None, 
+    order : int=4) -> sp.lil_matrix:
+    """Cotan laplacian 
 
     Parameters:
         mesh (SurfaceMesh): input mesh
         cotan (bool) : whether to compute real cotan values for more precise discretization or only 0/1 values as a graph laplacian. Defaults to True.
-        parallel_transport (dict, optional): For a laplacian on 1-forms, gives the angle in local bases of all adjacent edges. Defaults to None.
+        connection (SurfaceConnectionVertices, optional): For a laplacian on 1-forms, gives the angle in local bases of all adjacent edges. Defaults to None.
         order (int, optional): Order of the parallel transport (useful when computing frame fields). Does nothing if parallel_transport is set to None. Defaults to 4.
 
     Returns:
@@ -86,7 +89,7 @@ def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None,
 
     rows = np.zeros(n_coeffs, dtype=np.int32)
     cols = np.zeros(n_coeffs, dtype=np.int32)
-    coeffs = np.zeros(n_coeffs, dtype=(complex if parallel_transport else np.float64))
+    coeffs = np.zeros(n_coeffs, dtype=(complex if connection else np.float64))
     _c = 0
     
     for iT, (p,q,r) in enumerate(mesh.faces):
@@ -97,15 +100,15 @@ def laplacian(mesh : SurfaceMesh, cotan:bool=True, parallel_transport:dict=None,
         for (i, j, v) in [(p, q, c), (q, r, a), (r, p, b)]:
             rows[_c], cols[_c], coeffs[_c], _c = i, i, v, _c+1
             rows[_c], cols[_c], coeffs[_c], _c = j, j, v, _c+1
-            if parallel_transport is not None:
-                ai, aj = parallel_transport[(i,j)], parallel_transport[(j,i)]
+            if connection is not None:
+                ai, aj = connection.transport(i,j), connection.transport(j,i)
                 rows[_c], cols[_c], coeffs[_c], _c = i, j, - v * cmath.rect(1., order*(ai - aj - math.pi)), _c+1
                 rows[_c], cols[_c], coeffs[_c], _c = j, i, - v * cmath.rect(1., order*(aj - ai - math.pi)), _c+1
             else:
                 rows[_c], cols[_c], coeffs[_c], _c = i, j, -v, _c+1
                 rows[_c], cols[_c], coeffs[_c], _c = j, i, -v, _c+1 
     
-    mat = sp.csc_matrix((coeffs,(rows,cols)), dtype= (complex if parallel_transport else np.float64))
+    mat = sp.csc_matrix((coeffs,(rows,cols)), dtype= (complex if connection else np.float64))
     return mat
 
 ##### For Surface, on faces #####
@@ -143,33 +146,34 @@ def area_weight_matrix_faces(mesh : SurfaceMesh):
     return sp.diags(area, format="csc")
 
 @allowed_mesh_types(SurfaceMesh)
-def laplacian_triangles(mesh : SurfaceMesh, cotan=True, parallel_transport:bool=True, order:int=4) -> sp.lil_matrix:
-    """ Laplacian defined on face connectivity (ie on the dual mesh)
+def laplacian_triangles(
+    mesh : SurfaceMesh, 
+    cotan : bool = True, 
+    connection : "SurfaceConnectionFaces" = None, 
+    order : int=4) -> sp.lil_matrix:
+    """
+    Laplacian defined on face connectivity (ie on the dual mesh)
 
-    Parameters:
-        mesh (SurfaceMesh)
+    Args:
+        mesh (SurfaceMesh): the supporting mesh
+        cotan (bool, optional): whether to use cotan laplacian or . Defaults to True.
+        connection (SurfaceConnectionFaces, optional): _description_. Defaults to None.
+        order (int, optional): _description_. Defaults to 4.
 
     Returns:
-        scipy.sparse.lil_matrix
+        sp.lil_matrix: _description_
     """
 
     n = len(mesh.faces)
     m = len(mesh.edges)
 
-    Nabla = sp.lil_matrix((m,n), dtype=complex if parallel_transport else np.float32) # gradient matrix
-    if parallel_transport:
+    Nabla = sp.lil_matrix((m,n), dtype=complex if connection else np.float32) # gradient matrix
+    if connection is not None:
         for ie,(ei,ej) in enumerate(mesh.edges):
-            pi,pj = (mesh.vertices[u] for u in (ei,ej))
             T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)
             if T1 is not None and T2 is not None:
-                E = Vec(pj-pi)
-                X1,Y1,_ = face_basis(mesh.vertices[u] for u in mesh.faces[T1])
-                X2,Y2,_ = face_basis(mesh.vertices[u] for u in mesh.faces[T2])
-                angle1 = atan2( dot(E,Y1), dot(E,X1))
-                angle2 = atan2( dot(E,Y2), dot(E,X2))
-
                 Nabla[ie,T1] = -1
-                Nabla[ie,T2] = cmath.rect(1, order*(angle1 - angle2 + math.pi))
+                Nabla[ie,T2] = cmath.rect(1, order*(connection.transport(T1,T2) + math.pi))
     else:
          for ie,(ei,ej) in enumerate(mesh.edges):
             T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)

@@ -4,11 +4,33 @@ from ..mesh.mesh_attributes import Attribute
 from .misc_corners import corner_angles
 from .misc_faces import face_area
 
+@allowed_mesh_types(SurfaceMesh)
+def scatter_vertices_to_corners(
+    mesh : Mesh,
+    vattr : Attribute,
+    cattr : Attribute
+) -> Attribute :
+    """
+    Given an attribute on vertices, distributes its values onto corresponding corners.
+
+    Args:
+        mesh (Mesh): the input mesh
+        vattr (Attribute): input vertex attribute
+        cattr (Attribute): output face corner attribute
+
+    Returns:
+        Attribute: cattr
+    """
+    for c,v in enumerate(mesh.face_corners):
+        cattr[c] = vattr[v]
+    return cattr
+
 @forbidden_mesh_types(PointCloud,PolyLine)
 def interpolate_vertices_to_faces(
     mesh : Mesh,
     vattr : Attribute, 
-    fattr : Attribute) -> Attribute:
+    fattr : Attribute
+) -> Attribute:
     
     """Given an attribute on vertices, interpolates its value onto faces
 
