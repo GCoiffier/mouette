@@ -48,7 +48,7 @@ M.mesh.save(ffmesh, "framefield.mesh")
 
 #### And much more
 
-See full documentation at https://gcoiffier.github.io/mouette/
+See full documentation at https://gcoiffier.github.io/mouette/ (still a Work in Progress)
 
 
 ### Run tests
