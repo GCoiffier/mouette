@@ -31,18 +31,13 @@ def SurfaceFrameField(
 ) -> FrameField :
     """
     Framefield implementation selector.
-    A Frame field is a set of n directions 
-
-    References for implementations : 
-    [1] An Approach to Quad Meshing Based on Harmonic Cross-Valued Maps and the Ginzburg-Landau Theory, Viertel and Osting (2018)
-    [2] Frame Fields for CAD models, Desobry et al. (2022)
-    [3] Trivial Connections on Discrete Surfaces, Crane et al. (2010)
 
     Args:
         mesh (SurfaceMesh): the supporting mesh onto which the framefield is based
 
         elements (str): "vertices" or "faces", the mesh elements onto which the frames live.
-        
+    
+    Keyword Args:
         order (int, optional): Order of the frame field (number of branches). Defaults to 4.
         
         features (bool, optional): Whether to consider feature edges or not. 
@@ -77,6 +72,11 @@ def SurfaceFrameField(
 
     Returns:
         FrameField: A framefield object with the correct specifications
+
+    References: 
+        [1] An Approach to Quad Meshing Based on Harmonic Cross-Valued Maps and the Ginzburg-Landau Theory, Viertel and Osting (2018)
+        [2] Frame Fields for CAD models, Desobry et al. (2022)
+        [3] Trivial Connections on Discrete Surfaces, Crane et al. (2010)
     """
 
     ### Assert sanity of arguments
@@ -119,7 +119,8 @@ def PrincipalDirections(
         mesh (SurfaceMesh): the supporting mesh onto which the framefield is based
 
         elements (str): "vertices" or "faces", the mesh elements onto which the frames live.
-        
+    
+    Keyword Args:
         features (bool, optional): Whether to consider feature edges or not. 
             If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to True.
 
@@ -174,6 +175,7 @@ def VolumeFrameField(
 
         elements (str): "vertices" or "cells", the mesh elements onto which the frames live.
 
+    Keyword Args:
         features (bool, optional): Whether to consider feature edges or not. Has no effect on the cell implementation. Defaults to True.
 
         n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 1.

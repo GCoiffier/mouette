@@ -17,44 +17,54 @@ class LSCM(Worker):
     """
     Least-Square Conformal Map algorithm for computing a parametrization of a mesh.
     /!\\ The mesh should have the topology of a disk.
-
-    Usage :
-    ```
-    lscm = LSCM(mesh)
-    lscm.run([options])
-    ```
-    or
-    ```
-    lscm = LSCM(mesh)([options]) # directly calls run
-    ```
-
-    Options are:
-    'eigen' (bool) : whether to solve a linear system with two fixed points or use an eigen solver. Defaults to True
-    'save_on_corner' (bool) : whether to store the results on face corners or vertices. Defaults to True
-    'solver_verbose' (bool) : verbose level. Defaults to True.
-
     Computed UVs are stored in the self.uvs container
+
+    References:
+        - [1] Least Squares Conformal Maps for Automatic Texture Atlas Generation, Levy et al. (2002)
+        - [2] Spectral Conformal Parameterization, Mullen et al. (2008)
+        - See also : Intrinsic Parameterizations of Surface Meshes, Desbrun et al. (2002)
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, verbose:bool=True):
+    def __init__(self, mesh : SurfaceMesh, verbose:bool=True, **kwargs):
+        """
+        Initializes the LSCM parametrization tool.
+
+        Args:
+            mesh (SurfaceMesh): the supporting mesh. Should be a surface with disk topology.
+            verbose (bool, optional): verbose mode. Defaults to True.
+        Keyword Args:
+            eigen (bool, optional): whether to solve a linear system with two fixed points or use an eigen solver. Defaults to True
+            save_on_corner (bool, optional): whether to store the results on face corners or vertices. Defaults to True
+            solver_verbose (bool, optional): verbose level. Defaults to False.
+        """
         super().__init__("LSCM", verbose=verbose)
         self.mesh : SurfaceMesh = mesh
         self._flat_mesh : SurfaceMesh = None
         self.uvs : ArrayAttribute = None # attribute on corners
         self.residual : float = None # Final value of LSCM energy (residual of least square)
 
-    def run(self, eigen=True, save_on_corners : bool = True, solver_verbose=False):
+        self._eigen = kwargs.get("eigen", True)
+        self._save_on_corners = kwargs.get("save_on_corners", True)
+        self._solver_verbose = kwargs.get("solver_verbose", False)
+
+    def run(self):
+        """
+        Calls the solver on the LSCM system.
+
+        Raises:
+            Exception: fails if the mesh is not a topological disk
+        """
         if euler_characteristic(self.mesh)!=1:
             raise Exception("Mesh is not a topological disk. Cannot run LSCM.")
-        if eigen:
+        if self._eigen:
             U = self._solve_eigen()
         else:
-            U = self._solve(verbose=solver_verbose)
+            U = self._solve(verbose=self._solver_verbose)
         U = U.reshape((U.size//2, 2))
         U = self._scale(U)        
         # Retrieve uvs and write them in attribute
-        if save_on_corners:
+        if self._save_on_corners:
             self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
             for c,v in enumerate(self.mesh.face_corners):
                 self.uvs[c] = Vec(U[v])
@@ -149,7 +159,13 @@ class LSCM(Worker):
         return U/scale
 
     @property
-    def flat_mesh(self):
+    def flat_mesh(self) -> SurfaceMesh:
+        """
+        A flat representation of the mesh where uv-coordinates are copied to xy.
+
+        Returns:
+            SurfaceMesh: the flat mesh
+        """
         if self.uvs is None:
             return None
         if self._flat_mesh is None:

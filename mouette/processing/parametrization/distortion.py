@@ -20,6 +20,18 @@ class ParamDistortion(Worker):
             uv_attr : str = "uv_coords",
             save_on_mesh : bool = True,
             verbose : bool = False):
+        """
+        Initializes the distortion utility class.
+
+        Args:
+            mesh (SurfaceMesh): the supporting mesh
+            uv_attr (str, optional): the attribute name that stores the uv-coordinates on face corners. Defaults to "uv_coords".
+            save_on_mesh (bool, optional): whether to store distortion values on the mesh. Defaults to True.
+            verbose (bool, optional): verbose mode. Defaults to False.
+
+        Raises:
+            Exception: fails if the attribute 'uv_attr' does not exists.
+        """
         super().__init__("SurfaceDistortion", verbose)
         self.mesh : SurfaceMesh = mesh
         try:
@@ -39,6 +51,13 @@ class ParamDistortion(Worker):
         self._det : ArrayAttribute = None
 
     def run(self):
+        """
+        Run the distortion computation.
+
+        Raises:
+            Exception: fails if the mesh is not triangular.
+            ZeroDivisionError: if degenerated elements are present in the parametrization.
+        """
         if not ({len(f) for f in self.mesh.faces} == {3}) :
             # do not call mesh.is_triangular() since we would like to also be compatible with some RawMeshData
             raise Exception("Mesh is not triangular")
@@ -163,39 +182,70 @@ class ParamDistortion(Worker):
             self._det = ArrayAttribute(float, N)
 
     @property
-    def summary(self):
+    def summary(self) -> dict:
+        """
+        Computes a summary dictionnary of all distortion values as an average over the mesh
+
+        Returns:
+            dict: a dictionnary with aggregated values over the mesh
+        """
         if self._summary is None: self.run()
         return self._summary
 
     @property
-    def conformal(self):
+    def conformal(self) -> ArrayAttribute:
+        """
+        Conformal distortion
+        
+        Defined as ||J²||/det(J)
+        """
         if self._conformal is None: self.run()
         return self._conformal
     
     @property
-    def area(self):
+    def area(self) -> ArrayAttribute:
+        """
+        Area distortion
+
+        Defined as 0.5*(det J + 1/ det J)
+        """
         if self._area is None: self.run()
         return self._area
     
     @property
-    def stretch(self):
+    def stretch(self) -> ArrayAttribute:
         if self._stretch is None: self.run()
         return self._stretch
 
     @property
-    def det(self):
-        if self._det is None: self.run()
-        return self._det
+    def iso(self) -> ArrayAttribute :
+        """
+        Isometric distortion
 
-    @property
-    def iso(self):
+        Defined as the distance from (s1,s2) to (1,1) where s1,s2 are the eigenvalues of J
+        """
         if self._iso is None: self.run()
         return self._iso
 
     @property
-    def shear(self):
+    def shear(self) -> ArrayAttribute :
+        """
+        Shear distortion
+
+        Defined as dot(c1, c2) where c1 and c2 are the columns of J
+        """
         if self._shear is None: self.run()
         return self._shear
+
+    @property
+    def stretch(self) -> ArrayAttribute:
+        """
+        Stretch distortion
+
+        Defined as s2/s1 where s1,s2 are the eigenvalues of J 
+        """
+        if self._stretch is None: self.run()
+        return self._stretch
 
 
 class QuadQuality(Worker):

@@ -6,11 +6,17 @@ from .vector import Vec
 from .geometry import norm, dot
 from .rotations import axis_rot_from_z
 
+from typing import Annotated
+
+
+L4_SH = Annotated(np.ndarray, 9)
 """
-Angular momentum operators for spherical harmonics representation.
-Three matrices correspond to three axes.
-# taken from Algebraic Representations for Volumetric Frame Fields, DAVID PALMER, DAVID BOMMES and JUSTIN SOLOMON (Supplementary materials)
+An orthogonal frame is represented by its 9 coefficients in the L4 band of the spherical harmonics basis. In practice, L4_SH is a size 9 numpy array.
+
+References:
+    Algebraic Representations for Volumetric Frame Fields, Palmer et al. (Supplementary materials)
 """
+
 LX = np.array([
     [0.,      0.,        0.,        0.,        0.,        0.,         0.,         -sqrt(2),   0.      ],
     [0.,      0.,        0.,        0.,        0.,        0.,         -sqrt(7/2), 0.,         -sqrt(2)],
@@ -22,6 +28,7 @@ LX = np.array([
     [sqrt(2), 0.,        sqrt(7/2), 0.,        0.,        0.,         0.,         0.,         0.      ],
     [0.,      sqrt(2),   0.,        0.,        0.,        0.,         0.,         0.,         0.      ],
 ])
+# Angular momentum operator for spherical harmonics representation, x-axis
 
 LY = np.array([
     [0.,       sqrt(2),    0.,         0.,        0.,       0.,        0.,         0.,         0.      ],
@@ -34,6 +41,7 @@ LY = np.array([
     [0.,       0.,         0.,         0.,        0.,       0.,        sqrt(7/2),  0.,         -sqrt(2)],
     [0.,       0.,         0.,         0.,        0.,       0.,        0.,         sqrt(2),    0.      ],
 ])
+# Angular momentum operators for spherical harmonics representation, y-axis
 
 LZ = np.array([
     [0.,  0.,  0.,  0., 0., 0., 0., 0., 4.],
@@ -46,16 +54,27 @@ LZ = np.array([
     [0., -3.,  0.,  0., 0., 0., 0., 0., 0.],
     [-4., 0.,  0.,  0., 0., 0., 0., 0., 0.],
 ])
+# Angular momentum operators for spherical harmonics representation, z-axis
 
-# hard coded rotation matrices that are often used
 Rxpi4 = expm(np.pi/4 * LX)
 Rypi4 = expm(np.pi/4 * LY)
 Rzpi4 = expm(np.pi/4 * LZ)
 Rxzpi4 = Rzpi4 @ Rxpi4
 Rxpi2 = expm(np.pi/2 * LX)
 Rypi2 = expm(np.pi/2 * LY)
+# Hard-coded rotation matrices for common angles
 
-def RZ(a : float):
+
+def RZ(a : float) -> L4_SH:
+    """
+    The L4-SH representing a rotation around z-axis of angle a
+
+    Args:
+        a (float): angle
+
+    Returns:
+        L4_SH : corresponding decomposition in L4 Spherical Harmonics
+    """
     c = [cos(k*a) for k in range(5)]
     s = [sin(k*a) for k in range(5)]
     return np.array([
@@ -70,49 +89,122 @@ def RZ(a : float):
         [-s[4], 0.,   0.,   0.,   0., 0.,   0.,   0.,   c[4]],
     ])
 
-def RY(a : float):
+def RY(a : float) -> L4_SH:
+    """
+    The L4-SH representing a rotation around y-axis of angle a
+
+    Args:
+        a (float): angle
+
+    Returns:
+        L4_SH : corresponding decomposition in L4 Spherical Harmonics
+    """
     return Rxpi2.T @ RZ(a) @ Rxpi2
 
-def RX(a : float):
+def RX(a : float) -> L4_SH:
+    """
+    The L4-SH representing a rotation around x-axis of angle a
+
+    Args:
+        a (float): angle
+
+    Returns:
+        L4_SH : corresponding decomposition in L4 Spherical Harmonics
+    """
     return Rypi2 @ RZ(a) @ Rypi2.T
 
-# coefficients of the identity matrix
-EYE = np.array([0., 0., 0., 0., sqrt(7/12), 0., 0., 0., sqrt(5/12) ])
+"""
+Coefficient of the identity frame in L4_SH
+"""
+EYE : L4_SH = np.array([0., 0., 0., 0., sqrt(7/12), 0., 0., 0., sqrt(5/12) ])
 
 def skew_matrix_from_rotvec(w : Vec) -> np.ndarray :
+    """
+    Given a rotation in angle-axis form, computes the 9x9 corresponding skew-symmetric matrix
+    
+    Args:
+        v (Vec): a rotation axis vector where norm(v) represents the angle of rotation.
+
+    Returns:
+        np.ndarray: a 9x9 matrix
+    """
     return w[0] * LX + w[1] * LY + w[2] * LZ
 
 def rot_matrix_from_euler(w : Vec) -> np.ndarray :
+    """
+    Given three euler angles (XYZ), computes the 9x9 corresponding rotation matrix that performs the same rotation onto L4_SH coefficients
+
+    Args:
+        w (Vec): vector of size 3 representing three euler angles in convention XYZ.
+
+    Returns:
+        np.ndarray: a 9x9 matrix
+    """
     return RX(w[0]) @ RY(w[1]) @ RZ(w[2])
 
 def rot_matrix_from_rotvec(v : Vec) -> np.ndarray :
-    return expm(skew_matrix_from_rotvec(v))
-    #euler = Rotation.from_rotvec(v).as_euler("XYZ")
-    #return rot_matrix_from_euler(euler)
+    """
+    Given a rotation in angle-axis form, computes the 9x9 corresponding rotation matrix that performs the same rotation onto L4_SH coefficients,
+    defined as the exponential of the corresponding skew-symmetric matrix.
 
-def from_vec3(v : Vec) -> np.ndarray:
+    Args:
+        v (Vec): a rotation axis vector where norm(v) represents the angle of rotation.
+
+    Returns:
+        np.ndarray: a 9x9 matrix
+    """
+    return expm(skew_matrix_from_rotvec(v))
+
+def from_vec3(v : Vec) -> L4_SH:
+    """
+    Given a rotation in angle-axis form, computes the corresponding frame coefficients in L4_SH basis.
+
+    Args:
+        v (Vec): a rotation axis vector where norm(v) represents the angle of rotation.
+
+    Returns:
+        L4_SH: corresponding coefficients
+    """
     if norm(v)<1e-8: return np.array([0.,0.,0.,0.,1.,0.,0.,0.,0.])
     R = rot_matrix_from_rotvec(v)
     sh = R[:,4] # apply rotation to representation of (0,0,1) vector : 1 at 4th coeff and 0 otherwise -> dot product is fourth column of matrix
     return sh
 
-def from_frame(frame : Rotation) -> np.ndarray:
+def from_frame(frame : Rotation) -> L4_SH:
+    """
+    Given a rotation as a scipy.Rotation object, computes the corresponding frame coefficients in L4_SH basis.
+
+    Args:
+        frame (Rotation): a scipy rotation.
+
+    Returns:
+        L4_SH: corresponding coefficients
+    """
     axis = Vec(frame.as_euler("XYZ"))
     if norm(axis)<1e-8: return EYE
     R = rot_matrix_from_euler(axis)
     sh = R.dot(EYE) # apply found rotation to the spherical harmonic reference
     return sh
 
-def rotate_frame(sh : np.ndarray, r : Rotation) -> np.ndarray :
+def rotate_frame(sh : L4_SH, r : Rotation) -> L4_SH :
+    """
+    Applies a rotation to a frame decomposed in L4_SH basis.
+
+    Args:
+        sh (L4_SH): coefficients of the frame
+        r (Rotation|Vec): rotation to be applied, either a scipy.Rotation object or a axis-angle representation.
+
+    Returns:
+        L4_SH : the rotated frame coefficients
+    """
     if isinstance(r, Rotation):
         return Vec(rot_matrix_from_euler(r.as_rotvec()).dot(sh))
     return Vec(rot_matrix_from_euler(r).dot(sh))
 
 def project_to_frame(sh : Vec, stop_threshold : float = 1e-8, max_iter=1000, nrml_cstr: Vec = None):
     """Given the coefficients in the spherical harmonic basis, finds the frames that correspond the most.
-
-        Also recomputes spherical harmonics coefficients to a perfect match.
-        Uses the Cayleigh transform to approximate the 9D rotation.
+    Also recomputes spherical harmonics coefficients to a perfect match.
+    Uses the Cayleigh transform to approximate the 9D rotation.
 
     Parameters:
         sh (Vec): the 9 coefficients representing the frame in spherical harmonics basis
@@ -172,12 +264,12 @@ def project_to_frame(sh : Vec, stop_threshold : float = 1e-8, max_iter=1000, nrm
 
 def project_to_frame_grad(sh : Vec, lr : float = 1e-1, grad_threshold : float = 1e-4, dot_threshold = 1e-6, max_iter=1000):
     """Given the coefficients in the spherical harmonic basis, finds the frames that correspond the most. Computation is unfortunately not direct:
-        starting from the reference frame, we perform a gradient descent on the l2 distance between spherical harmonics coefficients.
+    starting from the reference frame, we perform a gradient descent on the l2 distance between spherical harmonics coefficients.
 
-        Also recomputes spherical harmonics coefficients to a perfect match.
-        Uses the linearization of the exponential to approximate 9D rotations.
+    Also recomputes spherical harmonics coefficients to a perfect match.
+    Uses the linearization of the exponential to approximate 9D rotations.
 
-        /!\\ This algorithm is less precise and less efficient than project_to_frame. Use the latter instead.
+    /!\\ This algorithm is less precise and less efficient than project_to_frame. Use the latter instead.
 
     Parameters:
         sh (Vec): the 9 coefficients representing the frame in spherical harmonics basis

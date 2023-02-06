@@ -8,6 +8,7 @@ from ...mesh.mesh import copy
 from ...mesh.mesh_attributes import Attribute, ArrayAttribute
 from ...geometry import Vec
 from ... import geometry as geom
+from ...utils.argument_check import check_argument
 from ...attributes.glob import euler_characteristic
 from ...attributes.misc_corners import cotangent
 from ...operators import area_weight_matrix
@@ -21,19 +22,38 @@ def regul_prime(x, eps=1e-18):
 
 class CotanEmbedding(Worker):
     """
-    Based on the paper
-    "Embedding a triangular graph within a given boundary" by Xu et al. (2011)
-    
     Given a parametrization of a disk where boundary is fixed, we can optimize the difference between unsigned and signed areas of triangles to compute a parametrization that is foldover-free.
+
+    References:
+        Embedding a triangular graph within a given boundary, Xu et al. (2011)
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, uv_attr: Attribute, on_corner:bool, verbose:bool=True):
+    def __init__(self, mesh : SurfaceMesh, uv_attr: Attribute, on_corner:bool, verbose:bool=True, **kwargs):
+        """
+        Initializing the CotanEmbedding parametrization tool.
+
+        Args:
+            mesh (SurfaceMesh): the supporting mesh.
+            uv_attr (Attribute): the attribute on vertices/corners that stores uv-coordinates to optimize.
+            on_corner (bool): specifies on which primitive the uv_attr is set (corners or vertices)
+            verbose (bool, optional): verbose mode. Defaults to True.
+        
+        Keyword Args:
+            mode (str): optimization mode. Either "bfgs" or "alternate". Defaults to "bfgs".
+            tutte_if_convex (bool): if the boundary of the shape is convex and mode=="alternate", whether to simply run Tutte's embedding. Defaults to True
+            solver_verbose (bool): solver verbose mode. Defaults to False.
+        """
         super().__init__("CotanEmbedding", verbose=verbose)
         self.mesh : SurfaceMesh = mesh
         self.flat_mesh : SurfaceMesh = None
         self.uvs : ArrayAttribute = uv_attr
         self.on_corners : bool = on_corner
+
+        self._mode = kwargs.get("mode", "bfgs")
+        check_argument("mode", self._mode, str, ["bfgs", "alternate"])
+        self._tutte_if_convex : bool = kwargs.get("tutte_if_convex", True)
+        self._solver_verbose : bool = kwargs.get("solver_verbose", False)
 
     def _energy(self,X):
         E = 0
@@ -78,15 +98,19 @@ class CotanEmbedding(Worker):
             E += (El + 2*Et)
         return E, grad
 
-    def run(self, mode:str="bfgs", tutte_if_convex:bool = False, solver_verbose=True):
+    def run(self):
+        """
+        Runs the optimization
+
+        Raises:
+            Exception: Fails if the mesh is not a topological disk
+            Exception: Fails if the mesh is not triangular
+        """
         if euler_characteristic(self.mesh)!=1:
             raise Exception("Mesh is not a topological disk. Cannot run parametrization.")
         if not self.mesh.is_triangular():
             raise Exception("Mesh is not triangular.")
         
-        if mode not in ["bfgs", "alternate"]:
-            raise Exception("CotanEmbedding mode should either be 'bfgs' or 'alternate'")
-
         # Initialize variable vector from uvs
         nv = len(self.mesh.vertices)
         var = np.zeros(2*nv)
@@ -100,10 +124,10 @@ class CotanEmbedding(Worker):
                 var[nv+v] = self.uvs[v][1]
 
         # Call corresponding optimizer
-        if mode=="bfgs":
-            var = self._optimize_bfgs(var, solver_verbose) 
-        elif mode=="alternate":
-            var = self._optimize_alternate(var, tutte_if_convex, solver_verbose)
+        if self._mode=="bfgs":
+            var = self._optimize_bfgs(var, self._solver_verbose) 
+        elif self._mode=="alternate":
+            var = self._optimize_alternate(var, self._tutte_if_convex, self._solver_verbose)
 
         # Write uvs in attribute
         if self.on_corners:
