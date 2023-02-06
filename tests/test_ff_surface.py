@@ -17,6 +17,7 @@ def test_surface_framefield_wrong_mesh():
     m = M.mesh.new_polyline()
     try:
         ff = SurfaceFrameField(m, "vertices")
+        assert False
     except BadMeshTypeException as e:
         assert True
 
@@ -24,11 +25,13 @@ def test_surface_framefield_wrong_elements():
     m = M.mesh.new_surface()
     try:
         ff = SurfaceFrameField(m, 42)
+        assert False
     except InvalidArgumentTypeError as e:
         assert True
     
     try:
         ff = SurfaceFrameField(m,"foo")
+        assert False
     except InvalidArgumentValueError as e:
         assert True
 
@@ -37,11 +40,13 @@ def test_surface_frame_field_bad_numerical_values():
     m = M.mesh.new_surface()
     try:
         ff = SurfaceFrameField(m, "vertices", n_smooth="pouet")
+        assert False
     except InvalidArgumentTypeError as e:
         assert True
 
     try:
         ff = SurfaceFrameField(m,"faces",n_smooth=-1)
+        assert False
     except InvalidRangeArgumentError as e:
         assert True
 
@@ -102,14 +107,25 @@ def test_surface_framefield_custom_singus_faces(m):
     ff = SurfaceFrameField(m, "faces", singularity_indices=singus)()
     assert True
 
+@pytest.mark.parametrize("m", [surf_circle()])
+def test_surface_framefield_custom_singus_faces_invalid_topo(m):
+    singus = m.vertices.create_attribute("singuls", float)
+    singus[64] = 1
+    singus[80] = -1 # singus do not verify Poincarré-Hopf
+    try:
+        ff = SurfaceFrameField(m, "faces", singularity_indices=singus)()
+        assert False
+    except Exception as e:
+        assert True
+
 @pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
 def test_CurvatureVertices(m):
-    ff = PrincipalCurvatureDirectionsVertices(m, verbose=False)()
+    ff = PrincipalDirections(m, "vertices")()
     ff.flag_singularities()
     assert m.faces.has_attribute("singuls")
 
 @pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
 def test_CurvatureFaces(m):
-    ff = PrincipalCurvatureDirectionsFaces(m, verbose=False)()
+    ff = PrincipalDirections(m, "faces")()
     ff.flag_singularities()
     assert m.vertices.has_attribute("singuls")

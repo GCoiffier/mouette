@@ -3,7 +3,7 @@ import numpy as np
 import scipy.sparse as sp
 from scipy.spatial.transform import Rotation
 from osqp import OSQP
-from itertools import chain
+import math
 
 from .base import FrameField
 
@@ -12,7 +12,6 @@ from ...mesh.mesh_data import RawMeshData
 from ...mesh.mesh_attributes import Attribute, ArrayAttribute
 
 from ... import attributes
-# from ..features import FeatureEdgeDetector
 
 from ... import geometry as geom
 from ... import utils
@@ -31,15 +30,20 @@ class FrameField3DCells(FrameField):
             message = f"Reading error at line {line}: {message}"
             super().__init__(message)
 
-    def __init__(self, supporting_mesh : VolumeMesh, verbose=True):
+    def __init__(self, 
+        supporting_mesh : VolumeMesh, 
+        verbose=True,
+        **kwargs):
         """
         Parameters:
             supporting_mesh (VolumeMesh): the input mesh
             verbose (bool, optional): verbose mode. Defaults to True.
         """
-        super().__init__(verbose=verbose)
+        super().__init__("FrameField3D", verbose=verbose)
         self.mesh : VolumeMesh = supporting_mesh
         self.mesh.enable_boundary_connectivity()
+        self.n_smooth = kwargs.get("n_smooth", 3)
+        self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None)
         self._boundary_mesh : SurfaceMesh = None
 
         self._fnormals : ArrayAttribute = None
@@ -114,7 +118,7 @@ class FrameField3DCells(FrameField):
             NF = self._fnormals[iF]
             axis = geom.cross(Vec(0.,0.,1.), NF)
             if abs(NF.z)<0.99:
-                axis = Vec.normalized(axis) * atan2(axis.norm(), NF.z)
+                axis = Vec.normalized(axis) * math.atan2(axis.norm(), NF.z)
                 face_bases_sh[iF] = SphericalHarmonics.from_vec3(axis)
             else:
                 face_bases_sh[iF] = Vec(0., 0., 0., 0., 1., 0., 0., 0., 0.)
@@ -209,7 +213,7 @@ class FrameField3DCells(FrameField):
         # print(geom.norm(cstrMat.dot(self.var) - cstrRHS))
         return cstrMat, cstrRHS
 
-    def optimize(self, n_renorm : int = 0):
+    def optimize(self):
         self._check_init()
         self.log(" | Compute Laplacian")
         lap = self._laplacian()
@@ -222,14 +226,14 @@ class FrameField3DCells(FrameField):
         res = instance.solve()
         self.var = res.x
 
-        if n_renorm>0:
-            alpha = 1e-3
-            self.log(" | Solve linear system {} times with diffusion".format(n_renorm))
+        if self.n_smooth>0:
+            alpha = self.smooth_attach_weight or 1e-3
+            self.log(" | Solve linear system {} times with diffusion".format(self.n_smooth))
             Id = sp.eye(self.var.size, format="csc")
             mat = Q + alpha * Id
             instance = OSQP()
             instance.setup(mat,self.var, A=cstrMat, l=cstrRHS, u=cstrRHS)
-            for _ in range(n_renorm):
+            for _ in range(self.n_smooth):
                 self.normalize()
                 instance.update(q = -alpha * self.var)
                 res = instance.solve()

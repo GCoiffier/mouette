@@ -5,19 +5,20 @@ from ... import operators
 import numpy as np
 from scipy.sparse import linalg
 
-class PrincipalCurvatureDirectionsFaces(_BaseFrameField2DFaces):
+class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
     """
-    Principal curvature direction estimation using a frame field on vertices.
+    Principal curvature direction estimation using a frame field on faces.
 
     Implementation based on 'Restricted Delaunay Triangulations and Normal Cycle',  David Cohen-Steiner and Jean-Marie Morvan, 2003
     """
 
     def __init__(self, 
-        supporting_mesh : SurfaceMesh, 
+        supporting_mesh : SurfaceMesh,
+        features : bool = True,
         verbose :bool = False,
         **kwargs):
         """
-        Principal curvature direction estimation using a frame field on vertices.
+        Principal curvature direction estimation using a frame field on faces.
 
         Args:
             supporting_mesh (SurfaceMesh): the surface mesh on which to perform the estimation
@@ -30,7 +31,7 @@ class PrincipalCurvatureDirectionsFaces(_BaseFrameField2DFaces):
         Note:
             Order of the frame field is fixed at 4 since principal curvature directions form an orthonormal basis.
         """
-        super().__init__(supporting_mesh, 4, False, verbose, **kwargs)
+        super().__init__(supporting_mesh, 4, features, verbose, **kwargs)
         self.curv_mat_faces : np.ndarray = None # shape (|T|,3,3)
 
     def _initialize_curvature(self):
@@ -80,7 +81,7 @@ class PrincipalCurvatureDirectionsFaces(_BaseFrameField2DFaces):
 
         if self.n_smooth > 0:
             # diffuse the curvature results to get a smoother results (especially where curvature was not defined)
-            lap = operators.laplacian_triangles(self.mesh, order=self.order)
+            lap = operators.laplacian_triangles(self.mesh, order=4)
             A = operators.area_weight_matrix_faces(self.mesh).astype(complex)
             alpha = self.smooth_attach_weight or 1e-3
 

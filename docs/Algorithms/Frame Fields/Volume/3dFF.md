@@ -5,23 +5,18 @@ title: "3D Frame Fields"
 # 3D Frame Fields
 
 ```python
-from mouette.processing import framefield
+from mouette.processing import VolumeFrameField
 ```
 
-In mouette, two algorithms of smoothest frame field in 3D have been implemented : `FrameField3DCells` and `FrameField3DVertices`
-
-
-## Frame field on vertices
-
-## Frame field on cells
+In mouette, two algorithms of smoothest frame field in 3D have been implemented : `FrameField3DCells` and `FrameField3DVertices`. These two algorithms can be accessed via the `VolumeFrameField` function.
 
 ```python
 import mouette as M
-from mouette.processing import framefield
+from mouette.processing import VolumeFrameField
 
 m = M.mesh.load("path/to/mesh")
-ff = framefield.FrameField3DCells(m, verbose=True)
-ff.run() # Initializes values 
+ff = VolumeFrameField(m, "vertices", verbose=True)
+ff.run() # Computes the frames
 ff.flag_singularities() # Computes the singularity graph
 ```
 
@@ -44,12 +39,13 @@ anx any anz bnx bny bnz cnx cny cnz
 
 ```python
 import mouette as M
+from mouette.processing import VolumeFrameField
 
 m = M.mesh.load("path/to/mesh")
-ff = M.processing.framefield.FrameField3DCells(m)
+ff = VolumeFrameField(m, "cells", verbose=True)
 ff.read_from_file("path/to/frame")
 ff.flag_singularities() 
-ffm = ff.export_as_mesh()
-M.mesh.save(ffm, "ff.mesh")
-M.mesh.save(ff.singularity_graph, "singuls.mesh")
+ff_mesh = ff.export_as_mesh()
+M.mesh.save(ff_mesh, "ff.mesh")
+M.mesh.save(ff.singularity_graph, "singularity_graph.mesh")
 ```

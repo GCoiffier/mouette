@@ -37,7 +37,7 @@ except ImportError:
             curvV[v,:,:] /= total_area[v]
         return curvV
 
-class PrincipalCurvatureDirectionsVertices(_BaseFrameField2DVertices):
+class PrincipalDirectionsVertices(_BaseFrameField2DVertices):
     """
     Principal curvature direction estimation using a frame field on vertices.
 
@@ -48,8 +48,6 @@ class PrincipalCurvatureDirectionsVertices(_BaseFrameField2DVertices):
     def __init__(self, 
         mesh : SurfaceMesh, 
         feature_edges : bool = False,
-        patch_size : int = 3,
-        curv_threshold : float = 0.01,
         verbose : bool = True,
         **kwargs):
         """
@@ -73,9 +71,9 @@ class PrincipalCurvatureDirectionsVertices(_BaseFrameField2DVertices):
             verbose,
             **kwargs
         )
-        self.curv_threshold : float = curv_threshold
-        self.complete : bool = kwargs.get("complete", True)
-        self.patch_size : int = patch_size
+        self.complete_ff : bool = kwargs.get("complete_ff", True)
+        self.patch_size : int = kwargs.get("patch_size", 3)
+        self.curv_threshold : float = kwargs.get("curv_threshold", 0.01)
         self.face_areas : Attribute = None
         self.curv_mat_vert : np.ndarray = None # shape (|V|,3,3)
         self.M : sp.lil_matrix = None
@@ -142,7 +140,7 @@ class PrincipalCurvatureDirectionsVertices(_BaseFrameField2DVertices):
                 self.var[v] = (c/abs(c))**4
         
         lap = None
-        if self.complete and self.curv_threshold>0:
+        if self.complete_ff and self.curv_threshold>0:
             lap = operators.laplacian(self.mesh, cotan=self.use_cotan, connection=self.conn, order=4)
             self.log("Completing curvature on flat regions")
             freeAttr = self.mesh.vertices.create_attribute("free", bool)
@@ -168,7 +166,7 @@ class PrincipalCurvatureDirectionsVertices(_BaseFrameField2DVertices):
             if lap is None:
                 lap = operators.laplacian(self.mesh, cotan=self.use_cotan, connection=self.conn, order=4)
                 A = operators.area_weight_matrix(self.mesh)
-            alpha = self.smooth_attach_weight or  1.
+            alpha = self.smooth_attach_weight or 1.
             self.log("Attach Weight", alpha)
 
             if len(self.feat.feature_vertices)>0:

@@ -42,10 +42,10 @@ class _BaseFrameField2DVertices(FrameField):
         
         self.use_cotan : bool = kwargs.get("use_cotan",True)
         self.cad_correction : bool = kwargs.get("cad_correction", False)
+        self.features : bool = features or self.cad_correction # whether feature edges are enabled or not
         self.n_smooth : int = kwargs.get("n_smooth", 10)
         self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None) # either None or the provided value
         self.conn = kwargs.get("custom_connection", None) # (A,B) -> direction (angle) of edge (A,B) in local basis of A
-        self.features : bool = features # whether feature edges are enabled or not
         self.feat : FeatureEdgeDetector = kwargs.get("custom_features", None) # either a FeatureEdgeDetector or None
 
         self.vnormals : ArrayAttribute = None # local basis Z vector (normal)
@@ -219,7 +219,7 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
     def initialize(self):
         self._initialize_attributes()
         self._initialize_variables()
-        if self.features and self.cad_correction:
+        if self.cad_correction:
             self._modify_parallel_transport()
         self.initialized = True
 
@@ -244,7 +244,7 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             target_w[e] = angles[i_angle]
 
         ## build start w for rotation penalty energy
-        cstrfaces = attributes.faces_near_border(self.mesh, 4)
+        cstrfaces = attributes.faces_near_border(self.mesh, 5)
         # 1) constraints
         ncstr = len(self.feat.feature_edges)
         nvar = len(self.mesh.edges)

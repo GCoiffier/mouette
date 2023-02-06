@@ -205,15 +205,16 @@ def volume_weight_matrix(mesh : VolumeMesh):
 @allowed_mesh_types(VolumeMesh)
 def volume_laplacian(mesh : VolumeMesh):
     """ Volume laplacian, the 3D extension of the cotan laplacian, ie the discretization of the Laplace-Beltrami operator on 3D manifolds.
-    
-    See https://cseweb.ucsd.edu/~alchern/projects/ConformalVolume/
-    and https://www.cs.cmu.edu/~kmcrane/Projects/Other/nDCotanFormula.pdf
 
     Parameters:
         mesh (VolumeMesh) : the input mesh
 
     Returns:
         scipy.sparse.lil_matrix : the Laplacian operator as a sparse matrix
+
+    References:
+       [1] https://cseweb.ucsd.edu/~alchern/projects/ConformalVolume/
+       [2] https://www.cs.cmu.edu/~kmcrane/Projects/Other/nDCotanFormula.pdf
     """
     if not mesh.is_tetrahedral(): 
         raise NotImplementedError

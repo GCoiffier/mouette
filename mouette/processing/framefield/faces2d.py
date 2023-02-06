@@ -279,6 +279,8 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
         instance = OSQP()
         instance.setup(P = sp.eye(n_rot,format="csc"), q=None, A=CstMat.tocsc(), l=CstX, u=CstX, verbose=self.verbose)
         res = instance.solve()
+        if res.info.status != "solved":
+            raise Exception(f"Solver exited with status '{res.info.status}'. Check validity of singularity indices (Poincarré-Hopf condition)")
         self.rotations = res.x
 
         ### Now rebuild frame field along a tree

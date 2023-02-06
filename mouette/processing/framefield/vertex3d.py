@@ -37,6 +37,8 @@ class FrameField3DVertices(FrameField):
 
         self.boundary_mesh : SurfaceMesh = None
         self.vertex_normals : Attribute = None
+        self.n_smooth = kwargs.get("n_smooth", 3)
+        self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None)
 
         self.frames : list = None # raw representation of frames as scipy.Rotation objects
         self.var = np.concatenate([SphericalHarmonics.EYE]*len(self.mesh.vertices)) # representation vectors in spherical harmonics basis
@@ -149,10 +151,10 @@ class FrameField3DVertices(FrameField):
             self.var[9*i:9*(i+1)] = a
             self.frames[i] = frame
 
-    def optimize(self, n_renorm=3):
+    def optimize(self):
         self._check_init()
         # Create Laplacian
-        lap = self._volume_laplacian()# /!\ TODO : needs debug
+        lap = self._volume_laplacian()
         # lap = self._graph_laplacian()
         A = self._volume_weight_matrix()
 
@@ -166,20 +168,23 @@ class FrameField3DVertices(FrameField):
         res = instance.solve()
         self.var = res.x
 
-        try:
-            alpha = abs(sp.linalg.eigsh(lap, k=1, which="SM", M=A, tol=1e-4, maxiter=1000, return_eigenvectors=False)[0])
-        except Exception as e:
-            self.log("Estimation of alpha failed: {}".format(e))
-            alpha = abs(sp.linalg.eigsh(lap-0.01*sp.identity(lap.shape[0]), k=1, M=A, which="SM", tol=1e-4, maxiter=1000, return_eigenvectors=False)[0])            
+        if self.smooth_attach_weight is not None:
+            alpha = self.smooth_attach_weight
+        else:
+            try:
+                alpha = abs(sp.linalg.eigsh(lap, k=1, which="SM", M=A, tol=1e-4, maxiter=1000, return_eigenvectors=False)[0])
+            except Exception as e:
+                self.log("Estimation of alpha failed: {}".format(e))
+                alpha = abs(sp.linalg.eigsh(lap-0.01*sp.identity(lap.shape[0]), k=1, M=A, which="SM", tol=1e-4, maxiter=1000, return_eigenvectors=False)[0])            
         self.log("Attach weight: {}".format(alpha))
 
-        if n_renorm>0:
-            self.log("Solve linear system {} times with diffusion".format(n_renorm))
+        if self.n_smooth>0:
+            self.log("Solve linear system {} times with diffusion".format(self.n_smooth))
             Id = scipy.sparse.eye(nvar, format="csc")
             mat = lap + alpha * Id
             instance = OSQP()
             instance.setup(mat,self.var, A=cstrMat, l=cstrRHS, u=cstrRHS)
-            for _ in range(n_renorm):
+            for _ in range(self.n_smooth):
                 self.normalize()
                 instance.update(q = -alpha * self.var)
                 res = instance.solve()

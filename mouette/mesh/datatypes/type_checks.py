@@ -20,7 +20,7 @@ def allowed_mesh_types(*allowed_types : list):
     def decorator(function):
         def wrapper(*args, **kwargs):
             for arg in args:
-                if isinstance(arg, Mesh) and type(arg) not in allowed_types:
+                if isinstance(arg, Mesh) and type(arg) not in filter(lambda t : issubclass(t,Mesh), allowed_types):
                     raise BadMeshTypeException(type(arg), "[Mouette] Mesh type '{}' is not allowed for this function. Allowed types : {}".format( type_to_str(type(arg)), [type_to_str(u) for u in allowed_types]))
             result = function(*args, **kwargs)
             return result
@@ -31,7 +31,7 @@ def forbidden_mesh_types(*forbidden_types : list):
     def decorator(function):
         def wrapper(*args, **kwargs):
             for arg in args:
-                if isinstance(arg, Mesh) and type(arg) in forbidden_types:
+                if isinstance(arg, Mesh) and type(arg) in filter(lambda t : issubclass(t,Mesh), forbidden_types):
                     raise BadMeshTypeException("[Mouette] Mesh type '{}' is forbidden for this function. Forbidden types are {}".format( type_to_str(type(arg)), [type_to_str(u) for u in forbidden_types]))
             result = function(*args, **kwargs)
             return result
