@@ -9,7 +9,7 @@ from .rotations import axis_rot_from_z
 from typing import Annotated
 
 
-L4_SH = Annotated(np.ndarray, 9)
+L4_SH = Annotated[np.ndarray, 9]
 """
 An orthogonal frame is represented by its 9 coefficients in the L4 band of the spherical harmonics basis. In practice, L4_SH is a size 9 numpy array.
 
