@@ -1,16 +1,9 @@
-"""
-A union-find disjoint set data structure.
-https://github.com/deehzee/unionfind/blob/master/unionfind.py
-"""
-
 # 2to3 sanity
 from __future__ import (
     absolute_import, division, print_function, unicode_literals,
 )
 
-# Third-party libraries
 import numpy as np
-
 
 class UnionFind(object):
     """Union-find disjoint sets datastructure.
@@ -33,58 +26,52 @@ class UnionFind(object):
     of a number until reaching 1. In practice, the amortized cost of
     each operation is nearly linear [1]_.
 
-    Terms
-    -----
-    Component
-        Elements belonging to the same disjoint set
+    Terms:
+        **Component**:
+            Elements belonging to the same disjoint set
 
-    Connected
-        Two elements are connected if they belong to the same component.
+        **Connected**:
+            Two elements are connected if they belong to the same component.
 
-    Union
-        The operation where two components are merged into one.
+        **Union**:
+            The operation where two components are merged into one.
 
-    Root
-        An internal representative of a disjoint set.
+        **Root**:
+            An internal representative of a disjoint set.
 
-    Find
-        The operation to find the root of a disjoint set.
+        **Find**:
+            The operation to find the root of a disjoint set.
 
-    Parameters
-    ----------
-    elements : NoneType or container, optional, default: None
-        The initial list of elements.
+    Parameters:
+        elements (None or container, optional):
+            The initial list of elements.
 
-    Attributes
-    ----------
-    n_elts : int
-        Number of elements.
+    Attributes:
+        n_elts (int): Number of elements.
 
-    n_comps : int
-        Number of distjoint sets or components.
+        n_comps (int): Number of distjoint sets or components.
+    
+        __len__:
+            Calling ``len(uf)`` (where ``uf`` is an instance of ``UnionFind``)
+            returns the number of elements.
 
-    Implements
-    ----------
-    __len__
-        Calling ``len(uf)`` (where ``uf`` is an instance of ``UnionFind``)
-        returns the number of elements.
+        __contains__:
+            For ``uf`` an instance of ``UnionFind`` and ``x`` an immutable object,
+            ``x in uf`` returns ``True`` if ``x`` is an element in ``uf``.
 
-    __contains__
-        For ``uf`` an instance of ``UnionFind`` and ``x`` an immutable object,
-        ``x in uf`` returns ``True`` if ``x`` is an element in ``uf``.
+        __getitem__:
+            For ``uf`` an instance of ``UnionFind`` and ``i`` an integer,
+            ``res = uf[i]`` returns the element stored in the ``i``-th index.
+            If ``i`` is not a valid index an ``IndexError`` is raised.
 
-    __getitem__
-        For ``uf`` an instance of ``UnionFind`` and ``i`` an integer,
-        ``res = uf[i]`` returns the element stored in the ``i``-th index.
-        If ``i`` is not a valid index an ``IndexError`` is raised.
+        __setitem__:
+            For ``uf`` and instance of ``UnionFind``, ``i`` an integer and ``x``
+            an immutable object, ``uf[i] = x`` changes the element stored at the
+            ``i``-th index. If ``i`` is not a valid index an ``IndexError`` is
+            raised.
 
-    __setitem__
-        For ``uf`` and instance of ``UnionFind``, ``i`` an integer and ``x``
-        an immutable object, ``uf[i] = x`` changes the element stored at the
-        ``i``-th index. If ``i`` is not a valid index an ``IndexError`` is
-        raised.
-
-    .. [1] http://algs4.cs.princeton.edu/lectures/
+    References:
+        [1] http://algs4.cs.princeton.edu/lectures/
 
     """
 
@@ -133,14 +120,8 @@ class UnionFind(object):
     def add(self, x):
         """Add a single disjoint element.
 
-        Parameters
-        ----------
-        x : immutable object
-
-        Returns
-        -------
-        None
-
+        Args:
+            x: immutable object
         """
         if x in self:
             return
@@ -152,23 +133,17 @@ class UnionFind(object):
         self.n_elts += 1
         self.n_comps += 1
 
-    def find(self, x):
+    def find(self, x) -> int:
         """Find the root of the disjoint set containing the given element.
 
-        Parameters
-        ----------
-        x : immutable object
+        Args:
+            x: immutable object
 
-        Returns
-        -------
-        int
-            The (index of the) root.
+        Returns:
+            int: The (index of the) root.
 
-        Raises
-        ------
-        ValueError
-            If the given element is not found.
-
+        Raises:
+            ValueError: If the given element is not found.
         """
         if x not in self._indx:
             raise ValueError('{} is not an element'.format(x))
@@ -181,34 +156,26 @@ class UnionFind(object):
             p = q
         return p
 
-    def connected(self, x, y):
-        """Return whether the two given elements belong to the same component.
+    def connected(self, x, y) -> bool:
+        """
+        Return whether the two given elements belong to the same component.
+           
+        Args:
+            x: immutable object
+            y: immutable object
 
-        Parameters
-        ----------
-        x : immutable object
-        y : immutable object
-
-        Returns
-        -------
-        bool
-            True if x and y are connected, false otherwise.
-
+        Returns:
+            bool: True if x and y are connected, false otherwise.
         """
         return self.find(x) == self.find(y)
 
     def union(self, x, y):
-        """Merge the components of the two given elements into one.
+        """
+        Merge the components of the two given elements into one.
 
-        Parameters
-        ----------
-        x : immutable object
-        y : immutable object
-
-        Returns
-        -------
-        None
-
+        Args:
+            x: immutable object
+            y: immutable object
         """
         # Initialize if they are not already in the collection
         for elt in [x, y]:
@@ -227,22 +194,18 @@ class UnionFind(object):
             self._siz[xroot] += self._siz[yroot]
         self.n_comps -= 1
 
-    def component(self, x):
-        """Find the connected component containing the given element.
+    def component(self, x) -> set:
+        """
+        Find the connected component containing the given element.
 
-        Parameters
-        ----------
-        x : immutable object
+        Args:
+            x: immutable object
 
-        Returns
-        -------
-        set
+        Raises:
+            ValueError:  If the given element is not found.
 
-        Raises
-        ------
-        ValueError
-            If the given element is not found.
-
+        Returns:
+            set: The component of x
         """
         if x not in self:
             raise ValueError('{} is not an element'.format(x))
@@ -254,21 +217,17 @@ class UnionFind(object):
     def roots(self):
         """Return the set of roots of components
         
-        Returns
-        ------
-        set
-            A set of elements
+        Returns:
+            set: A set of elements
         """
         return set(self.find(x) for x in self._elts)
 
-    def components(self):
-        """Return the list of connected components.
+    def components(self) -> list:
+        """
+        Return the list of connected components.
 
-        Returns
-        -------
-        list
-            A list of sets.
-
+        Returns:
+            list: A list of sets representing components
         """
         roots = self.roots()
         root_ids = dict((r,i) for i,r in enumerate(roots))
@@ -278,11 +237,10 @@ class UnionFind(object):
             components[i].append(e)
         return components
 
-
-    def component_mapping(self):
+    def component_mapping(self) -> dict:
         """Return a dict mapping elements to their components.
 
-        The returned dict has the following semantics:
+        The returned dict has the following semantics
 
             `elt -> component containing elt`
 
@@ -297,31 +255,27 @@ class UnionFind(object):
         If you want to do any operation on these sets, use caution.
         For example, instead of
 
-        ::
-
-            s = uf.component_mapping()[item]
-            s.add(stuff)
-            # This will have side effect in other sets
-
+        ```python
+        s = uf.component_mapping()[item]
+        s.add(stuff)
+        # This will have side effect in other sets
+        ```
+        
         do
-
-        ::
-
-            s = set(uf.component_mapping()[item]) # or
-            s = uf.component_mapping()[item].copy()
-            s.add(stuff)
+        ```python
+        s = set(uf.component_mapping()[item]) # or
+        s = uf.component_mapping()[item].copy()
+        s.add(stuff)
+        ```
 
         or
+        ```python
+        s = uf.component_mapping()[item]
+        s = s | {stuff}  # Now s is different
+        ```
 
-        ::
-
-            s = uf.component_mapping()[item]
-            s = s | {stuff}  # Now s is different
-
-        Returns
-        -------
-        dict
-            A dict with the semantics: `elt -> component contianing elt`.
+        Returns:
+            dict: A dict with the semantics: `elt -> component contianing elt`.
 
         """
         elts = np.array(self._elts)

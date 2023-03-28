@@ -69,6 +69,23 @@ class _BaseFrameField2DFaces(FrameField) :
                 c = complex(edge.dot(X), edge.dot(Y)) # compute edge in local basis coordinates (edge.dot(Z) = 0 -> complex number for 2D vector)
                 self.var[T] = (c/abs(c))**4 # c^4 is the same for all four directions of the cross
 
+    def _compute_attach_weight(self, A, fail_value=1e-3):
+        # A is area weight matrix
+        lap_no_pt = operators.laplacian_triangles(self.mesh, cotan=self.use_cotan)
+        try:
+            eigs = sp.linalg.eigsh(lap_no_pt, k=2, M=A, which="SM", tol=1e-3, maxiter=1000, return_eigenvectors=False)
+        except Exception as e:
+            try:
+                self.log("First estimation of alpha failed: {}".format(e))
+                eigs = sp.linalg.eigsh(lap_no_pt+0.1*sp.identity(lap_no_pt.shape[0]), M=A, k=2, which="SM", tol=1e-3, maxiter=1000, return_eigenvectors=False)
+            except:
+                self.log("Second estimation of alpha failed: taking alpha = ", fail_value)
+                return fail_value
+        eigs_non_zero = [e for e in eigs if abs(e)>1e-6]
+        if len(eigs_non_zero)==0:
+            return fail_value
+        return abs(min(eigs_non_zero))
+
     def flag_singularities(self, singul_attr_name:str = "singuls"):        
         """
         Detects singularities of the frame field
@@ -170,7 +187,7 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
             cotan=self.use_cotan, 
             connection=self.conn, 
             order=self.order).tocsc()
-        A = operators.area_weight_matrix_faces(self.mesh).tocsc().astype(complex)
+        A = operators.area_weight_matrix_faces(self.mesh).tocsc()
 
         ###### Border ######
         if len(self.feat.feature_vertices)>0: # We have a border / feature elements -> linear solve
@@ -195,7 +212,7 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
             lapI = lap[freeInds,:][:,freeInds]
             lapB = lap[freeInds,:][:,fixedInds]
             # for lapI and lapB, only lines of freeInds are relevant : lines of fixedInds link fixed variables -> useless constraints
-            AI = A[freeInds, :][:, freeInds]
+            AI = A[freeInds, :][:, freeInds].astype(complex)
             valB = lapB.dot(self.var[fixedInds]) # right hand side
             
             self.log("Initial solve of linear system")
@@ -204,7 +221,7 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
 
             if self.n_smooth>0:
                 self.log(f"Solve linear system {self.n_smooth} times with diffusion")
-                alpha = self.smooth_attach_weight or 1e-3 * mean_edge_length(self.mesh)
+                alpha = self.smooth_attach_weight or self._compute_attach_weight(A)
                 self.log("Attach weight: {}".format(alpha))
                 mat = lapI - alpha * AI
                 for _ in range(self.n_smooth):

@@ -165,7 +165,7 @@ def from_vec3(v : Vec) -> L4_SH:
     Returns:
         L4_SH: corresponding coefficients
     """
-    if norm(v)<1e-8: return np.array([0.,0.,0.,0.,1.,0.,0.,0.,0.])
+    if norm(v)<1e-8:  return np.array([0.,0.,0.,0.,1.,0.,0.,0.,0.])
     R = rot_matrix_from_rotvec(v)
     sh = R[:,4] # apply rotation to representation of (0,0,1) vector : 1 at 4th coeff and 0 otherwise -> dot product is fourth column of matrix
     return sh

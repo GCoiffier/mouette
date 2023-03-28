@@ -70,7 +70,7 @@ def export_obj(mesh, path):
             ofile.write('v '+' '.join(['{}'.format(v) for v in vtx])+'\n')
 
         if has_texcoords_corners:
-            texcoords = mesh.face_corners.get_attribute("uv_coords").as_array()
+            texcoords = mesh.face_corners.get_attribute("uv_coords").as_array(len(mesh.face_corners))
             for tex in texcoords:
                 ofile.write('vt '+' '.join([str(vt) for vt in tex])+'\n')
                     

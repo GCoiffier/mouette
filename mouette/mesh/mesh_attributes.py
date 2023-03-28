@@ -36,7 +36,7 @@ class BaseAttribute(ABC):
     ################ Typing ################
 
     SUPPORTED_TYPES = {
-        bool, 
+        bool, np.bool_,
         int, np.uint8, np.int32, np.int64, 
         float, np.float32, np.float64, 
         complex, 
@@ -44,7 +44,7 @@ class BaseAttribute(ABC):
     }
 
     class Type(MultiValueEnum):
-        Bool = bool
+        Bool = bool, np.bool_
         Int = int, np.int32, np.uint8, np.int64
         Float = float, np.float32, np.float64
         Complex = complex
@@ -329,7 +329,7 @@ class ArrayAttribute(BaseAttribute):
         """
         return range(self.n_elem)
 
-    def as_array(self):
+    def as_array(self, *args):
         return np.squeeze(self._data)
     
     def clear(self):

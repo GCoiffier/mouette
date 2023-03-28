@@ -8,7 +8,8 @@ from ...utils import keyify
 from .base import SpanningTree, SpanningForest
 
 class FaceSpanningTree(SpanningTree):
-    """A spanning tree defined over the connectivity of a mesh, built over dual edges.
+    """
+    A spanning tree defined over the connectivity of a mesh, built over dual edges.
     """
 
     @allowed_mesh_types(SurfaceMesh)
