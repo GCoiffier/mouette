@@ -21,10 +21,11 @@ def SurfaceFrameField(
     order : int = 4,
     features : bool = True,
     verbose : bool = False,
-    n_smooth : int = 10,
+    n_smooth : int = 3,
     smooth_attach_weight : float = None,
     use_cotan : bool = True,
     cad_correction : bool = True,
+    smooth_normals : bool = True,
     singularity_indices : Attribute = None,
     custom_connection : SurfaceConnection = None,
     custom_feature : FeatureEdgeDetector = None
@@ -43,7 +44,7 @@ def SurfaceFrameField(
         features (bool, optional): Whether to consider feature edges or not. 
             If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to True.
         
-        n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 10.
+        n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 3.
         
         smooth_attach_weight (float, optional): Custom attach weight to previous solution during smoothing steps. 
             If not provided, will be estimated automatically during optimization. Defaults to None.
@@ -53,6 +54,8 @@ def SurfaceFrameField(
 
         cad_correction (bool, optional): Whether to modify the parallel transport as in [2] to prevent singularities to appear close to pointy areas. 
             Will overwrite any connection provided with the 'custom_connection' argument. Defaults to True.
+
+        smooth_normals : Whether to initialize the frame field as a mean of adjacent feature edges (True), or following one of the edges (False). has no effect for frame field on faces. Defaults to True.
 
         verbose (bool, optional): verbose mode. Defaults to False.
         
@@ -94,7 +97,8 @@ def SurfaceFrameField(
             return TrivialConnectionVertices(mesh, singularity_indices, order, verbose, use_cotan=use_cotan, cad_correction=cad_correction, custom_connection=custom_connection, custom_feature=custom_feature)
         else:
             return FrameField2DVertices(mesh, order, features, verbose, n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight, 
-            use_cotan=use_cotan, cad_correction=cad_correction, custom_connection=custom_connection, custom_feature=custom_feature)
+            use_cotan=use_cotan, cad_correction=cad_correction, smooth_normals=smooth_normals, custom_connection=custom_connection, custom_feature=custom_feature)
+
     elif elements=="faces":
         if singularity_indices is not None:
             return TrivialConnectionFaces(mesh, singularity_indices, order=order, verbose=verbose, custom_connection=custom_connection, custom_feature=custom_feature)

@@ -14,5 +14,3 @@ from .border import extract_border_cycle, extract_border_cycle_all, extract_curv
 from . import trees
 from .parametrization import distortion
 from .connection import SurfaceConnectionFaces, SurfaceConnectionVertices
-
-from .framefield.framefield import SurfaceFrameField, PrincipalDirections, VolumeFrameField

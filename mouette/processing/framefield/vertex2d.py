@@ -48,6 +48,8 @@ class _BaseFrameField2DVertices(FrameField):
         self.conn = kwargs.get("custom_connection", None) # (A,B) -> direction (angle) of edge (A,B) in local basis of A
         self.feat : FeatureEdgeDetector = kwargs.get("custom_features", None) # either a FeatureEdgeDetector or None
 
+        self.smooth_normals : bool = kwargs.get("smooth_normals", True) # controls which direction to lock on features and boundary (average of features or first one)
+
         self.vnormals : ArrayAttribute = None # local basis Z vector (normal)
 
         self.angles : Attribute = None # angles of every triangle corner
@@ -55,7 +57,6 @@ class _BaseFrameField2DVertices(FrameField):
         self.cot : Attribute = None
 
         self.var = np.zeros(len(self.mesh.vertices), dtype=complex)
-
 
     def _initialize_attributes(self):
         self.angles = attributes.corner_angles(self.mesh)
@@ -70,12 +71,9 @@ class _BaseFrameField2DVertices(FrameField):
             self.feat.run(self.mesh)
         self.conn = self.conn or SurfaceConnectionVertices(self.mesh, self.feat, vnormal=self.vnormals, angles=self.angles)
     
-    def _initialize_variables(self, mean_normals=True):
-        """Init self.var for feature vertices
-        
-        mean_normals : whether to initialize the frame field as a mean of adjacent feature edges (True), or following one of the edges (False)
-        """
-        if mean_normals and self.order%2 != 1:
+    def _initialize_variables(self):
+        """ Init self.var for feature vertices """
+        if self.smooth_normals and self.order%2 != 1:
             for e in self.feat.feature_edges:
                 A,B = self.mesh.edges[e]
                 edge = self.mesh.vertices[B] - self.mesh.vertices[A]

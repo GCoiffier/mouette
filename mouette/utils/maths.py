@@ -1,5 +1,5 @@
 import cmath
-from math import pi
+from math import pi, sqrt
 
 def roots(c : complex, pow: int, normalize=True):
     """Given a complex number c, compute and returns the four ^(1/4) roots 
@@ -26,3 +26,28 @@ def principal_angle(a : float) -> float :
     if b>pi:
         b-=2*pi
     return b
+
+def solve_quadratic(A : float, B : float, C : float):
+    """
+    Solves Ax² + Bx + C = 0 for real-valued roots
+
+    Args:
+        A (float): coefficient of X² 
+        B (float): coefficient of X
+        C (float): constant coefficient
+
+    Returns:
+        list: a list containing 0, 1 or 2 roots
+    """
+    if A==0: # linear case
+        if B == 0:
+            return []
+        return [-C/B]
+    delta = B*B-4*A*C
+    if delta<0:
+        return []
+    if abs(delta)<1e-14: # delta = 0
+        return [-B/(2*A)]
+    else:
+        delta = sqrt(delta)
+        return [ (-B + delta)/(2*A), (-B - delta)/(2*A)]

@@ -43,7 +43,6 @@ def split_double_boundary_edges_triangles(mesh : SurfaceMesh) -> SurfaceMesh:
                 subdv.split_face_as_fan(f)
     return mesh
 
-
 @allowed_mesh_types(SurfaceMesh)
 def smooth(mesh : SurfaceMesh, n_iter=100, mode="cotan", keep_border=False, damping=0.0) -> SurfaceMesh:
     """

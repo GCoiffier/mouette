@@ -66,9 +66,9 @@ class SurfaceConnectionVertices(SurfaceConnection):
             else:
                 self.angles = attributes.corner_angles(mesh)
         
-        self.defect = ArrayAttribute(float, len(mesh.vertices))
+        self.total_angle = ArrayAttribute(float, len(mesh.vertices))
         for iC, C in enumerate(mesh.face_corners):
-            self.defect[C] = self.defect[C] + self.angles[iC] 
+            self.total_angle[C] = self.total_angle[C] + self.angles[iC] 
         super().__init__(mesh, feat)
 
     def _initialize(self):
@@ -88,27 +88,46 @@ class SurfaceConnectionVertices(SurfaceConnection):
             self._baseX[u] = X
             self._baseY[u] = geom.cross(N,X)
 
+            vert_u = self.mesh.connectivity.vertex_to_vertex(u)
+            
             # initialize angles of every edge in this basis
             ang = 0.
-            vert_u = self.mesh.connectivity.vertex_to_vertex(u)
-            if self.mesh.is_vertex_on_border(u):
-                fst, lst = vert_u[0], vert_u[-1]
-                pfst, plst = (self.mesh.vertices[x] for x in (fst, lst))
-                comp_angle = geom.signed_angle_3pts(plst,P,pfst, N) # complementary angle, ie "exterior" angle between two edges on the boundary
-                comp_angle = 2*np.pi + comp_angle if comp_angle<0 else comp_angle
-                
+            if u in self.feat.feature_vertices:
+                dfct = self.feat.corners[u] * 2 * np.pi / self.feat.corner_order # target defect (multiple of pi/order)
                 for v in vert_u:
                     T = self.mesh.half_edges.adj(u,v)[0]
-                    self._transport[(u,v)] = ang * 2 * np.pi / (self.defect[u] + comp_angle)
-                    if T is None : continue
+                    self._transport[(u,v)] = ang * dfct / self.total_angle[u]
                     c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
+                    if c is None: continue
                     ang += self.angles[c]
             else:
-                for v in vert_u:
+                # normal vertex in interior -> flatten to 2pi
+                for v in vert_u :
                     T = self.mesh.half_edges.adj(u,v)[0]
+                    self._transport[(u,v)] = ang * 2 * np.pi / self.total_angle[u]
                     c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
-                    self._transport[(u,v)] = ang * 2 * np.pi / self.defect[u]
                     ang += self.angles[c]
+
+            # ang = 0.
+            # # if u in self.feat.feature_vertices:
+            # if self.mesh.is_vertex_on_border(u) :
+            #     fst, lst = vert_u[0], vert_u[-1]
+            #     pfst, plst = (self.mesh.vertices[x] for x in (fst, lst))
+            #     comp_angle = geom.signed_angle_3pts(plst,P,pfst, N) # complementary angle, ie "exterior" angle between two edges on the boundary
+            #     comp_angle = 2*np.pi + comp_angle if comp_angle<0 else comp_angle
+                
+            #     for v in vert_u:
+            #         T = self.mesh.half_edges.adj(u,v)[0]
+            #         self._transport[(u,v)] = ang * 2 * np.pi / (self.total_angle[u] + comp_angle)
+            #         if T is None : continue
+            #         c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
+            #         ang += self.angles[c]
+            # else:
+            #     for v in vert_u:
+            #         T = self.mesh.half_edges.adj(u,v)[0]
+            #         c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
+            #         self._transport[(u,v)] = ang * 2 * np.pi / self.total_angle[u]
+            #         ang += self.angles[c]
 
 class SurfaceConnectionFaces(SurfaceConnection):
     """
