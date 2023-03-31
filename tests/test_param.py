@@ -4,16 +4,16 @@ from data import *
 
 @pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere()])
 def test_LSCM(m, tmp_path):
-    lscm = PARAM.LSCM(m,False)
-    lscm.run(True, True, False)
+    lscm = PARAM.LSCM(m, verbose=False, eigen=True, save_on_corners=True, solver_verbose=False)
+    lscm.run()
 
 @pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere()])
 def test_LSCM_no_eigen(m, tmp_path):
-    lscm = PARAM.LSCM(m,False)
-    lscm.run(False, True, False)
+    lscm = PARAM.LSCM(m, verbose=False, eigen=False, save_on_corners=True, solver_verbose=False)
+    lscm.run()
 
 @pytest.mark.parametrize("m", [surf_half_sphere()])
 def test_export_LSCM(m, tmp_path):
-    lscm = PARAM.LSCM(m,False)(False, True, False)
+    _ = PARAM.LSCM(m, verbose=False, eigen=False, save_on_corners=True, solver_verbose=False)()
     build_test_io(m, tmp_path, "obj", 2)
     build_test_io(m, tmp_path, "geogram_ascii", 2)
