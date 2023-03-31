@@ -71,6 +71,9 @@ class LevenbergMarquardt(Logger):
         self._cstL = None
         self._cstU = None
 
+        ### Metric matrix
+        self._W : sp.csc_matrix = None
+
         ### Function to optimize
         self._functions = []
 
@@ -119,6 +122,10 @@ class LevenbergMarquardt(Logger):
             fun_noJ = lambda x : fun(x)[0]
         self._functions.append( LMFunction(name, fun, fun_noJ, weight) )
 
+    def set_metric_matrix(self, W : sp.spmatrix):
+        # TODO : some assertions on the matrix
+        self._W = W.tocsc()
+
     def energy(self, X, jac=True, which=None):
         funs_to_call = self._functions if which is None else [fun for fun in self._functions if fun.name in which]
         if jac:
@@ -165,13 +172,16 @@ class LevenbergMarquardt(Logger):
             self.log("No function to optimize.")
             return 0.
 
+        if self._W is None:
+            # Metric matrix is Id by default (classical L2 norm)
+            self._W = sp.identity(x_init.size, format="csc")
+
         mu = 1.
         mu_avg = mu
         update = True
         grad_norm = None
         step_norm = 0.
         RelDeltaE = 0.
-        Id = None # identity matrix (built when first needed)
 
         # iterable for optimization steps
         if self.verbose_options.logger_verbose and self.verbose_options.use_tqdm:
@@ -192,7 +202,6 @@ class LevenbergMarquardt(Logger):
                     JtJ = Jt.dot(Jx)
                     q = Jt.dot(fx) # gradient
 
-                    if Id is None : Id = sp.identity(JtJ.shape[0])
                     Ex = np.dot(fx,fx)/2
 
                     if Ex<self.HP.ENERGY_MIN:
@@ -219,7 +228,7 @@ class LevenbergMarquardt(Logger):
                     cstU = self._cstU - xCst
                 else:
                     cstL,cstU = None, None
-                osqp_instance.setup(JtJ + gamma*Id, q=q, A=self._cstM, l=cstL, u=cstU,
+                osqp_instance.setup(JtJ + gamma*self._W, q=q, A=self._cstM, l=cstL, u=cstU,
                     verbose=self.verbose_options.solver_verbose,
                     eps_abs=1e-3, eps_rel=1e-3,
                     max_iter=100, polish=True, check_termination=10, 
