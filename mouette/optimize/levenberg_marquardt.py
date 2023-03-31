@@ -81,7 +81,7 @@ class LevenbergMarquardt(Logger):
         self._stop_criterion_instance = None # OSQP instance to compute projected gradient norm
         
         ### Additionnal parameters
-        self._linsys_solver = kwargs.get("lin_solver", "mkl pardiso") #"qdldl")
+        self._linsys_solver = kwargs.get("lin_solver", "mkl pardiso")
 
     def register_constraints(self, A : sp.spmatrix, l : np.ndarray = None, u : np.ndarray = None):
         """
@@ -91,8 +91,8 @@ class LevenbergMarquardt(Logger):
 
         Args:
             cstMat (sp.spmatrix): constraint matrix, either dense or sparse
-            cstL (np.ndarray, optional): _description_. Defaults to None.
-            cstR (np.ndarray, optional): _description_. Defaults to None.
+            cstL (np.ndarray, optional): vector l. Defaults to None.
+            cstR (np.ndarray, optional): vector u. Defaults to None.
         """
 
         if isinstance(A, sp.spmatrix):
