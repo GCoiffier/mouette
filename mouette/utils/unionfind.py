@@ -1,8 +1,3 @@
-# 2to3 sanity
-from __future__ import (
-    absolute_import, division, print_function, unicode_literals,
-)
-
 import numpy as np
 
 class UnionFind(object):
@@ -20,10 +15,8 @@ class UnionFind(object):
     union-find algorithm.  Only works if elements are immutable
     objects.
 
-    Worst case for union and find: :math:`(N + M \log^* N)`, with
-    :math:`N` elements and :math:`M` unions. The function
-    :math:`\log^*` is the number of times needed to take :math:`\log`
-    of a number until reaching 1. In practice, the amortized cost of
+    Worst case for union and find: `(N + M log* N)`, with
+    `N` elements and `M` unions. The function `log*` is the number of times needed to take `log` of a number until reaching 1. In practice, the amortized cost of
     each operation is nearly linear [1]_.
 
     Terms:

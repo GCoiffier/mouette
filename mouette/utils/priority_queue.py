@@ -53,6 +53,9 @@ class PriorityQueue:
 
         Returns:
             PriorityItem: The first element of the queue
+        
+        Raises:
+            IndexError: if the queue is empty
         """
         return hq.heappop(self.data)
 
@@ -62,6 +65,9 @@ class PriorityQueue:
 
         Returns:
             PriorityItem: The first element of the queue
+
+        Raises:
+            IndexError: if the queue is empty
         """
         return self.get()
     
