@@ -6,6 +6,22 @@ from ... import utils
 from ... import config
 
 class SurfaceMesh(Mesh):
+    """
+    A data structure for representing polygonal surfaces.
+
+    Attributes:
+        vertices (DataContainer): the container for all vertices
+        edges (DataContainer): the container for all edges
+        faces (DataContainer): the container for all faces
+        face_corners (DataContainer): the container for all corner of faces
+
+        boundary_edges (list): list of all edges on the boundary
+        interior_edges (list): list of all interior edges (all edges \ boundary_edges)
+        boundary_vertices (list): list of all vertices on the boundary
+        interior_vertices (list): list of all interior vertices (all vertices \ boundary_vertices)
+
+        __str__: Representation of the object and its elements as a string.
+    """
 
     def __init__(self, data : RawMeshData = None):
         Mesh.__init__(self, 2, data)
@@ -35,35 +51,54 @@ class SurfaceMesh(Mesh):
     @property
     def id_vertices(self):
         """
-        Shortcut for range(len(self.vertices))
+        Shortcut for `range(len(self.vertices))`
         """
         return range(len(self.vertices))
 
     @property
     def id_edges(self):
         """
-        Shortcut for range(len(self.edges))
+        Shortcut for `range(len(self.edges))`
         """
         return range(len(self.edges))
 
     @property
     def id_faces(self):
         """
-        Shortcut for range(len(self.faces))
+        Shortcut for `range(len(self.faces))`
         """
         return range(len(self.faces))
 
     @property
     def id_corners(self):
         """
-        Shortcut for range(len(self.face_corners))
+        Shortcut for `range(len(self.face_corners))`
         """
         return range(len(self.face_corners))
 
-    def ith_vertex_of_face(self, fid, vid):
-        return self.faces[fid][vid]
+    def ith_vertex_of_face(self, fid:int, i:int) -> int:
+        """
+        helper function to get the i-th vertex of a face, i.e. self.faces[fid][i]
 
-    def pt_of_face(self,fid):
+        Args:
+            fid (int): face id
+            vid (int): vertex id in face. Should be 0 <= vid < len(face)
+
+        Returns:
+            int: the id of the i-th vertex in face `fid` (`self.faces[fid][i]`)
+        """
+        return self.faces[fid][i]
+
+    def pt_of_face(self,fid:int):
+        """
+        point coordinates of vertices of face `fid`
+
+        Args:
+            fid (int): face id
+
+        Returns:
+            iterable: iterator of Vec objects representing point coordinates of vertices
+        """
         return (self.vertices[_v] for _v in self.faces[fid])
 
     def is_triangular(self) -> bool:
@@ -76,12 +111,16 @@ class SurfaceMesh(Mesh):
         return True
 
     def is_quad(self) -> bool:
+        """
+        Returns:
+            bool: True if the mesh is quadrangular (all faces are quad)
+        """
         for f in self.faces:
             if len(f) != 4: return False
         return True
 
     def recompute_edges(self):
-        """Recomputes the set of edges according to the set of faces """
+        """Recomputes the set of edges according to the set of faces"""
         self.edges.clear()
         edge_set = set()
         for f in self.faces:
@@ -93,6 +132,10 @@ class SurfaceMesh(Mesh):
                     self.edges.append(edge)
 
     def clear_boundary_data(self):
+        """
+        Clear all boundary data.
+        Next call to a boundary/interior container or method will recompute everything
+        """
         self._boundary_edges : list = None
         self._interior_edges : list = None
 
@@ -127,10 +170,29 @@ class SurfaceMesh(Mesh):
             if not self._is_vertex_on_border[x]:
                 self._interior_vertices.append(x)
 
-    def is_edge_on_border(self,u,v) -> bool:
+    def is_edge_on_border(self, u:int, v:int) -> bool:
+        """
+        whether edge (u,v) is a boundary edge or not
+
+        Args:
+            u (int): vertex id
+            v (int): vertex id
+
+        Returns:
+            bool: whether edge (u,v) is a boundary edge or not
+        """
         return self.half_edges.adj(u,v)[0] is None or self.half_edges.adj(v,u)[0] is None
 
-    def is_vertex_on_border(self,u) -> bool:
+    def is_vertex_on_border(self, u:int) -> bool:
+        """
+        whether vertex `u` is a boundary vertex or not.
+
+        Args:
+            u (int): vertex id
+
+        Returns:
+            bool: whether vertex `u` is a boundary vertex or not.
+        """
         if self._is_vertex_on_border is None:
             self._compute_interior_boundary_vertices()
         return self._is_vertex_on_border[u]
@@ -167,6 +229,10 @@ class SurfaceMesh(Mesh):
             self._half_edges : dict = None
 
         def clear(self):
+            """
+            Resets connectivity. 
+            The next query in the code will regenerate internal arrays.
+            """
             self._half_edges : dict = None
 
         def _compute_half_edges(self):
@@ -254,6 +320,10 @@ class SurfaceMesh(Mesh):
             self._face_id : dict = None
         
         def clear(self):
+            """
+            Resets connectivity. 
+            The next query in the code will regenerate internal arrays.
+            """
             super().clear()
             self._adjV2F : dict = dict() # vertex -> triangle            
             self._adjF2F : dict = None # triangle -> triangle
@@ -353,7 +423,31 @@ class SurfaceMesh(Mesh):
 
         ##### Vertex to Faces #####
 
-        def n_VtoF(self, V):
+        def vertex_to_face(self, V:int) -> list:
+            """
+            Neighborhood of vertex `V` in terms of faces.
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                list: list of faces `F` such that `V` is a vertex of `F`.
+            """
+            L = self._adjV2F.get(V, None)
+            if L is None :
+                self._compute_vertex_adj()
+            return self._adjV2F[V]
+        
+        def n_VtoF(self, V:int) -> int:
+            """
+            Size of the face neighborhood of vertex `V`
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                int: `len(vertex_to_face(V))`
+            """
             L = self._adjV2F.get(V, None)
             if L is None:
                 self._adjV2F[V] = []
@@ -362,40 +456,98 @@ class SurfaceMesh(Mesh):
                         self._adjV2F[V].append(iT)
             return len(self._adjV2F[V])
 
-        def vertex_to_face(self, V):
-            L = self._adjV2F.get(V, None)
-            if L is None :
-                self._compute_vertex_adj()
-            return self._adjV2F[V]
-        
         ##### Corners #####
 
-        def vertex_to_corner_in_face(self, V, F):
+        def vertex_to_corner(self, V:int) -> list:
+            """
+            List of face corners that correspond to vertex `V`
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                list: the list of corners `C` such that `mesh.corners[C]==V`
+            """
+            L = self._adjV2F.get(V, None)
+            if L is None:
+                self._adjV2F[V] = []
+                for iT,T in enumerate(self.mesh.faces):
+                    if V in T:
+                        self._adjV2F[V].append(iT)
+            return [self.vertex_to_corner_in_face(V,_f) for _f in self.vertex_to_face(V)]
+
+        def vertex_to_corner_in_face(self, V:int, F:int) -> int:
+            """
+            The corner `C` corresponding to vertex `V` in face `F`.
+
+            Args:
+                V (int): vertex id
+                F (int): face id
+
+            Returns:
+                int: corner id, or `None` if `V` is not a vertex of `F`.
+            """
             if self._adjVF2Cn is None:
                 self._compute_corner_adj()
             return self._adjVF2Cn.get((V,F), None)
 
-        def vertex_to_corner(self, V):
-            return [self.vertex_to_corner_in_face(V,_f) for _f in self.vertex_to_face(V)]
+        def corner_to_face(self,C:int)->int:
+            """
+            The face inside which corner `C` belongs.
 
-        def corner_to_face(self,C):
+            Args:
+                C (int): corner id
+
+            Returns:
+                int: face id or `None` if `C` is not a valid corner
+            """
             if self._adjCn2F is None:
                 self._compute_corner_adj()
             return self._adjCn2F.get(C,None)
         
-        def face_to_first_corner(self,F):
+        def face_to_first_corner(self,F:int)->int:
+            """
+            One corner `C` of the face `F` (the first in order of appearance in the `face_corners` container)
+
+            Args:
+                F (int): face id
+
+            Returns:
+                int: corner id
+            """
             if self._adjF2Cn is None:
                 self._compute_corner_adj()
             return self._adjF2Cn[F]
 
-        def face_to_corners(self,F):
+        def face_to_corners(self,F:int)->list:
+            """
+            list of corners of face `F`
+
+            Args:
+                F (int): face id
+
+            Returns:
+                list: list of corners of face `F`
+            """
             if self._adjF2Cn is None:
                 self._compute_corner_adj()
             return [self._adjF2Cn[F] + _i for _i in range(len(self.mesh.faces[F]))]
 
         ##### Faces to Vertex #####
 
-        def face_to_vertex(self, F):
+        def face_to_vertex(self, F:int) -> list:
+            """
+            Neighborhood of face `F` in terms of vertices.
+
+            Note:
+                Equivalent to `mesh.faces[F]`
+
+            Args:
+                F (int): face id
+
+            Returns:
+                list: list of vertices `V` such that `V` is a vertex of `F`.
+            """
             return list(self.mesh.faces[F])
 
         def in_face_index(self, F, V):
@@ -414,14 +566,32 @@ class SurfaceMesh(Mesh):
         
         ##### Face to Edge ######
 
-        def face_to_edge(self, F):
+        def face_to_edge(self, F:int) -> list:
+            """
+            List of edges that bound face `F`.
+
+            Args:
+                F (int): face id
+
+            Returns:
+                list: list of edges `E` such that `E` is a boundary edge of face `F`
+            """
             lF = self.mesh.faces[F]
             n = len(lF)
             return [self.edge_id(lF[i],lF[(i+1)%n]) for i in range(n)]
 
         ###### Face to face ######
 
-        def face_to_face(self, F):
+        def face_to_face(self, F:int) -> list:
+            """
+            Neighborhood of face `F` in terms of vertices.
+
+            Args:
+                F (int): face id
+
+            Returns:
+                list: list of faces `G` that are adjacent to `F`
+            """
             if self._adjF2F is None:
                 self._compute_face_adj()
             return self._adjF2F[F]

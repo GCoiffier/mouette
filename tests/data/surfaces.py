@@ -91,3 +91,7 @@ surfaces = [
     surf_two_pieces(),
     surf_pointy()
 ]
+
+def surf_uv_sphere_quads():
+    # example of a quad mesh
+    return M.mesh.load("tests/data/uv_sphere_nopoles_quad.obj")

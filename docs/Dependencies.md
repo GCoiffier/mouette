@@ -1,7 +1,7 @@
 
 ## Numpy and Scipy
 
-- arrays, sparse matrices and linear algebra
+Mouette makes use of numpy and scipy for the representation of dense and sparse matrices.
 
 ## OSQP
 

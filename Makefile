@@ -6,3 +6,6 @@ wheel:
 	
 test:
 	pytest --cov=mouette tests/
+
+servedoc:
+	mkdocs serve

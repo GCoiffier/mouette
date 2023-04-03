@@ -1,10 +1,17 @@
 from ..mesh_data import RawMeshData
 from .base import Mesh
-from .pointcloud import PointCloud
 from ... import utils
 
 class PolyLine(Mesh): 
-    
+    """
+    A data structure for representing polylines.
+
+    Attributes:
+        vertices (DataContainer): the container for all vertices
+        edges (DataContainer): the container for all edges
+        __str__: Representation of the object and its elements as a string.
+    """
+
     def __init__(self, data : RawMeshData = None):
         Mesh.__init__(self, 1, data)
         self.connectivity = PolyLine._Connectivity(self) 
@@ -18,18 +25,23 @@ class PolyLine(Mesh):
     @property
     def id_vertices(self):
         """
-        Shortcut for range(len(self.vertices))
+        Shortcut for `range(len(self.vertices))`
         """
         return range(len(self.vertices))
 
     @property
     def id_edges(self):
         """
-        Shortcut for range(len(self.edges))
+        Shortcut for `range(len(self.edges))`
         """
         return range(len(self.edges))
 
     class _Connectivity:
+        """
+        Connectivity handler class. Allows connectivity queries on the object, like neighbours of a vertex, etc.
+
+        Connectivity is computed lazily only when needed in the code. For instance, the first call to `mesh.connectivity.vertex_to_vertex` will generate the vertex_to_vertex array, so that the next call will not perform any computation but a lookup in the array.
+        """
         
         def __init__(self, master):
             self.mesh = master
@@ -38,6 +50,10 @@ class PolyLine(Mesh):
             self._adjV2V : dict = None # vertex -> vertex
 
         def clear(self):
+            """
+            Resets connectivity. 
+            The next query in the code will regenerate internal arrays.
+            """
             self._edge_id = None
             self._adjV2V = None
 
@@ -58,34 +74,93 @@ class PolyLine(Mesh):
                 key = utils.keyify(E)
                 self._edge_id[key] = iE
 
-        def edge_id(self, V1, V2):
+        def edge_id(self, V1:int, V2:int)->int:
+            """
+            id of an edge. If `self.edges[i]` contains edges `(A,B)`, then `edge_id(A,B)=edge_id(B,A)=i`
+            If (A,B) is not a valid edge of the mesh, returns `None`
+
+            Args:
+                V1 (int): first vertex of the edge
+                V2 (int): second vertex of the edge
+
+            Returns:
+                int: the id of edge (V1,V2), or `None` if the edge does not exist.
+            """
             if self._edge_id is None:
                 self._compute_edge_adj()
             key = utils.keyify(V1,V2)
             return self._edge_id.get(key, None)
 
-        def other_edge_end(self, e, v) -> int:
-            A,B = self.mesh.edges[e]
-            if v==A: return B
-            if v==B: return A
+        def other_edge_end(self, E:int, V:int) -> int:
+            """
+            Vertex at the opposite end of edge `E` from vertex `V`.
+            Returns `None` if `V` is not adjacent to edge `E`
+
+            Args:
+                E (int): edge id
+                V (int): vertex id
+
+            Returns:
+                int: the vertex `W` such that `E` is the edge `(V,W)`. Returns `None` if `V` is not adjacent to edge `E`
+            """
+            A,B = self.mesh.edges[E]
+            if V==A: return B
+            if V==B: return A
             return None
 
         ##### Vertex to Vertex #####
 
-        def vertex_to_vertex(self, V : int):
+        def vertex_to_vertex(self, V : int) -> list:
+            """
+            Neighborhood of vertex `V` in terms of vertices.
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                list: list of vertices `W` such that `(V,W)` is a valid edge in the polyline.
+            """
             if self._adjV2V is None : 
                 self._compute_vertex_adj()
             return self._adjV2V[V]
 
-        def n_VtoV(self, V : int):
+        def n_VtoV(self, V : int) -> int:
+            """
+            Size of the neighborhood of vertex `V`
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                int: `len(vertex_to_vertex(V))`
+            """
             if self._adjV2V is None:
                 self._compute_vertex_adj()
             return len(self._adjV2V[V])
 
         ##### Vertex to Edges #####
 
-        def n_VtoE(self, V : int):
+        def vertex_to_edge(self, V : int) -> list:
+            """
+            Neighborhood of vertex `V` in terms of edges.
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                list: list of edges E such that V belongs to E.
+            """
+            return [ self.edge_id(V, u) for u in self.vertex_to_vertex(V)]
+
+        def n_VtoE(self, V : int) -> int:
+            """
+            Size of the neighborhood of vertex `V`
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                int: `len(vertex_to_edge(V))`
+            """
             return self.n_VtoV(V)
 
-        def vertex_to_edge(self, V : int) :
-            return [ self.edge_id(V, u) for u in self.vertex_to_vertex(V)]

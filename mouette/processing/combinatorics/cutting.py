@@ -69,7 +69,7 @@ class SingularityCutter(Worker):
         return self._cut_graph
 
     def run(self):
-        self.log("Cutting along singularities")
+        self.log("Cutting to link singularities and retrieve disk topology")
         self.log("# Singularities :", len(self.singularities))
         if self.has_features:
             self.log(f"{len(self.feat_detector.feature_edges)} feature edges and {len(self.feat_detector.feature_vertices)} provided")

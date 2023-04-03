@@ -1,3 +1,22 @@
+"""
+Attributes:
+    EYE (L4_SH): Coefficient of the identity frame in L4_SH
+    LX (L4_Operator): Angular momentum operator for spherical harmonics representation, x-axis
+    LY (L4_Operator): Angular momentum operator for spherical harmonics representation, y-axis
+    LZ (L4_Operator): Angular momentum operator for spherical harmonics representation, z-axis
+
+    Rxpi4 (L4_Operator): rotation of angle pi/4 around axis x
+    Rypi4 (L4_Operator): rotation of angle pi/4 around axis y
+    Rzpi4 (L4_Operator): rotation of angle pi/4 around axis z
+    Rxzpi4 (L4_Operator): composition Rzpi4 * Rxpi4
+    Rxpi2 (L4_Operator): rotation of angle pi/2 around axis x
+    Rypi2 (L4_Operator): rotation of angle pi/2 around axis y
+    Rzpi2 (L4_Operator): rotation of angle pi/2 around axis z
+
+References:
+    Algebraic Representations for Volumetric Frame Fields, Palmer et al. (Supplementary materials)
+"""
+
 import numpy as np
 from scipy.linalg import expm
 from scipy.spatial.transform import Rotation
@@ -10,10 +29,14 @@ from typing import Annotated
 
 L4_SH = Annotated[np.ndarray, 9]
 """
-An orthogonal frame is represented by its 9 coefficients in the L4 band of the spherical harmonics basis. In practice, L4_SH is a size 9 numpy array.
+Type annotation for linear combinations of L4 Spherical Harmonics. 
+Orthogonal frames are represented by 9 coefficients in the L4 band of the spherical harmonics basis. 
+In practice, L4_SH is a size 9 numpy array.
+"""
 
-References:
-    Algebraic Representations for Volumetric Frame Fields, Palmer et al. (Supplementary materials)
+L4_Operator = Annotated[np.ndarray, (9,9)]
+"""
+Type annotation for linear operators acting on L4_SH (i.e. 9x9 matrices)
 """
 
 LX = np.array([
@@ -29,6 +52,7 @@ LX = np.array([
 ])
 # Angular momentum operator for spherical harmonics representation, x-axis
 
+
 LY = np.array([
     [0.,       sqrt(2),    0.,         0.,        0.,       0.,        0.,         0.,         0.      ],
     [-sqrt(2), 0.,         sqrt(7/2),  0.,        0.,       0.,        0.,         0.,         0.      ],
@@ -41,6 +65,7 @@ LY = np.array([
     [0.,       0.,         0.,         0.,        0.,       0.,        0.,         sqrt(2),    0.      ],
 ])
 # Angular momentum operators for spherical harmonics representation, y-axis
+
 
 LZ = np.array([
     [0.,  0.,  0.,  0., 0., 0., 0., 0., 4.],
@@ -55,24 +80,24 @@ LZ = np.array([
 ])
 # Angular momentum operators for spherical harmonics representation, z-axis
 
-Rxpi4 = expm(np.pi/4 * LX)
-Rypi4 = expm(np.pi/4 * LY)
-Rzpi4 = expm(np.pi/4 * LZ)
-Rxzpi4 = Rzpi4 @ Rxpi4
-Rxpi2 = expm(np.pi/2 * LX)
-Rypi2 = expm(np.pi/2 * LY)
+Rxpi4  : L4_Operator = expm(np.pi/4 * LX)
+Rypi4  : L4_Operator = expm(np.pi/4 * LY)
+Rzpi4  : L4_Operator = expm(np.pi/4 * LZ)
+Rxzpi4 : L4_Operator = Rzpi4 @ Rxpi4
+Rxpi2  : L4_Operator = expm(np.pi/2 * LX)
+Rypi2  : L4_Operator = expm(np.pi/2 * LY)
+Rzpi4  : L4_Operator = expm(np.pi/2 * LZ)
 # Hard-coded rotation matrices for common angles
 
-
-def RZ(a : float) -> L4_SH:
+def RZ(a : float) -> L4_Operator:
     """
-    The L4-SH representing a rotation around z-axis of angle a
+    The L4 operator representing a rotation around z-axis of angle a
 
     Args:
         a (float): angle
 
     Returns:
-        L4_SH : corresponding decomposition in L4 Spherical Harmonics
+        L4_Operator : 9x9 matrix
     """
     c = [cos(k*a) for k in range(5)]
     s = [sin(k*a) for k in range(5)]
@@ -88,36 +113,35 @@ def RZ(a : float) -> L4_SH:
         [-s[4], 0.,   0.,   0.,   0., 0.,   0.,   0.,   c[4]],
     ])
 
-def RY(a : float) -> L4_SH:
+def RY(a : float) -> L4_Operator:
     """
-    The L4-SH representing a rotation around y-axis of angle a
+    The L4 operator representing a rotation around y-axis of angle a
 
     Args:
         a (float): angle
 
     Returns:
-        L4_SH : corresponding decomposition in L4 Spherical Harmonics
+        L4_Operator : 9x9 matrix
     """
     return Rxpi2.T @ RZ(a) @ Rxpi2
 
-def RX(a : float) -> L4_SH:
+def RX(a : float) -> L4_Operator:
     """
-    The L4-SH representing a rotation around x-axis of angle a
+    The L4 operator representing a rotation around x-axis of angle a
 
     Args:
         a (float): angle
 
     Returns:
-        L4_SH : corresponding decomposition in L4 Spherical Harmonics
+        L4_Operator : 9x9 matrix
     """
     return Rypi2 @ RZ(a) @ Rypi2.T
 
-"""
-Coefficient of the identity frame in L4_SH
-"""
-EYE : L4_SH = np.array([0., 0., 0., 0., sqrt(7/12), 0., 0., 0., sqrt(5/12) ])
 
-def skew_matrix_from_rotvec(w : Vec) -> np.ndarray :
+EYE : L4_SH = np.array([0., 0., 0., 0., sqrt(7/12), 0., 0., 0., sqrt(5/12) ])
+# Coefficient of the identity frame in L4_SH
+
+def skew_matrix_from_rotvec(w : Vec) -> L4_Operator :
     """
     Given a rotation in angle-axis form, computes the 9x9 corresponding skew-symmetric matrix
     
@@ -125,11 +149,11 @@ def skew_matrix_from_rotvec(w : Vec) -> np.ndarray :
         v (Vec): a rotation axis vector where norm(v) represents the angle of rotation.
 
     Returns:
-        np.ndarray: a 9x9 matrix
+        L4_Operator: a 9x9 matrix
     """
     return w[0] * LX + w[1] * LY + w[2] * LZ
 
-def rot_matrix_from_euler(w : Vec) -> np.ndarray :
+def rot_matrix_from_euler(w : Vec) -> L4_Operator :
     """
     Given three euler angles (XYZ), computes the 9x9 corresponding rotation matrix that performs the same rotation onto L4_SH coefficients
 
@@ -137,11 +161,11 @@ def rot_matrix_from_euler(w : Vec) -> np.ndarray :
         w (Vec): vector of size 3 representing three euler angles in convention XYZ.
 
     Returns:
-        np.ndarray: a 9x9 matrix
+        L4_Operator: a 9x9 matrix
     """
     return RX(w[0]) @ RY(w[1]) @ RZ(w[2])
 
-def rot_matrix_from_rotvec(v : Vec) -> np.ndarray :
+def rot_matrix_from_rotvec(v : Vec) -> L4_Operator :
     """
     Given a rotation in angle-axis form, computes the 9x9 corresponding rotation matrix that performs the same rotation onto L4_SH coefficients,
     defined as the exponential of the corresponding skew-symmetric matrix.
@@ -150,7 +174,7 @@ def rot_matrix_from_rotvec(v : Vec) -> np.ndarray :
         v (Vec): a rotation axis vector where norm(v) represents the angle of rotation.
 
     Returns:
-        np.ndarray: a 9x9 matrix
+        L4_Operator: a 9x9 matrix
     """
     return expm(skew_matrix_from_rotvec(v))
 
@@ -213,7 +237,7 @@ def project_to_frame(sh : Vec, stop_threshold : float = 1e-8, max_iter=1000, nrm
     
     Returns:
         frame (scipy.spatial.transform.Rotation) : the obtained frame
-        a (Vec) : the projected and updated spherical harmonics coefficients
+        a (L4_SH) : the projected and updated spherical harmonics coefficients
     """
     if norm(sh)<1e-6: return Rotation.identity(), sh
     q = Vec.normalized(sh)
@@ -267,8 +291,9 @@ def project_to_frame_grad(sh : Vec, lr : float = 1e-1, grad_threshold : float = 
 
     Also recomputes spherical harmonics coefficients to a perfect match.
     Uses the linearization of the exponential to approximate 9D rotations.
-
-    /!\\ This algorithm is less precise and less efficient than project_to_frame. Use the latter instead.
+    
+    Warning:
+        This algorithm is less precise and less efficient than `project_to_frame`. Use the latter instead.
 
     Parameters:
         sh (Vec): the 9 coefficients representing the frame in spherical harmonics basis

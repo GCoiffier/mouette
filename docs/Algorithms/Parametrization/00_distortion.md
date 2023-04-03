@@ -2,4 +2,4 @@
 title: "Measuring Distortion"
 ---
 
-:::mouette.processing.parametrization.distortion.ParamDistortion
+:::mouette.processing.parametrization.distortion

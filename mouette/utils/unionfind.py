@@ -214,7 +214,7 @@ class UnionFind(object):
         roots = vfind(elts)
         return set(elts[roots == self.find(x)])
 
-    def roots(self):
+    def roots(self) -> set:
         """Return the set of roots of components
         
         Returns:
