@@ -2,10 +2,9 @@ from scipy.optimize import fmin_l_bfgs_b
 import scipy.sparse as sp
 import numpy as np
 
-from ..worker import Worker
+from .base import BaseParametrization
 from ...mesh.datatypes import *
-from ...mesh.mesh import copy
-from ...mesh.mesh_attributes import Attribute, ArrayAttribute
+from ...mesh.mesh_attributes import Attribute
 from ...geometry import Vec
 from ... import geometry as geom
 from ...utils.argument_check import check_argument
@@ -20,7 +19,7 @@ def regul_prime(x, eps=1e-18):
     y = x*x + eps
     return 0.5 * x/ (y**0.75)
 
-class CotanEmbedding(Worker):
+class CotanEmbedding(BaseParametrization):
     """
     Given a parametrization of a disk where boundary is fixed, we can optimize the difference between unsigned and signed areas of triangles to compute a parametrization that is foldover-free.
 
@@ -29,14 +28,14 @@ class CotanEmbedding(Worker):
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, uv_attr: Attribute, on_corner:bool, verbose:bool=True, **kwargs):
+    def __init__(self, mesh : SurfaceMesh, uv_attr: Attribute, verbose:bool=True, **kwargs):
         """
         Initializing the CotanEmbedding parametrization tool.
 
         Args:
             mesh (SurfaceMesh): the supporting mesh.
             uv_attr (Attribute): the attribute on vertices/corners that stores uv-coordinates to optimize.
-            on_corner (bool): specifies on which primitive the uv_attr is set (corners or vertices)
+            save_on_corners (bool): specifies on which primitive the uv_attr is set (corners or vertices)
             verbose (bool, optional): verbose mode. Defaults to True.
         
         Keyword Args:
@@ -44,11 +43,8 @@ class CotanEmbedding(Worker):
             tutte_if_convex (bool): if the boundary of the shape is convex and mode=="alternate", whether to simply run Tutte's embedding. Defaults to True
             solver_verbose (bool): solver verbose mode. Defaults to False.
         """
-        super().__init__("CotanEmbedding", verbose=verbose)
-        self.mesh : SurfaceMesh = mesh
-        self.flat_mesh : SurfaceMesh = None
-        self.uvs : ArrayAttribute = uv_attr
-        self.on_corners : bool = on_corner
+        kwargs["uv_attr"] = uv_attr
+        super().__init__("CotanEmbedding", mesh, verbose=verbose, **kwargs)
 
         self._mode = kwargs.get("mode", "bfgs")
         check_argument("mode", self._mode, str, ["bfgs", "alternate"])
@@ -114,7 +110,7 @@ class CotanEmbedding(Worker):
         # Initialize variable vector from uvs
         nv = len(self.mesh.vertices)
         var = np.zeros(2*nv)
-        if self.on_corners:
+        if self.save_on_corners:
             for c,v in enumerate(self.mesh.face_corners):
                 var[v] = self.uvs[c][0]
                 var[nv+v] = self.uvs[c][1]
@@ -130,14 +126,13 @@ class CotanEmbedding(Worker):
             var = self._optimize_alternate(var, self._tutte_if_convex, self._solver_verbose)
 
         # Write uvs in attribute
-        if self.on_corners:
+        if self.save_on_corners:
             # self.mesh.vertices.delete_attribute("uv_coords")
             for c,v in enumerate(self.mesh.face_corners):
                 self.uvs[c] = Vec(var[v], var[nv+v])
         else:
             for v in self.mesh.id_vertices:
                 self.uvs[v] = Vec(var[v], var[nv+v])
-        self._build_flat_mesh(var)
 
     def _optimize_bfgs(self, var, solver_verbose:bool):
         # det_init = self.mesh.faces.create_attribute("det_init", float, dense=True)
@@ -224,10 +219,3 @@ class CotanEmbedding(Worker):
             var[Iinds] = sp.linalg.spsolve(LI, -LB.dot(var[Binds])) # first system for u
             var[Iinds+nv] = sp.linalg.spsolve(LI, -LB.dot(var[Binds+nv])) # second system for v
         return var
-        
-    def _build_flat_mesh(self, var):
-        # build the flat mesh : vertex coordinates are uv of original mesh
-        self.flat_mesh = copy(self.mesh)
-        nv = len(self.mesh.vertices)
-        for v in self.mesh.id_vertices:
-            self.flat_mesh.vertices[v] = Vec(var[v], var[nv+v], 0.)

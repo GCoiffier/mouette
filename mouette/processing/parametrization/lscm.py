@@ -1,19 +1,16 @@
 from ...mesh.datatypes import *
-from ...mesh.mesh import copy
-from ...mesh.mesh_attributes import Attribute, ArrayAttribute
+from .base import BaseParametrization
 from ...geometry import Vec
-from ..worker import Worker
 from ... import geometry as geom
 from ...attributes.glob import euler_characteristic
 
 import numpy as np
-from math import atan2
 
 from osqp import OSQP
 import scipy.sparse as sp
 from scipy.sparse import linalg
 
-class LSCM(Worker):
+class LSCM(BaseParametrization):
     """
     Least-Square Conformal Map algorithm for computing a parametrization of a mesh.
     /!\\ The mesh should have the topology of a disk.
@@ -26,7 +23,7 @@ class LSCM(Worker):
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, verbose:bool=True, **kwargs):
+    def __init__(self, mesh : SurfaceMesh, verbose : bool=True, **kwargs):
         """
         Initializes the LSCM parametrization tool.
 
@@ -35,17 +32,12 @@ class LSCM(Worker):
             verbose (bool, optional): verbose mode. Defaults to True.
         Keyword Args:
             eigen (bool, optional): whether to solve a linear system with two fixed points or use an eigen solver. Defaults to True
-            save_on_corner (bool, optional): whether to store the results on face corners or vertices. Defaults to True
+            save_on_corners (bool, optional): whether to store the results on face corners or vertices. Defaults to True
             solver_verbose (bool, optional): verbose level. Defaults to False.
         """
-        super().__init__("LSCM", verbose=verbose)
-        self.mesh : SurfaceMesh = mesh
-        self._flat_mesh : SurfaceMesh = None
-        self.uvs : ArrayAttribute = None # attribute on corners
+        super().__init__("LSCM", mesh, verbose=verbose, **kwargs)
         self.residual : float = None # Final value of LSCM energy (residual of least square)
-
         self._eigen = kwargs.get("eigen", True)
-        self._save_on_corners = kwargs.get("save_on_corners", True)
         self._solver_verbose = kwargs.get("solver_verbose", False)
 
     def run(self):
@@ -64,7 +56,7 @@ class LSCM(Worker):
         U = U.reshape((U.size//2, 2))
         U = self._scale(U)        
         # Retrieve uvs and write them in attribute
-        if self._save_on_corners:
+        if self.save_on_corners:
             self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
             for c,v in enumerate(self.mesh.face_corners):
                 self.uvs[c] = Vec(U[v])
@@ -157,21 +149,3 @@ class LSCM(Worker):
         scale = min(scale_x, scale_y)
         # apply scale
         return U/scale
-
-    @property
-    def flat_mesh(self) -> SurfaceMesh:
-        """
-        A flat representation of the mesh where uv-coordinates are copied to xy.
-
-        Returns:
-            SurfaceMesh: the flat mesh
-        """
-        if self.uvs is None:
-            return None
-        if self._flat_mesh is None:
-            # build the flat mesh : vertex coordinates are uv of original mesh
-            self._flat_mesh = copy(self.mesh)
-            for T in self.mesh.id_faces:
-                for i,v in enumerate(self.mesh.faces[T]):
-                    self._flat_mesh.vertices[v] = Vec(self.uvs[3*T+i][0], self.uvs[3*T+i][1], 0.)
-        return self._flat_mesh

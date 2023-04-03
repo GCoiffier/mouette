@@ -40,15 +40,16 @@ class ParamDistortion(Worker):
             self.log(f"Mesh has no attribute '{uv_attr}'. Cannot compute distortion.")
             raise Exception("Initialization failed")
 
-        self.save_on_mesh = save_on_mesh
+        self.save_on_mesh : bool = save_on_mesh
 
         self._summary : dict = None
-        self._conformal : ArrayAttribute = None
-        self._area : ArrayAttribute = None
-        self._iso : ArrayAttribute = None
-        self._shear : ArrayAttribute = None
-        self._stretch : ArrayAttribute = None
-        self._det : ArrayAttribute = None
+
+        self._conformal : ArrayAttribute = None # ||J||² / det J
+        self._scale     : ArrayAttribute = None # 0.5*(det J + 1 / det J)
+        self._iso       : ArrayAttribute = None # distance( (sigma_1, sigma_2), (1,1))
+        self._shear     : ArrayAttribute = None # dot(c_1, c_2) of columns of jacobian 
+        self._stretch   : ArrayAttribute = None # sigma_1 / sigma_2
+        self._det       : ArrayAttribute = None # determinant of faces
 
     def run(self):
         """
@@ -66,7 +67,7 @@ class ParamDistortion(Worker):
         uv_area = 0.
         area = face_area(self.mesh, persistent=False)
         for T in self.mesh.id_faces:
-            cnr = 3*T #self.mesh.connectivity.face_to_first_corner(T)
+            cnr = 3*T # self.mesh.connectivity.face_to_first_corner(T)
             xy_area += area[T]
             uvA,uvB,uvC = ( Vec( self.UV[cnr + i][0], self.UV[cnr + i][1], 0.) for i in range(3))
             uv_area += geom.triangle_area(uvA,uvB,uvC)
@@ -75,12 +76,10 @@ class ParamDistortion(Worker):
 
         conformalDist = 0. # ||J||² / det J
         authalicDist = 0. # det J + 1 / det J
-        detDist = 0. # det J
-        logDetDist = 0. # log(| det J |)
         isoDist = 0. # distance( (sigma_1, sigma_2), (1,1))
         shearDist = 0. # dot(c_1, c_2) of columns of jacobian 
+        stretchDistMean = 0 # sigma_1 / sigma_2 
         stretchDistMax = -float("inf") # sigma_1 / sigma_2
-        stretchDistMean = 0
 
         for T in self.mesh.id_faces:
             try:
@@ -94,18 +93,18 @@ class ParamDistortion(Worker):
                 v0 = pC-pA
                 u0 = complex(X.dot(u0), Y.dot(u0))
                 v0 = complex(X.dot(v0), Y.dot(v0))
+
                 # new coordinates of the triangle
                 qA,qB,qC = (self.UV[cnr + i] for i in range(3))
                 u = qB - qA
                 v = qC - qA
+                
                 # jacobian
                 J0 = np.array([[u0.real, v0.real], 
                             [u0.imag, v0.imag]])
                 J0 = np.linalg.inv(J0)
-
                 J1 = np.array([[u[0], v[0]], 
                                [u[1], v[1]]])
-                
                 J = J1 @ J0
 
                 try:
@@ -116,7 +115,7 @@ class ParamDistortion(Worker):
                 self._shear[T] = shearDistT
                 shearDist += shearDistT * area[T] / xy_area
 
-                sig = np.linalg.svd(J, compute_uv=False)
+                sig = np.linalg.svd(J, compute_uv=False) # eigenvalues
                 detJ = np.linalg.det(J)
                 
                 if abs(detJ)<1e-8:
@@ -130,16 +129,10 @@ class ParamDistortion(Worker):
 
                 detJ *= scale_ratio
                 self._det[T] = detJ
-                # detDist += detJ / len(self.mesh.faces)
-                detDist += detJ * area[T] / xy_area
-                logDetDist += np.log(abs(detJ)) * area[T] / xy_area
                 
                 authDistT = ( detJ + 1 / detJ)/2
-                self._area[T] = authDistT
+                self._scale[T] = authDistT
                 authalicDist += authDistT * area[T]/xy_area
-
-                #sigma1Attr[T] = sig[0] * np.sqrt(scale_ratio)
-                #sigma2Attr[T] = sig[1] * np.sqrt(scale_ratio)
 
                 stretchDistT = sig[0]/sig[1]
                 self._stretch[T] = stretchDistT
@@ -155,19 +148,17 @@ class ParamDistortion(Worker):
 
         self._summary = {
             "conformal" : conformalDist,
-            "authalic" : authalicDist,
-            "det" : detDist,
-            "log_det" : logDetDist,
             "iso" : isoDist,
             "shear" : shearDist,
+            "scale" : authalicDist,
+            "stretch_mean" : stretchDistMean,
             "stretch_max" : stretchDistMax,
-            "stretch_mean" : stretchDistMean
         }
 
     def _init_containers(self):
         if self.save_on_mesh:
             self._conformal = self.mesh.faces.create_attribute("conformal_dist", float, dense=True)
-            self._area = self.mesh.faces.create_attribute("authalic_dist", float, dense=True)
+            self._scale = self.mesh.faces.create_attribute("scale_dist", float, dense=True)
             self._stretch = self.mesh.faces.create_attribute("stretch_dist", float, dense=True)
             self._shear = self.mesh.faces.create_attribute("shear_dist", float, dense=True)
             self._iso = self.mesh.faces.create_attribute("iso_dist", float, dense=True)
@@ -175,7 +166,7 @@ class ParamDistortion(Worker):
         else:
             N = len(self.mesh.faces)
             self._conformal = ArrayAttribute(float, N)
-            self._area = ArrayAttribute(float, N)
+            self._scale = ArrayAttribute(float, N)
             self._stretch = ArrayAttribute(float, N)
             self._shear = ArrayAttribute(float, N)
             self._iso = ArrayAttribute(float, N)
@@ -203,17 +194,22 @@ class ParamDistortion(Worker):
         return self._conformal
     
     @property
-    def area(self) -> ArrayAttribute:
+    def scale(self) -> ArrayAttribute:
         """
-        Area distortion
+        Scale distortion
 
         Defined as 0.5*(det J + 1/ det J)
         """
-        if self._area is None: self.run()
-        return self._area
+        if self._scale is None: self.run()
+        return self._scale
     
     @property
     def stretch(self) -> ArrayAttribute:
+        """
+        Stretch distortion
+
+        Defined as the ratio sigma_1 / sigma_2 of the two eigenvalues of J
+        """
         if self._stretch is None: self.run()
         return self._stretch
 
@@ -237,16 +233,6 @@ class ParamDistortion(Worker):
         if self._shear is None: self.run()
         return self._shear
 
-    @property
-    def stretch(self) -> ArrayAttribute:
-        """
-        Stretch distortion
-
-        Defined as s2/s1 where s1,s2 are the eigenvalues of J 
-        """
-        if self._stretch is None: self.run()
-        return self._stretch
-
 
 class QuadQuality(Worker):
     """
@@ -264,9 +250,7 @@ class QuadQuality(Worker):
 
         self._summary : dict = None
         self._conformal : ArrayAttribute = None
-        self._area : ArrayAttribute = None
-        self._iso : ArrayAttribute = None
-        self._shear : ArrayAttribute = None
+        self._scale : ArrayAttribute = None
         self._stretch : ArrayAttribute = None
         self._det : ArrayAttribute = None
 
@@ -284,7 +268,7 @@ class QuadQuality(Worker):
         scale_ratio = (ref_area / real_area)
 
         conformalDist = 0. # ||J||² / det J
-        authalicDist = 0. # det J + 1 / det J
+        scaleDist = 0. # 0.5*(det J + 1 / det J)
         detDist = 0. # det J
         stretchDistMean = 0
 
@@ -315,10 +299,10 @@ class QuadQuality(Worker):
                     detJ *= scale_ratio
                     detDist += detJ / (4*len(self.mesh.faces))
                     self._det[iT] += detJ/4
-                    authDistT = ( detJ + 1 / detJ)/8
+                    scaleDistT = ( detJ + 1 / detJ)/8
 
-                    self._area[iT] += authDistT
-                    authalicDist += authDistT * area[iT] / real_area
+                    self._scale[iT] += scaleDistT
+                    scaleDist += scaleDistT * area[iT] / real_area
 
                     stretchDistT = (sig[0]/sig[1])/4
                     self._stretch[iT] += stretchDistT
@@ -330,26 +314,23 @@ class QuadQuality(Worker):
 
         self._summary = {
             "conformal" : conformalDist,
-            "authalic" : authalicDist,
+            "scale" : scaleDist,
             "det" : detDist,
-            "stretch_mean" : stretchDistMean
+            "stretch" : stretchDistMean
         }
         
 
     def _init_containers(self):
         if self.save_on_mesh:
             self._conformal = self.mesh.faces.create_attribute("conformal_dist", float, dense=True)
-            self._area = self.mesh.faces.create_attribute("authalic_dist", float, dense=True)
+            self._scale = self.mesh.faces.create_attribute("scale_dist", float, dense=True)
             self._stretch = self.mesh.faces.create_attribute("stretch_dist", float, dense=True)
-            self._shear = self.mesh.faces.create_attribute("shear_dist", float, dense=True)
-            self._iso = self.mesh.faces.create_attribute("iso_dist", float, dense=True)
             self._det = self.mesh.faces.create_attribute("det", float, dense=True)
         else:
             N = len(self.mesh.faces)
             self._conformal = ArrayAttribute(float, N)
-            self._area = ArrayAttribute(float, N)
+            self._scale = ArrayAttribute(float, N)
             self._stretch = ArrayAttribute(float, N)
-            self._shear = ArrayAttribute(float, N)
             self._det = ArrayAttribute(float, N)
 
     @property
@@ -364,8 +345,8 @@ class QuadQuality(Worker):
     
     @property
     def area(self):
-        if self._area is None: self.run()
-        return self._area
+        if self._scale is None: self.run()
+        return self._scale
     
     @property
     def stretch(self):
