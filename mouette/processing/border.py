@@ -4,7 +4,7 @@ from ..mesh.datatypes import *
 from ..mesh.mesh_attributes import Attribute
 
 @allowed_mesh_types(SurfaceMesh)
-def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None) -> PolyLine:
+def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
     """
     Extracts a list of vertices that are on the border of the mesh.
 

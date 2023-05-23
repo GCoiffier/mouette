@@ -238,7 +238,7 @@ def export_attribute(f, size, container, attr, attr_name):
                     f.write(f"{attr[i][j]}\n")
 
 def export_geogram_ascii(mesh : RawMeshData, path):
-    with open(path, "w") as f:
+    with open(path, "w", newline="\n") as f:
         f.write("[HEAD]\n\"GEOGRAM\"\n\"1.0\"\n")
         
         # Vertices

@@ -19,7 +19,8 @@ class TutteEmbedding(BaseParametrization):
     The parametrization is locally injective (Floater, 1997) provided the boundary is convex.
 
     References:
-        How to draw a graph, Tutte, 1963.
+        [1] How to draw a graph, Tutte, 1963.
+        [2] Parametrization and smooth approximation of surface triangulations, Floater, 1996.
     """
 
     class BoundaryMode(Enum):
@@ -28,6 +29,7 @@ class TutteEmbedding(BaseParametrization):
         """
         CIRCLE = 0
         SQUARE = 1
+        CUSTOM = 2
 
         @staticmethod
         def from_string(s :str):
@@ -35,25 +37,33 @@ class TutteEmbedding(BaseParametrization):
                 return TutteEmbedding.BoundaryMode.CIRCLE
             if "square" in s.lower():
                 return TutteEmbedding.BoundaryMode.SQUARE
-            raise Exception(f"'{s}' does correspond to any boundary mode. Choices are : 'circle', 'square'")
+            if "custom" in s.lower():
+                return TutteEmbedding.BoundaryMode.CUSTOM
+            raise Exception(f"'{s}' does correspond to any boundary mode. Choices are : 'circle', 'square', 'custom'")
 
-    def __init__(self, mesh:SurfaceMesh, boundary_mode:str = "circle", verbose:bool=True, **kwargs):
+    def __init__(self, mesh:SurfaceMesh, boundary_mode:str = "circle", use_cotan:bool=False, verbose:bool=True, **kwargs):
         """
         Initializer of the Tutte's embedding tool.
 
         Args:
             mesh (SurfaceMesh): the mesh to embed. Should be a surface with disk topology.
             boundary_mode (str, optional): Shape of the boundary. Possible choices are ["square", "circle"]. Defaults to "circle".
+            use_cotan (bool, optional): whether to use Tutte's original barycentric embedding [1], or use cotangents as weights in the laplacian matrix ([2]). Defaults to False.
             verbose (bool, optional): verbose mode. Defaults to True.
             save_on_corners (bool, optional): whether to store the results on face corners or vertices. Defaults to True
+            custom_boundary (np.ndarray, optionnal): a Nx2 array containing custom coordinates for the boundary vertices. If provided, the boundary_mode argument is ignored. Defaults to None.
         
-
         Raises:
             InvalidArgumentValueError : if 'boundary_mode' is not "square" or "circle".
         """
         check_argument("boundary_mode", boundary_mode, str, ["square", "circle"])
         super().__init__("Tutte", mesh, verbose, **kwargs)
-        self._bnd_mode : TutteEmbedding.BoundaryMode = TutteEmbedding.BoundaryMode.from_string(boundary_mode)
+        self._custom_bnd : np.ndarray = kwargs.get("custom_boundary", None)
+        self._use_cotan : bool = use_cotan
+        if self._custom_bnd is None:
+            self._bnd_mode = TutteEmbedding.BoundaryMode.from_string(boundary_mode)
+        else:
+            self._bnd_mode = TutteEmbedding.BoundaryMode.CUSTOM
 
     def run(self) :
         if euler_characteristic(self.mesh)!=1:
@@ -61,7 +71,7 @@ class TutteEmbedding(BaseParametrization):
 
         Ubnd,Vbnd = self._initialize_boundary(self._bnd_mode)
 
-        lap = operators.laplacian(self.mesh, cotan=False)
+        lap = operators.laplacian(self.mesh, cotan=self._use_cotan)
         freeInds = self.mesh.interior_vertices
         bndInds, _ = extract_border_cycle(self.mesh)
 
@@ -89,7 +99,9 @@ class TutteEmbedding(BaseParametrization):
     def _initialize_boundary(self, boundary_mode):
         n = len(self.mesh.boundary_vertices)
         U, V = np.zeros(n), np.zeros(n)
-        if boundary_mode == TutteEmbedding.BoundaryMode.CIRCLE:
+        if boundary_mode == TutteEmbedding.BoundaryMode.CUSTOM:
+            U,V = self._custom_bnd[:,0], self._custom_bnd[:,1]
+        elif boundary_mode == TutteEmbedding.BoundaryMode.CIRCLE:
             for i in range(n):
                 rt = cmath.rect(1., 2*pi*i/n)
                 U[i] = rt.real
