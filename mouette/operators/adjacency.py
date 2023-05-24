@@ -4,10 +4,12 @@ import scipy.sparse as sp
 import numpy as np
 
 @forbidden_mesh_types(PointCloud)
-def adjacency_matrix(mesh : Mesh, weights="one"):
+def adjacency_matrix(mesh : Mesh, weights="one") -> sp.coo_matrix:
     """
     Computes and returns the adjacency matrix of a mesh, that is a (sparse) matrix M such that
+        
         M[i,j] = M[j,i] = weights[i,j] if (i,j) is an edge of the mesh
+        
         M[i,j] = 0 otherwise
 
 
@@ -54,8 +56,9 @@ def adjacency_matrix(mesh : Mesh, weights="one"):
     return sp.coo_matrix( (vals, (rows,cols)), shape=(n,n))
 
 @forbidden_mesh_types(PointCloud)
-def vertex_to_edge_operator(mesh : Mesh):
+def vertex_to_edge_operator(mesh : Mesh) -> sp.lil_matrix:
     """Vertices to edges operator. Matrix M of size |V|x|E| where:
+        
         M[v,e] = 1 if and only if v is one extremity of edge e.
 
     Parameters:

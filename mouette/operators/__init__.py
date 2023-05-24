@@ -1,2 +1,2 @@
 from .adjacency import *
-from .laplacian import *
+from .laplacian_op import *

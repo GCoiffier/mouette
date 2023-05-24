@@ -19,7 +19,7 @@ from ...geometry import Vec, SphericalHarmonics
 from ...geometry.rotations import match_rotation
 from ...geometry import transform
 
-from ...operators.laplacian import *
+from ...operators.laplacian_op import *
 from ...procedural import axis_aligned_cube
 
 

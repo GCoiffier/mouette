@@ -44,7 +44,7 @@ def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
 def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False) -> sp.csc_matrix:
     """
     Returns the diagonal matrix A of area weights on vertices
-    Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix/
+    Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix
 
     Args:
         mesh (SurfaceMesh): input mesh
@@ -66,7 +66,7 @@ def laplacian(
     cotan : bool=True, 
     connection : "SurfaceConnectionVertices" = None, 
     order : int=4) -> sp.lil_matrix:
-    """Cotan laplacian 
+    """Cotan laplacian on vertices.
 
     Parameters:
         mesh (SurfaceMesh): input mesh
@@ -77,7 +77,6 @@ def laplacian(
     Returns:
         scipy.sparse.lil_matrix : the Laplacian operator as a sparse matrix
     """
-    n = len(mesh.vertices)
     n_coeffs = 12*len(mesh.faces)
     if cotan:
         if mesh.face_corners.has_attribute("cotan"):
@@ -115,6 +114,19 @@ def laplacian(
 
 @allowed_mesh_types(SurfaceMesh)
 def cotan_edge_diagonal(mesh : SurfaceMesh) -> sp.csc_matrix:
+    """
+    Builds a diagonal matrix of size |E|x|E| where the coefficients are the cotan weights, i.e.
+
+        M[e,e] = 1/abs( cot(a_e) + cot(b_e))
+
+    where a_e and b_e are the opposite angles in adjacent triangles of edge e.
+
+    Args:
+        mesh (SurfaceMesh): input mesh
+
+    Returns:
+        sp.csc_matrix
+    """
     m = len(mesh.edges)
     cotan = cotangent(mesh, persistent=False)
     coeffs = np.zeros(m)
@@ -137,10 +149,16 @@ def cotan_edge_diagonal(mesh : SurfaceMesh) -> sp.csc_matrix:
     return sp.diags(coeffs, format="csc")
 
 @allowed_mesh_types(SurfaceMesh)
-def area_weight_matrix_faces(mesh : SurfaceMesh):
+def area_weight_matrix_faces(mesh : SurfaceMesh) -> sp.csc_matrix:
     """
     Returns the diagonal matrix A of area weights on faces
     Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix
+
+    Args:
+        mesh (SurfaceMesh): the input mesh
+
+    Returns:
+        sp.csc_matrix
     """
     area = face_area(mesh, persistent=False).as_array()
     return sp.diags(area, format="csc")
@@ -152,7 +170,7 @@ def laplacian_triangles(
     connection : "SurfaceConnectionFaces" = None, 
     order : int=4) -> sp.lil_matrix:
     """
-    Laplacian defined on face connectivity (ie on the dual mesh)
+    Cotan laplacian defined on face connectivity (ie on the dual mesh)
 
     Args:
         mesh (SurfaceMesh): the supporting mesh
@@ -161,7 +179,7 @@ def laplacian_triangles(
         order (int, optional): _description_. Defaults to 4.
 
     Returns:
-        sp.lil_matrix: _description_
+        scipy.sparse.lil_matrix : the Laplacian operator as a sparse matrix
     """
 
     n = len(mesh.faces)

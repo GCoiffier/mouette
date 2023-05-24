@@ -1,6 +1,6 @@
 from ..mesh.datatypes import *
 from ..attributes.misc_vertices import degree
-from ..operators.laplacian import laplacian
+from ..operators.laplacian_op import laplacian
 from ..geometry import distance
 from .combinatorics import SurfaceSubdivision
 
