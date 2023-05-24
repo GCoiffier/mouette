@@ -44,6 +44,7 @@ def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
 def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False) -> sp.csc_matrix:
     """
     Returns the diagonal matrix A of area weights on vertices
+    
     Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix
 
     Args:
@@ -209,29 +210,38 @@ def laplacian_triangles(
 ##### For Volumes #####
 
 @allowed_mesh_types(VolumeMesh)
-def volume_weight_matrix(mesh : VolumeMesh):
+def volume_weight_matrix(mesh : VolumeMesh, inverse:bool = False) -> sp.csc_matrix:
     """
-    Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix
+    Mass diagonal matrix for volume Laplacian.
+    Args:
+        mesh (VolumeMesh): input mesh
+        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
+
+    Returns:
+        sp.csc_matrix: diagonal matrix of vertices area
     """
     A = np.zeros(len(mesh.vertices))
     volume = cell_volume(mesh, persistent=False)
     for iC,C in enumerate(mesh.cells):
         for u in C:
-            A[u] += volume[iC]
-    return sp.diags(A, format="coo")
+            A[u] += volume[iC] if not inverse else 1/volume[iC]
+    return sp.diags(A, format="csc")
 
 @allowed_mesh_types(VolumeMesh)
-def volume_laplacian(mesh : VolumeMesh):
-    """ Volume laplacian, the 3D extension of the cotan laplacian, ie the discretization of the Laplace-Beltrami operator on 3D manifolds.
+def volume_laplacian(mesh : VolumeMesh) -> sp.lil_matrix:
+    """Volume laplacian on vertices
+    
+    This is the 3D extension of the cotan laplacian, ie the discretization of the Laplace-Beltrami operator on 3D manifolds.
 
     Parameters:
-        mesh (VolumeMesh) : the input mesh
+        mesh (VolumeMesh): the input mesh
 
     Returns:
-        scipy.sparse.lil_matrix : the Laplacian operator as a sparse matrix
+        scipy.sparse.lil_matrix: the Laplacian operator as a sparse matrix
 
     References:
        [1] https://cseweb.ucsd.edu/~alchern/projects/ConformalVolume/
+
        [2] https://www.cs.cmu.edu/~kmcrane/Projects/Other/nDCotanFormula.pdf
     """
     if not mesh.is_tetrahedral(): 
@@ -255,11 +265,11 @@ def volume_laplacian(mesh : VolumeMesh):
     return mat
 
 @allowed_mesh_types(VolumeMesh)
-def laplacian_tetrahedra(mesh : VolumeMesh):
+def laplacian_tetrahedra(mesh : VolumeMesh) -> sp.csc_matrix:
     """Laplacian defined on cell connectivity (ie on the dual volume mesh)
 
     Parameters:
-        mesh (SurfaceMesh)
+        mesh (SurfaceMesh): input mesh
 
     Returns:
         scipy.sparse.csc_matrix
