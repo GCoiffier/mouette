@@ -36,7 +36,7 @@ class _BaseFrameField2DVertices(FrameField):
             feature_edges (bool, optional): _description_. Defaults to False.
             verbose (bool, optional): _description_. Defaults to True.
         """
-        super().__init__(verbose=verbose)
+        super().__init__("vertices", verbose=verbose)
         self.mesh : SurfaceMesh = supporting_mesh
         self.order : int = order
         
@@ -338,6 +338,7 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
                     valI2 = alpha * A.dot(self.var)
                     self.var = linalg.spsolve(mat, - valI2)
             self.normalize()
+        self.smoothed = True
 
 class TrivialConnectionVertices(_BaseFrameField2DVertices):
     """
@@ -392,3 +393,4 @@ class TrivialConnectionVertices(_BaseFrameField2DVertices):
             w = self.rotations[e] if vertex<parent else -self.rotations[e]
             zv = zf * cmath.rect(1, 4*(w + pt))
             self.var[vertex] = zv
+        self.smoothed = True

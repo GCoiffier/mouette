@@ -60,6 +60,7 @@ class FaceSpanningTree(SpanningTree):
             if p is not None:
                 self.children[p].append(f)
                 self.edges.append( keyify(p,f))
+        super().compute() # sets the 'computed' flag
 
     def build_tree_as_polyline(self):
         output = PolyLine()
@@ -91,3 +92,4 @@ class FaceSpanningForest(SpanningForest):
                 self.trees.append(tree_v)
                 for (node, _) in tree_v.traverse():
                     visited[node] = True
+        super().compute() # sets the 'computed' flag

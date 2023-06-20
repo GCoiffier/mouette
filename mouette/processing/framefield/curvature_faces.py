@@ -47,13 +47,6 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
             for T in adj_e[e]:
                 self.curv_mat_faces[T] += curv_mat_edges[e]
 
-    def run(self):
-        self.initialize()
-        self.log("Optimize")
-        self.optimize()
-        self.log("Done.")
-        return self
-
     def initialize(self):
         self.log("Initialize attributes")
         self._initialize_attributes() # /!\ may change mesh combinatorics near boundary
@@ -94,3 +87,4 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
                         valI2 = alpha * A.dot(self.var)
                         self.var = linalg.spsolve(mat, - valI2)
                         self.normalize()
+        self.smoothed = True

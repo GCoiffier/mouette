@@ -30,8 +30,12 @@ class SurfaceConnection(ABC):
     def transport(self, iA : int, iB : int) -> float:
         return self._transport[(iA,iB)]
 
-    def base(self, i):
+    def base(self, i:int):
         return self._baseX[i], self._baseY[i]
+
+    def project(self, V:Vec, i:int):
+        return Vec(self._baseX[i].dot(V), self._baseY[i].dot(V))
+
 
 class SurfaceConnectionVertices(SurfaceConnection):
     """

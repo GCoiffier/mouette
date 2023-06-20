@@ -56,7 +56,7 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
         raise Exception("Tried to compute angle defects on a non-triangulated mesh")
 
     if persistent:
-        defects = mesh.vertices.create_attribute(name, float, dense=dense)
+        defects = mesh.vertices.create_attribute(name, float, dense=dense, default_value=2*pi)
     else:
         defects = ArrayAttribute(float, len(mesh.vertices), default_value=2*pi) if dense else Attribute(float, default_value=2*pi)
     

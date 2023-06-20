@@ -20,6 +20,7 @@ class TutteEmbedding(BaseParametrization):
 
     References:
         [1] How to draw a graph, Tutte, 1963.
+        
         [2] Parametrization and smooth approximation of surface triangulations, Floater, 1996.
     """
 

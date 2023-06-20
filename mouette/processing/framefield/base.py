@@ -7,10 +7,17 @@ class FrameField(Worker):
     A frame field is a set of vector fields defined on a surface or volume mesh.
     """
 
-    def __init__(self, name="FrameField", verbose=True):
+    def __init__(self, element:str, name:str="FrameField", verbose=True):
         super().__init__(name, verbose)
-        self.initialized = False
+        self.initialized : bool = False
+        self.smoothed : bool = False
+        self._element : str = element
         self.var = None
+
+    @property
+    def element(self) -> str:
+        """The element of a mesh on which the frame field is defined. Either vertices, edges, faces or cells"""
+        return self._element
 
     def _check_init(self):
         if not self.initialized:
@@ -30,10 +37,14 @@ class FrameField(Worker):
         pass
 
     def run(self):
-        self.log("Initialize")
-        self.initialize()
-        self.log("Optimize")
-        self.optimize()
+        if not self.initialized:
+            self.log("Initialize")
+            self.initialize()
+            self.initialized = True
+        if not self.smoothed:
+            self.log("Optimize")
+            self.optimize()
+            self.smoothed = True
         self.log("Done.")
 
     def normalize(self):

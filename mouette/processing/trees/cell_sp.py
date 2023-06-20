@@ -58,6 +58,7 @@ class CellSpanningTree(SpanningTree):
             if p is not None:
                 self.children[p].append(c)
                 self.edges.append( keyify(p,c))
+        super().compute() # sets the 'computed' flag
 
     def build_tree_as_polyline(self) -> PolyLine:
         output = PolyLine()
@@ -88,3 +89,4 @@ class CellSpanningForest(SpanningForest):
                 self.trees.append(tree_v)
                 for (node, _) in tree_v.traverse():
                     visited[node] = True
+        super().compute() # sets the 'computed' flag

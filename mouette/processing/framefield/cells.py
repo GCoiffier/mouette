@@ -39,7 +39,7 @@ class FrameField3DCells(FrameField):
             supporting_mesh (VolumeMesh): the input mesh
             verbose (bool, optional): verbose mode. Defaults to True.
         """
-        super().__init__("FrameField3D", verbose=verbose)
+        super().__init__("cells", "FrameField3D", verbose=verbose)
         self.mesh : VolumeMesh = supporting_mesh
         self.mesh.enable_boundary_connectivity()
         self.n_smooth = kwargs.get("n_smooth", 3)
@@ -241,6 +241,7 @@ class FrameField3DCells(FrameField):
 
         self.log(" | Final Normalize")
         self.normalize()
+        self.smoothed = True
 
     @property
     def singular_vertices(self):

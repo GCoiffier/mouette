@@ -196,3 +196,4 @@ class PrincipalDirectionsVertices(_BaseFrameField2DVertices):
                     self.normalize()
         else: 
             self.normalize()
+        self.smoothed = True

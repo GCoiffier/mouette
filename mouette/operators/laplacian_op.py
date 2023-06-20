@@ -114,7 +114,7 @@ def laplacian(
 ##### For Surface, on faces #####
 
 @allowed_mesh_types(SurfaceMesh)
-def cotan_edge_diagonal(mesh : SurfaceMesh) -> sp.csc_matrix:
+def cotan_edge_diagonal(mesh : SurfaceMesh, inverse:bool=True) -> sp.csc_matrix:
     """
     Builds a diagonal matrix of size |E|x|E| where the coefficients are the cotan weights, i.e.
 
@@ -124,6 +124,7 @@ def cotan_edge_diagonal(mesh : SurfaceMesh) -> sp.csc_matrix:
 
     Args:
         mesh (SurfaceMesh): input mesh
+        inverse (bool): whether to compute M or M^-1 (all coefficients on the diagonal inverted)
 
     Returns:
         sp.csc_matrix
@@ -143,10 +144,14 @@ def cotan_edge_diagonal(mesh : SurfaceMesh) -> sp.csc_matrix:
             w = mesh.faces[T2][3-uT2-vT2]
             c = mesh.connectivity.vertex_to_corner_in_face(w,T2)
             cT2 = cotan[c]
-        if abs(cT1 + cT2)<1e-8:
-            coeffs[ie] = 1e8
+        
+        if inverse:
+            if abs(cT1 + cT2)<1e-8:
+                coeffs[ie] = 1e8
+            else:
+                coeffs[ie] = 1/(cT1 + cT2)
         else:
-            coeffs[ie] = 1/abs(cT1 + cT2)
+            coeffs[ie] = cT1 + cT2
     return sp.diags(coeffs, format="csc")
 
 @allowed_mesh_types(SurfaceMesh)

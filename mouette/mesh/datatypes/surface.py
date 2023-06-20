@@ -281,7 +281,7 @@ class SurfaceMesh(Mesh):
             for i in range(n):
                 A,B = F1[i], F1[(i+1)%n]
                 if self.opposite(A,B,iF1)[0]==iF2:
-                    return A,B
+                    return utils.keyify(A,B)
             return None,None
 
         def next_around(self, v : int, u: int):

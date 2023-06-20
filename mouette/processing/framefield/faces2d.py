@@ -32,7 +32,7 @@ class _BaseFrameField2DFaces(FrameField) :
         verbose:bool=True,
         **kwargs
     ):
-        super().__init__(verbose=verbose)
+        super().__init__("faces", verbose=verbose)
         self.mesh : SurfaceMesh = supporting_mesh
         self.order : int = order
         self.features : bool = feature_edges # whether feature edges are enabled or not
@@ -177,7 +177,6 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
     def initialize(self):
         self._initialize_attributes()
         self._initialize_variables()
-        self.initialized = True
 
     def optimize(self):
         self._check_init()
@@ -273,6 +272,7 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
         self.initialized = True
 
     def optimize(self):
+        self._check_init()
         ### Optimize for rotations between frames
         n_cstr = len(self.mesh.vertices)
         n_rot = len(self.mesh.edges)
@@ -323,3 +323,4 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
             w = self.rotations[e] if self.mesh.half_edges.adj(ea,eb)[0]==parent else -self.rotations[e]
             zf = zp * cmath.rect(1, 4*(w + pt))
             self.var[face] = zf
+        self.smoothed = True

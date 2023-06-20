@@ -16,6 +16,8 @@ def split_edge(mesh : PolyLine, n : int) -> PolyLine:
     mesh.edges.append(keyify(B,C))
     return mesh
 
+### Surface Subdivision ###
+
 class SurfaceSubdivision(Logger):
 
     @allowed_mesh_types(SurfaceMesh)
@@ -76,7 +78,7 @@ class SurfaceSubdivision(Logger):
                 self.triangulate_face(f)
 
     def subdivide_triangles(self, n:int = 1) -> SurfaceMesh:
-        """Subdivides triangles of a mesh in 4 triangles by spliting along middle of edges.
+        """Subdivides triangles of a mesh in 4 triangles by splitting along middle of edges.
             If the mesh is not triangulated, will triangulate the mesh first.
 
         Parameters:
@@ -110,49 +112,54 @@ class SurfaceSubdivision(Logger):
             self.mesh = newMeshData
 
     @allowed_mesh_types(SurfaceMesh)
-    def subdivide_triangles_6(self, n:int = 1) -> SurfaceMesh:
+    def subdivide_triangles_6(self, repeat:int = 1) -> SurfaceMesh:
         """Subdivides triangles of a mesh in 6 triangles by adding a point at the barycenter and three middles of edges.
             If the mesh is not triangulated, will triangulate the mesh first.
 
         Parameters:
-            n (int, optional): number of successive subdivisions. Eventual first triangulation does not count. Defaults to 1.
+            repeat (int, optional): number of successive subdivisions. Eventual first triangulation does not count. Defaults to 1.
+        """
+        for _ in range(repeat):
+            self.subdivide_triangles_3quads()
+        self.triangulate()
+
+    @allowed_mesh_types(SurfaceMesh)
+    def subdivide_triangles_3quads(self) -> SurfaceMesh:
+        """Subdivides triangles of a mesh in 3 quads by adding a point at the barycenter and three middles of edges.
+            If the mesh is not triangulated, will triangulate the mesh first.
         """
         self.triangulate()
-        for _ in range(n):
-            newMeshData = RawMeshData()
-            newMeshData.vertices += self.mesh.vertices
-            # cut every edge in half
-            half = dict()
-            for e in self.mesh.id_edges:
-                A,B = self.mesh.edges[e]
-                C = len(newMeshData.vertices)
-                pC = (self.mesh.vertices[A] + self.mesh.vertices[B])/2
-                newMeshData.vertices.append(pC)
-                half[keyify(A,B)]=C
+        newMeshData = RawMeshData()
+        newMeshData.vertices += self.mesh.vertices
+        # cut every edge in half
+        half = dict()
+        for e in self.mesh.id_edges:
+            A,B = self.mesh.edges[e]
+            C = len(newMeshData.vertices)
+            pC = (self.mesh.vertices[A] + self.mesh.vertices[B])/2
+            newMeshData.vertices.append(pC)
+            half[keyify(A,B)]=C
 
-            bary = dict()
-            for iF,F in enumerate(self.mesh.faces):
-                pS = sum([self.mesh.vertices[u] for u in F])/3
-                bary[iF] = len(newMeshData.vertices)
-                newMeshData.vertices.append(pS)
+        bary = dict()
+        for iF,F in enumerate(self.mesh.faces):
+            pS = sum([self.mesh.vertices[u] for u in F])/3
+            bary[iF] = len(newMeshData.vertices)
+            newMeshData.vertices.append(pS)
 
-            for f in self.mesh.id_faces:
-                A,B,C = self.mesh.faces[f]
-                mAB = half[keyify(A,B)]
-                mBC = half[keyify(B,C)]
-                mCA = half[keyify(C,A)]
-                S = bary[f]
-                
-                for new_tri in [
-                    [A,mAB,S],
-                    [mAB,B,S],
-                    [B,mBC,S],
-                    [mBC,C,S],
-                    [C,mCA,S],
-                    [mCA,A,S]
-                ]:
-                    newMeshData.faces.append(new_tri)
-            self.mesh = newMeshData
+        for f in self.mesh.id_faces:
+            A,B,C = self.mesh.faces[f]
+            mAB = half[keyify(A,B)]
+            mBC = half[keyify(B,C)]
+            mCA = half[keyify(C,A)]
+            S = bary[f]
+            
+            for new_face in [
+                [A, mAB, S, mCA],
+                [B, mBC, S, mAB],
+                [C, mCA, S, mBC],
+            ]:
+                newMeshData.faces.append(new_face)
+        self.mesh = newMeshData
 
 ### Volume Subdivision ###
 

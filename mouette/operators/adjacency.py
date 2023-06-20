@@ -56,20 +56,24 @@ def adjacency_matrix(mesh : Mesh, weights="one") -> sp.coo_matrix:
     return sp.coo_matrix( (vals, (rows,cols)), shape=(n,n))
 
 @forbidden_mesh_types(PointCloud)
-def vertex_to_edge_operator(mesh : Mesh) -> sp.lil_matrix:
+def vertex_to_edge_operator(mesh : Mesh, oriented:bool = False) -> sp.lil_matrix:
     """Vertices to edges operator. Matrix M of size |V|x|E| where:
         
         M[v,e] = 1 if and only if v is one extremity of edge e.
 
+        if oriented is set, M[v,e] = -1 if v is the origin of the edge and 1 if it is the arrival.
+
     Parameters:
         mesh (Mesh): the input mesh
+        oriented (bool): whether to consider oriented edge and signed values or not. Defaults to False.
 
     Returns:
         scipy.sparse.lil_matrix
     """
     n,m = len(mesh.vertices), len(mesh.edges)
     mat = sp.lil_matrix((n,m))
+    orig_coeff = -1 if oriented else 1
     for e,(A,B) in enumerate(mesh.edges):
-        mat[A,e] = 1
+        mat[A,e] = orig_coeff
         mat[B,e] = 1
     return mat

@@ -31,7 +31,7 @@ class FrameField3DVertices(FrameField):
         feature_edges : bool = True, 
         verbose=True,
         **kwargs):
-        super().__init__("FrameField3D", verbose)
+        super().__init__("vertices", "FrameField3D", verbose)
         self.mesh : VolumeMesh = supporting_mesh
         supporting_mesh.enable_boundary_connectivity()
 
@@ -190,6 +190,7 @@ class FrameField3DVertices(FrameField):
                 res = instance.solve()
                 self.var = res.x
         self.normalize()
+        self.smoothed = True
 
     def flag_singularities(self):
         self._check_init()

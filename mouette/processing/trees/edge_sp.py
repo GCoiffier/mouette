@@ -88,6 +88,7 @@ class EdgeSpanningTree(SpanningTree):
             if p is not None:
                 self.children[p].append(v)
                 self.edges.append( keyify(p,v))
+        super().compute() # sets the 'computed' flag
 
     def build_tree_as_polyline(self):
         output = PolyLine()
@@ -165,6 +166,7 @@ class EdgeMinimalSpanningTree(EdgeSpanningTree):
             self.children[v] = [x for x in neighbours[v] if x != prev]
             for child in self.children[v]:
                 queue.append((child,v))
+        super().compute() # sets the 'computed' flag
         
 class EdgeSpanningForest(SpanningForest):
 
@@ -183,3 +185,4 @@ class EdgeSpanningForest(SpanningForest):
                 self.trees.append(tree_v)
                 for (node, _) in tree_v.traverse():
                     visited[node] = True
+        super().compute() # sets the 'computed' flag

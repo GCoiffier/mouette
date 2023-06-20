@@ -15,6 +15,8 @@ class SpanningTree(ABC):
         self.children : list = None # v -> list of indices of children of v (inverse of self.parent)
         self.edges : list = None # list of (u,v) with u<v and u parent of v (or v parent of u)
 
+        self._computed : bool = False
+
     def __call__(self):
         self.compute()
         return self
@@ -22,7 +24,7 @@ class SpanningTree(ABC):
     @abstractmethod
     def compute(self) -> None : 
         """Compute the list of edges as well as the connectivity of the tree"""
-        pass
+        self._computed = True
 
     def traverse(self, order="BFS"):
         """
@@ -32,8 +34,12 @@ class SpanningTree(ABC):
         Parameters:
             order (str, optional):  BFS or DFS order. Defaults to "BFS".
         """
+        if not self._computed:
+            raise Exception("Tree was not computed. Call the .compute() method first")
+
         if order not in ["BFS", "DFS"]:
             raise Exception("Error when traversing a spanning tree: given 'order' argument should be 'DFS' or 'BFS'. Got {}".format(order))
+            
         isBFS = (order=="BFS")
         queue = deque()
         def pop():
