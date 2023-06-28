@@ -69,6 +69,7 @@ class VolumeMesh(Mesh):
 
     @property
     def boundary_mesh(self):
+        self.enable_boundary_connectivity()
         return self.boundary_connectivity.mesh
 
     def _compute_interior_boundary_faces(self):
@@ -185,72 +186,57 @@ class VolumeMesh(Mesh):
         return self._interior_vertices
 
     class _Connectivity(SurfaceMesh._Connectivity): 
+        ### Notations ###
+        # V - vertex
+        # E - edge
+        # F - face
+        # C - cell
+        # Cn - face corner
+        # CCn - cell corner
+        # CFn - cell face
 
         def __init__(self, master):
             super().__init__(master)
-            self._adjC2C : Attribute = None
-            self._adjV2C : dict = None
-
-            self._adjC2F : dict = None
-            self._adjF2C : dict = None
+            self._adjC2C : dict = None # cell -> cell
+            self._adjV2C : dict = None # vertex -> cell
+            self._adjE2C : dict = None # edge -> cell
+            self._adjF2C : dict = None # face -> cell
             
-            self._adjC2E : dict = None
-            self._adjE2C : dict = None
+            self._adjC2E : dict = None # cell -> edge
+
+            self._adjVC2CCn : dict = None # vertex,cell -> cell corner
+            self._adjCCn2C : dict = None # cell_corner -> cell
+            self._adjC2CCn : dict = None # cell -> first cell_corner
+
+            self._adjFC2CFn : dict = None # face,cell -> cell face
+            self._adjCFn2C : dict = None  # cell_face -> cell
+            self._adjC2CFn : dict = None # cell -> first cell_face
+
+            self._cell_id : dict = None
         
         def clear(self):
             super().clear()
-            self._adjC2C : Attribute = None
+            self._adjC2C : dict = None
             self._adjV2C : dict = None
-            
-            self._adjC2F : dict = None
-            self._adjF2C : dict = None
-
-            self._adjE2F : dict = None
             self._adjE2C : dict = None
+            self._adjF2C : dict = None
             self._adjC2E : dict = None
+            self._adjVC2CCn : dict = None
+            self._adjCCn2C : dict = None
+            self._adjC2CCn : dict = None
+            self._adjFC2CFn : dict = None
+            self._adjCFn2C : dict = None
+            self._adjC2CFn : dict = None
+            self._cell_id : dict = None
 
         def _compute_vertex_adj(self):
             super()._compute_vertex_adj()
-            
             self._adjV2C = dict([(i,set()) for i in self.mesh.id_vertices ])
             for iC,C in enumerate(self.mesh.cells):
                 for V in C:
                     self._adjV2C[V].add(iC)
-
             for U in self.mesh.id_vertices:
                 self._adjV2C[U] = list(self._adjV2C[U])
-
-        def _compute_adjacent_cell(self):
-            # GEOGRAM_API CellDescriptor tet_descriptor = {
-            #     4,         // nb_vertices
-            #     4,         // nb_faces
-            #     {3,3,3,3}, // nb_vertices in face
-            #     {          // faces
-            #         {1,3,2},
-            #         {0,2,3},
-            #         {3,1,0},
-            #         {0,1,2}
-            #     },
-            #     6,         // nb_edges
-            #     {          // edges
-            #         {1,2}, {2,3}, {3,1}, {0,1}, {0,2}, {0,3}
-            #     },
-            #     {          // edges adjacent faces
-            #         {0,3}, {0,1}, {0,2}, {2,3}, {3,1}, {1,2}
-            #     }
-            # };
-            if self.mesh.cell_faces.has_attribute("adjacent_cell"):
-                self._adjC2C = self.mesh.cell_faces.get_attribute("adjacent_cell")
-            else:
-                self._adjC2C = self.mesh.cell_faces.create_attribute("adjacent_cell", int, 1, default_value= config.NOT_AN_ID)
-                for iC, cell in enumerate(self.mesh.cells):
-                    v0,v1,v2,v3 = cell
-                    # face fi does not contain vertex vi
-                    f0,f1,f2,f3 = self.face_id(v1,v3,v2), self.face_id(v0,v2,v3), self.face_id(v3,v1,v0), self.face_id(v0,v1,v2)
-                    for iF, F in enumerate((f0,f1,f2,f3)):
-                        for iC2 in self.face_to_cell(F):
-                            if iC2 != iC: self._adjC2C[(iC,iF)] = iC2
-                            
 
         def _compute_cell_adj(self):
             self._adjC2F = dict([(i,[]) for i in self.mesh.id_cells ])
@@ -333,41 +319,14 @@ class VolumeMesh(Mesh):
                 self._adjE2C[e].sort(key= lambda c : keys_cell[c])
                 self._adjE2F[e].sort(key= lambda f : keys_face[f])
 
-        ##### Faces - Cells #####
+        def _compute_cell_corner_adj(self):
+            return
 
-        def n_F2C(self, F):
-            return len(self.face_to_cell(F))
-
-        def face_to_cell(self, iF):
-            if self._adjF2C is None:
-                self._compute_cell_adj()
-            return self._adjF2C[iF]
-
-        def cell_to_face(self, iC):
-            if self._adjC2F is None:
-                self._compute_cell_adj()
-            return self._adjC2F[iC]
-
-        ##### Cell - Cell #####
-
-        def cell_to_cell(self, iC):
-            if self._adjC2C is None:
-                self._compute_adjacent_cell()
-            return [ self._adjC2C[(iC,i)] for i in range(len(self.mesh.cells[iC])) if self._adjC2C[(iC,i)] != config.NOT_AN_ID]
-
-        def other_face_side(self, C, F):
-            if len(self.face_to_cell(F)) != 2 : return None
-            C1,C2 = self.face_to_cell(F)
-            if C==C1: return C2
-            if C==C2 : return C1
-            return None
-        
-        def common_face(self, C1, C2):
-            common_vert = set(self.mesh.cells[C1]).intersection(self.mesh.cells[C2])
-            if len(common_vert) != 3: return None
-            return self.face_id(*common_vert)
+        def _compute_cell_faces_adj(self):
+            return
 
         ##### Vertex - Cell #####
+        
         def vertex_to_cell(self, V):
             if self._adjV2C is None:
                 self._compute_vertex_adj()
@@ -391,14 +350,88 @@ class VolumeMesh(Mesh):
             return None
 
         def in_cell_face_index(self,C,F):
-            face_set = set(self.mesh.faces[F])
-            for i,_ in enumerate(self.mesh.cells[C]):
-                cell_set_i = set(self.mesh.cells[C][:i] + self.mesh.cells[C][(i+1):])
-                if face_set == cell_set_i:
+            if self._adjC2CFn is None:
+                self._compute_cell_faces_adj()
+            
+            fstCFn = self._adjC2CFn.get(C, None)
+            if fstCFn is None: return None
+
+            for i in range(len(self.mesh.cells[C])):
+                if self.mesh.cell_faces[fstCFn+i] == F:
                     return i
             return None
 
-        ##### Edge - face #####
+        ##### Cell Corners #####
+
+        def cell_corner_to_cell(self,CCn):
+            if self._adjCCn2C is None:
+                self._compute_cell_corner_adj()
+            return self._adjCCn2C.get(CCn,None)
+
+        def vertex_to_corner_in_cell(self,V,C):
+            if self._adjVC2CCn is None:
+                self._compute_cell_corner_adj()
+            return self._adjVC2CCn.get((V,C), None)
+
+        def cell_to_first_corner(self,C):
+            if self._adjC2CCn is None:
+                self._compute_cell_corner_adj()
+            return self._adjC2CCn.get(C,None)
+
+        def vertex_to_cell_corners(self,V):
+            return [self.vertex_to_corner_in_cell(V,_C) for _C in self.vertex_to_cell(V)]
+
+        ##### Faces - Cells #####
+
+        def n_F2C(self, F):
+            return len(self.face_to_cell(F))
+
+        def face_to_cell(self, iF):
+            if self._adjF2C is None:
+                self._compute_cell_adj()
+            return self._adjF2C[iF]
+
+        def cell_to_face(self, iC):
+            if self._adjC2F is None:
+                self._compute_cell_adj()
+            return self._adjC2F[iC]
+
+        ##### Cell - Half Faces #####
+
+        def cellface_to_cell(self,CFn):
+            return
+
+        def face_to_cellface_in_cell(self,F,C):
+            return
+
+        def cell_to_first_cellface(self,C):
+            return
+
+        def face_to_cellfaces(self,F):
+            return
+
+
+        ##### Cell - Cell #####
+
+        def cell_to_cell(self, iC):
+            if self._adjC2C is None:
+                self._compute_adjacent_cell()
+            return [ self._adjC2C[(iC,i)] for i in range(len(self.mesh.cells[iC])) if self._adjC2C[(iC,i)] != config.NOT_AN_ID]
+
+        def other_face_side(self, C, F):
+            if len(self.face_to_cell(F)) != 2 : return None
+            C1,C2 = self.face_to_cell(F)
+            if C==C1: return C2
+            if C==C2 : return C1
+            return None
+        
+        def common_face(self, C1, C2):
+            
+            common_vert = set(self.mesh.cells[C1]).intersection(self.mesh.cells[C2])
+            if len(common_vert) != 3: return None
+            return self.face_id(*common_vert)
+
+        ##### Edge - Face #####
 
         # face_to_edge already defined in parent class SurfaceMesh.connectivity
         # edge_to_face is not since SurfaceMesh takes advantage of the half edge structure

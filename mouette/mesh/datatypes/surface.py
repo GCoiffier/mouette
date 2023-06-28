@@ -325,12 +325,13 @@ class SurfaceMesh(Mesh):
             The next query in the code will regenerate internal arrays.
             """
             super().clear()
-            self._adjV2F : dict = dict() # vertex -> triangle            
-            self._adjF2F : dict = None # triangle -> triangle
-            self._adjVF2Cn : dict = None # vertex,face -> corner
-            self._adjCn2F : dict = None # corner -> face
-            self._adjF2Cn : dict = None # face -> first corner
-            self._face_id : dict = None     
+            # V2F is not None because connectivity is built on the fly at each query
+            self._adjV2F   : dict = dict() # vertex -> face
+            self._adjF2F   : dict = None # face -> face
+            self._adjVF2Cn : dict = None # vertex,face -> face_corner
+            self._adjCn2F  : dict = None # face_corner -> face
+            self._adjF2Cn  : dict = None # face -> first face_corner
+            self._face_id  : dict = None     
 
         def face_id(self, a, b, c):
             if self._face_id is None:

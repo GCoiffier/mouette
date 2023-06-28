@@ -198,10 +198,8 @@ def import_geogram_ascii(path):
 
         elif chk.container == Chunk.Container.CELL_FACETS and chk.name == "\"GEO::Mesh::cell_facets::adjacent_cell\"":
             assert chk.n_data==1
-            # chk.name = "adjacent_cell"
-            adj_cell = outmesh.cell_faces.create_attribute("adjacent_cell", int, default_value=NOT_AN_ID)
-            adj_cell._expand(container_sizes[Chunk.Container.CELL_FACETS])
-            import_attribute(chk, adj_cell)
+            for i in range(container_sizes[Chunk.Container.CELL_FACETS]):
+                outmesh.cell_faces.append(chk.data[i])
 
         else: # user defined attribute
             container = {
@@ -308,10 +306,9 @@ def export_geogram_ascii(mesh : RawMeshData, path):
                 export_attribute(f, n_corners, "GEO::Mesh::cell_corners", attr, attr_key)
                    
             # Cell faces
-            n_cell_faces = sum([len(c) for c in mesh.cells])
-            cell_adj = mesh.cell_faces.get_attribute("adjacent_cell")
+            n_cell_faces = len(mesh.cell_faces)
             f.write("[ATTR]\n\"GEO::Mesh::cell_corners\"\n\"GEO::Mesh::cell_faces::adjacent_cell\"\n\"index_t\"\n4\n1\n")
-            for x in cell_adj:
+            for x in mesh.cell_faces:
                 f.write(f"{x}\n")
 
             for attr_key in mesh.cell_faces.attributes:

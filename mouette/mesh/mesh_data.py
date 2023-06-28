@@ -204,6 +204,8 @@ class RawMeshData:
         self._prepare_faces()
         self._prepare_face_corners()
         self._prepare_cells()
+        self._prepare_cell_corners()
+        self._prepare_cell_faces()
         self._compute_dimensionality()
         self._prepared = True
 
@@ -243,21 +245,48 @@ class RawMeshData:
 
     def _prepare_faces(self):
         pass
-        # for iF in self.id_faces:
-        #     self.faces[iF] = tuple(self.faces[iF])
-        
 
     def _prepare_face_corners(self):
         nc = len(self.face_corners)
         nf = sum([len(f) for f in self.faces])
         if nc == 0 or nc!= nf : 
-            # corners were not generated
+            # corners were not or badly generated
             self.face_corners._data = []
             for f in self.faces:
                 self.face_corners._data += list(f)
 
     def _prepare_cells(self):
         pass
+
+    def _prepare_cell_corners(self):
+        nc = len(self.cell_corners)
+        nf = sum([len(c) for c in self.cells])
+        if nc==0 or nc!=nf:
+            # corners were not or badly generated
+            self.face_corners._data = []
+            for c in self.cells:
+                self.cell_corners._data += list(c)
+
+    def _prepare_cell_faces(self):
+        nc = len(self.cell_faces)
+        if nc==0:
+            # cell faces were not generated
+            face_id = dict() # first invert face indirection
+            for iF,F in enumerate(self.faces):
+                key = utils.keyify(F)
+                face_id[key] = iF
+
+            self.cell_faces._data = []
+            for c in self.cells:
+                # if cell is hexahedron : TODO
+                if len(c)==8:
+                    pass
+
+                elif len(c)==4:
+                    # cell is tetrahedron
+                    v0,v1,v2,v3 = c
+                    # face fi does not contain vertex vi
+                    self.cell_faces += [face_id[utils.keyify(_v1,_v2,_v3)] for (_v1,_v2,_v3) in [(v1,v3,v2), (v0,v2,v3), (v3,v1,v0), (v0,v1,v2)]]
 
     def _complete_edges_from_faces(self):
         if self.faces.empty() : return # nothing to do
