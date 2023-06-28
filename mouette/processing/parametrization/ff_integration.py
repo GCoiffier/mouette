@@ -171,6 +171,13 @@ class FrameFieldIntegration(BaseParametrization):
         result = instance.solve()
         return result.x
 
+    def _export_jacobian_dets(self,Jac):
+        det_attr = self.mesh.faces.create_attribute("det", float)
+        for T in self.mesh.id_faces:
+            J = Jac[4*T:4*T+4].reshape((2,2))
+            detJ = np.linalg.det(J)
+            det_attr[T] = detJ
+
     def _build_UVs(self,Jac):
         self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
 
@@ -245,6 +252,7 @@ class FrameFieldIntegration(BaseParametrization):
        
         self.log("Solve gradient least-square system")
         Jac = self._integrate()
+        self._export_jacobian_dets(Jac)
 
         self.log("Build UVs")
         self._build_UVs(Jac)

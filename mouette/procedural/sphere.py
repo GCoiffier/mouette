@@ -68,11 +68,12 @@ def spherify_vertices(points : PointCloud, radius : float = 1e-2, n_subdiv=1) ->
         spheres.append(mp)
     return merge(spheres)
 
-def sphere_fibonacci( n_pts : int , build_surface : bool = True) -> SurfaceMesh:
+def sphere_fibonacci( n_pts : int, radius:float =1., build_surface : bool = True) -> SurfaceMesh:
     """Generates a point cloud or a surface mesh using fibonacci sampling of a sphere.
 
     Parameters:
         n_pts (int): total number of vertices
+        radius (float, optional): Radius of the sphere. Defaults to 1.
         build_surface (bool, optional): If specified to True, the function will also compute a triangulation of the vertices. This is obtained through a convex hull algorithm (since points lay on a convex shape, the convex hull and the Delaunay triangulation are equivalent). Defaults to True.
 
     Returns:

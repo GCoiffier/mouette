@@ -7,7 +7,7 @@ import math
 
 from .base import FrameField
 
-from ...mesh.datatypes import *
+from ...mesh.datatypes import PolyLine,SurfaceMesh,VolumeMesh
 from ...mesh.mesh_data import RawMeshData
 from ...mesh.mesh_attributes import Attribute, ArrayAttribute
 
@@ -19,7 +19,7 @@ from ...geometry import Vec, SphericalHarmonics
 from ...geometry.rotations import match_rotation
 from ...geometry import transform
 
-from ...operators.laplacian_op import *
+from ...operators import laplacian_tetrahedra
 from ...procedural import axis_aligned_cube
 
 
@@ -88,7 +88,7 @@ class FrameField3DCells(FrameField):
         try:
             # Line 2 should only contain the total number of frames
             n_frames = int(data[1])
-        except:
+        except Exception:
             raise FrameField3DCells.FileParsingError(2, f"Invalid number of frames '{data[1]}'")
         
         if n_frames != len(self.mesh.cells):
@@ -100,7 +100,7 @@ class FrameField3DCells(FrameField):
                 frame = Rotation.from_matrix(mat)
                 self.frames.append(frame)
                 self.var[9*line:9*(line+1)] = SphericalHarmonics.from_frame(frame)
-            except:
+            except Exception:
                 raise FrameField3DCells.FileParsingError(line+3, f"Invalid frame {data[line+2]}")
         self.initialized = True
 
@@ -197,10 +197,12 @@ class FrameField3DCells(FrameField):
         for iFb in self._boundary_mesh.id_faces:
             iF = self.mesh.boundary_connectivity.b2m_face[iFb]
             iC = self.mesh.connectivity.face_to_cell(iF)[0]
-            if self._cell_on_bnd[iC] != 1 : continue
+            if self._cell_on_bnd[iC] != 1 : 
+                continue
             axis = geom.cross(Z, self._fnormals[iFb])
             angle = geom.angle_2vec3D(Z, self._fnormals[iFb])
-            if axis.norm()>1e-8: axis = Vec.normalized(axis) * angle
+            if axis.norm()>1e-8: 
+                axis = Vec.normalized(axis) * angle
             nrml_frame = SphericalHarmonics.from_vec3(axis)
             rows += [ncstr]*9
             cols += [9*iC + _c for _c in range(9)]
