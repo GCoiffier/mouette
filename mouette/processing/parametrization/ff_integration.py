@@ -91,7 +91,7 @@ class FrameFieldIntegration(BaseParametrization):
     def _compute_jumps(self):
         self.jumps = self.mesh.edges.create_attribute("jump", int)
         for e in self._cutter.cut_edges:
-            T1,T2 = self.mesh.half_edges.edge_to_triangles(*self.mesh.edges[e])
+            T1,T2 = self.mesh.half_edges.edge_to_faces(*self.mesh.edges[e])
             if T1 is None or T2 is None : continue # boundary edge -> no jump
             ff1, ff2 = self.get_ff_dir(T1), self.get_ff_dir(T2)
             jump = utils.maths.angle_diff( cmath.phase(ff1), cmath.phase(ff2) - self._conn.transport(T2,T1))
@@ -116,7 +116,7 @@ class FrameFieldIntegration(BaseParametrization):
         for e in self.mesh.id_edges:
             je = self.jumps[e]
             A,B = self.mesh.edges[e]
-            T1,T2 = self.mesh.half_edges.edge_to_triangles(A,B)
+            T1,T2 = self.mesh.half_edges.edge_to_faces(A,B)
             if T1 is None or T2 is None : continue # boundary edge
             E = self.mesh.vertices[B] - self.mesh.vertices[A]
             E1 = self._conn.project(E,T1)
@@ -146,7 +146,7 @@ class FrameFieldIntegration(BaseParametrization):
         for e in self._feat.feature_edges:
             A,B = self.mesh.edges[e]
             E = self.mesh.vertices[B] - self.mesh.vertices[A] 
-            for T in self.mesh.half_edges.edge_to_triangles(A,B):
+            for T in self.mesh.half_edges.edge_to_faces(A,B):
                 if T is None: continue
                 ET = Vec.normalized(self._conn.project(E,T))
                 zT = self.get_ff_dir(T)

@@ -78,23 +78,30 @@ def copy(mesh : Mesh, copy_attributes=False, copy_connectivity=False, copy_half_
 
     if copy_attributes:
         copy_mesh.vertices = deepcopy(mesh.vertices)
-        if hasattr(mesh, "edges") : copy_mesh.edges = deepcopy(mesh.edges)
+        if hasattr(mesh, "edges") : 
+            copy_mesh.edges = deepcopy(mesh.edges)
         if hasattr(mesh, "faces") :
             copy_mesh.faces = deepcopy(mesh.faces)
             copy_mesh.face_corners = deepcopy(mesh.face_corners)
         if hasattr(mesh, "cells"):
             copy_mesh.cells = deepcopy(mesh.cells)
             copy_mesh.cell_corners = deepcopy(mesh.cell_corners)
+            copy_mesh.cell_faces = deepcopy(mesh.cell_faces)
     else:
         # copy only _cont data of each container (connectivity data and not attribute data)
         copy_mesh.vertices._data = deepcopy(mesh.vertices._data)
-        if hasattr(mesh, "edges"): copy_mesh.edges._data = deepcopy(mesh.edges._data)
+        if hasattr(mesh, "edges"): 
+            copy_mesh.edges._data = deepcopy(mesh.edges._data)
         if hasattr(mesh, "faces") : 
             copy_mesh.faces._data = deepcopy(mesh.faces._data)
-            copy_mesh.face_corners._data = deepcopy(mesh.face_corners._data)
+            copy_mesh.face_corners._elem = deepcopy(mesh.face_corners._elem)
+            copy_mesh.face_corners._adj = deepcopy(mesh.face_corners._adj)
         if hasattr(mesh, "cells") : 
             copy_mesh.cells._data = deepcopy(mesh.cells._data)
-            copy_mesh.cell_corners._data = deepcopy(mesh.cell_corners._data)
+            copy_mesh.cell_corners._elem = deepcopy(mesh.cell_corners._elem)
+            copy_mesh.cell_corners._adj = deepcopy(mesh.cell_corners._adj)
+            copy_mesh.cell_faces._elem = deepcopy(mesh.cell_faces._elem)
+            copy_mesh.cell_faces._adj = deepcopy(mesh.cell_faces._adj)
         # _cont of face_corners and cell_corners are always empty
     if copy_connectivity and hasattr(mesh, "connectivity"):
         copy_mesh.connectivity = mesh.connectivity

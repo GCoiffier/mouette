@@ -11,13 +11,21 @@ def test_new():
     assert len(m.edges)==0
     assert len(m.faces)==0
 
+def test_copy():
+    m = M.mesh.empty()
+    m.vertices += [(0.,0.,0.), (0.,1.,0.), (0.,0.,1.)]
+    m.faces += [(0,1,2)]
+    m = M.mesh.instanciate(m, dim=2)
+    m2 = M.mesh.copy(m)
+    assert compare_mesh(m,m2)
+
 # ### Io tests ###
 
 @pytest.mark.parametrize("s", surfaces)
 def test_io_obj(s, tmp_path):
     assert build_test_io(s, tmp_path, "obj", 2)
 
-@pytest.mark.parametrize("s", surfaces)
+@pytest.mark.parametrize("s",  surfaces)
 def test_io_geogram_ascii(s, tmp_path):
     assert build_test_io(s, tmp_path, "geogram_ascii", 2)
 

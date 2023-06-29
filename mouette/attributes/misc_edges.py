@@ -35,7 +35,7 @@ def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
 
     data = np.zeros((len(mesh.edges), 3,3), dtype=np.float64)
     for e, (A,B) in enumerate(mesh.edges):
-        T1,T2 = mesh.half_edges.edge_to_triangles(A,B)
+        T1,T2 = mesh.half_edges.edge_to_faces(A,B)
         if T1 is not None and T2 is not None:
             _,_,n1 = geom.face_basis(*(mesh.vertices[u] for u in mesh.faces[T1]))
             _,_,n2 = geom.face_basis(*(mesh.vertices[u] for u in mesh.faces[T2]))

@@ -194,13 +194,13 @@ def laplacian_triangles(
     Nabla = sp.lil_matrix((m,n), dtype=complex if connection else np.float32) # gradient matrix
     if connection is not None:
         for ie,(ei,ej) in enumerate(mesh.edges):
-            T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)
+            T1,T2 = mesh.half_edges.edge_to_faces(ei,ej)
             if T1 is not None and T2 is not None:
                 Nabla[ie,T1] = -1
                 Nabla[ie,T2] = cmath.rect(1, order*(connection.transport(T1,T2) + math.pi))
     else:
          for ie,(ei,ej) in enumerate(mesh.edges):
-            T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)
+            T1,T2 = mesh.half_edges.edge_to_faces(ei,ej)
             if T1 is not None and T2 is not None:
                 Nabla[ie,T1] = -1
                 Nabla[ie,T2] = 1

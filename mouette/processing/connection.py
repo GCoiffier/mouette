@@ -168,7 +168,7 @@ class SurfaceConnectionFaces(SurfaceConnection):
             A,B = self.mesh.edges[e]
             pA,pB = self.mesh.vertices[A], self.mesh.vertices[B]
             E = geom.Vec(pB-pA)
-            T1,T2 = self.mesh.half_edges.edge_to_triangles(A,B)
+            T1,T2 = self.mesh.half_edges.edge_to_faces(A,B)
             X1,Y1 = self._baseX[T1], self._baseY[T1]
             X2,Y2 = self._baseX[T2], self._baseY[T2]
             angle1 = math.atan2( geom.dot(E,Y1), geom.dot(E,X1))

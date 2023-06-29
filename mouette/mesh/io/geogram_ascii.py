@@ -2,6 +2,7 @@ from ..mesh_data import RawMeshData
 from ..mesh_attributes import Attribute
 from ...geometry import Vec
 from ...config import NOT_AN_ID
+from ... import utils
 
 import numpy as np
 from enum import Enum
@@ -52,8 +53,8 @@ class Chunk:
 
     def __init__(self, chunk_data):
         self.type = Chunk.Type.from_string(chunk_data[0])
+        self.container : Chunk.Container = Chunk.Container.from_string(chunk_data[1]) # like GEO::Mesh::vertices
         if self.type == Chunk.Type.ATTR:
-            self.container : Chunk.Container = Chunk.Container.from_string(chunk_data[1]) # like GEO::Mesh::vertices
             self.name : str = chunk_data[2]
             self.data_type : Attribute.Type = Attribute.Type.from_string(chunk_data[3])
             self.data_size : int = int(chunk_data[4]) # size of an element in bytes
@@ -70,9 +71,15 @@ class Chunk:
             self.n_item : int = len(self.data) // self.n_data
             self.data = np.array(self.data).reshape((self.n_item, self.n_data))
 
+        elif self.type == Chunk.Type.ATTS:
+            self.n_item : int = int(chunk_data[2])
+
     def export_to_attribute(self, attr):
         for elem in range(self.n_item):
-            attr[elem] = self.data[elem]
+            if self.data.shape[1]==1:
+                attr[elem] = self.data[elem,0]
+            else:
+                attr[elem] = Vec(self.data[elem,:])
         return attr
 
 def is_chunk_header(line : str) -> bool:
@@ -91,12 +98,11 @@ def parse_geogram_ascii(path):
     data = deque(data)
 
     chunk_data = []
-    current_chunk = [data.popleft()]
     while len(data)>0:
-        while not is_chunk_header(data[0]):
+        current_chunk = [data.popleft()]
+        while len(data)>0 and not is_chunk_header(data[0]):
             current_chunk.append(data.popleft())
         chunk_data.append(current_chunk)
-        current_chunk = []
 
     chunks = [Chunk(data) for data in chunk_data]
     return chunks
@@ -108,7 +114,7 @@ def build_mesh_from_chunks(chunks):
     container_sizes = dict([(a,0) for a in Chunk.Container])
     for chk in chunks:
         if chk.type != Chunk.Type.ATTS: continue
-        container_sizes[chk.container] = chk.n
+        container_sizes[chk.container] = chk.n_item
 
     ### (2) Build facet and cell index
     n_corner_in_facet = []
@@ -165,14 +171,14 @@ def build_mesh_from_chunks(chunks):
         elif chk.container == Chunk.Container.EDGES and chk.name == "\"GEO::Mesh::edges::edge_vertex\"":
             assert chk.n_data==2 # edges should have 2 pointers to vertices id
             for i in range(container_sizes[Chunk.Container.EDGES]):
-                outmesh.edges.append(chk.data[i])
+                outmesh.edges.append(utils.keyify(chk.data[i]))
         
         elif chk.container == Chunk.Container.FACE_CORNERS and chk.name == "\"GEO::Mesh::facet_corners::corner_vertex\"":
             assert chk.n_data==1
             for i in range(container_sizes[Chunk.Container.FACES]):
                 ncf = n_corner_in_facet[i]
                 ptr = facet_ptr[i]
-                face = [chk.data[ptr+_i] for _i in range(ncf)]
+                face = tuple(chk.data[ptr:ptr+ncf, 0])
                 outmesh.faces.append(face)
             outmesh.face_corners._elem += list(chk.data)
 
@@ -243,14 +249,26 @@ def export_geogram_ascii(mesh : RawMeshData, path):
  
         ### Edges
         if hasattr(mesh, "edges") and not mesh.edges.empty():
-            n_edges = len(mesh.edges)
-            f.write("[ATTS]\n\"GEO::Mesh::edges\"\n{}\n".format(n_edges))
-            f.write("[ATTR]\n\"GEO::Mesh::edges\"\n\"GEO::Mesh::edges::edge_vertex\"\n\"index_t\"\n4\n2\n")
-            for edge in mesh.edges:
-                f.write(f"{edge[0]}\n{edge[1]}\n")
-            for attr_key in mesh.edges.attributes:
-                attr = mesh.edges.get_attribute(attr_key)
-                export_attribute(f, n_edges, "GEO::Mesh::edges", attr, attr_key)
+            if len(mesh.edges.attributes)==1 and mesh.edges.has_attribute("hard_edges"):
+                # we export only half edges
+                hard_edges = mesh.edges.get_attribute("hard_edges")
+                n_edges = len(hard_edges)
+                if n_edges>0:
+                    f.write("[ATTS]\n\"GEO::Mesh::edges\"\n{}\n".format(n_edges))
+                    f.write("[ATTR]\n\"GEO::Mesh::edges\"\n\"GEO::Mesh::edges::edge_vertex\"\n\"index_t\"\n4\n2\n")
+                    for e in hard_edges:
+                        edge = mesh.edges[e]
+                        f.write(f"{edge[0]}\n{edge[1]}\n")
+            else:
+                # we export all edges
+                n_edges = len(mesh.edges)
+                f.write("[ATTS]\n\"GEO::Mesh::edges\"\n{}\n".format(n_edges))
+                f.write("[ATTR]\n\"GEO::Mesh::edges\"\n\"GEO::Mesh::edges::edge_vertex\"\n\"index_t\"\n4\n2\n")
+                for edge in mesh.edges:
+                    f.write(f"{edge[0]}\n{edge[1]}\n")
+                for attr_key in mesh.edges.attributes:
+                    attr = mesh.edges.get_attribute(attr_key)
+                    export_attribute(f, n_edges, "GEO::Mesh::edges", attr, attr_key)
 
         ### Faces
         if hasattr(mesh, "faces") and not mesh.faces.empty():

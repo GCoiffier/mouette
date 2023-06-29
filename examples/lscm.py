@@ -13,5 +13,5 @@ if len(sys.argv)<2:
 mesh = M.mesh.load(sys.argv[1])
 lscm = parametrization.LSCM(mesh, verbose=True)()
 
+M.mesh.save(mesh, "output.obj")
 M.mesh.save(mesh, "output.geogram_ascii")
-M.mesh.save(lscm.flat_mesh, "output_flat.geogram_ascii")

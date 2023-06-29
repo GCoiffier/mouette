@@ -260,7 +260,7 @@ class SurfaceMesh(Mesh):
             return None,None,None
 
         def opposite(self, u : int, v : int, T : int):
-            """Given a pair of vertices (u,v) and a face T, returns the face (and local indexes of u and v) on the other side of edge (u,v)
+            """Given a pair of vertices (u,v) and a face T, returns the face (and local indices of u and v) on the other side of edge (u,v)
 
             if (u,v) are not two vertices of the face T, returns None
             """
@@ -272,7 +272,7 @@ class SurfaceMesh(Mesh):
                 return T1,u1,v1
             return None,None,None
 
-        def edge_to_triangles(self, u, v):
+        def edge_to_faces(self, u, v):
             return self.adj(u,v)[0], self.adj(v,u)[0]
 
         def common_edge(self,iF1,iF2):
@@ -286,7 +286,7 @@ class SurfaceMesh(Mesh):
 
         def next_around(self, v : int, u: int):
             """ 
-            Turning clockwise in the neighbourhood of vertex v, finds the vertex after u.
+            Turning clockwise in the neighborhood of vertex v, finds the vertex after u.
             Returns None is such a vertex does not exist (reach boundary)
             """
             T, iV, iU = self.adj(v,u)
@@ -295,7 +295,7 @@ class SurfaceMesh(Mesh):
 
         def prev_around(self, v, u):
             """ 
-            Turning counter clockwise in the neighbourhood of vertex v, finds the vertex after u.
+            Turning counter clockwise in the neighborhood of vertex v, finds the vertex after u.
             Returns None is such a vertex does not exist (reach boundary)
             """
             T, iU, iV = self.adj(u,v)
@@ -314,7 +314,6 @@ class SurfaceMesh(Mesh):
             
             self._adjF2F : dict = None # triangle -> triangle
             self._adjVF2Cn : dict = None # vertex,face -> corner
-            self._adjCn2F : dict = None # corner -> face
             self._adjF2Cn : dict = None # face -> first corner
 
             self._face_id : dict = None
