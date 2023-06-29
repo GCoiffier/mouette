@@ -1,6 +1,8 @@
 from mouette import framefield as ff
 from data import *
 
+import pytest
+
 @pytest.mark.parametrize("m", [vol_cube()])
 def test_volume_framefield_vertices(m):
     field = ff.VolumeFrameField(m, "vertices")

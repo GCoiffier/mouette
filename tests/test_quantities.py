@@ -2,6 +2,8 @@ import mouette as M
 from utils import *
 from data import *
 
+import pytest
+
 ## Vertices
 @pytest.mark.parametrize("s", surfaces + polylines)
 def test_degree(s):

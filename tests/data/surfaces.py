@@ -1,12 +1,9 @@
 import mouette as M
-import pytest
-from math import cos, sin, pi
-import os
 
 ### Surfaces ###
 
 def surf_triangle():
-    m = M.mesh.new_surface()
+    m = M.mesh.empty()
     m.vertices += [
         M.Vec(0., 0., 0.),
         M.Vec(1., 0., 0.),
@@ -14,11 +11,10 @@ def surf_triangle():
     ]
     m.edges += [(0,1), (0,2), (1,2)]
     m.faces.append((0,1,2))
-    m.face_corners += [0,1,2]
-    return m
+    return M.mesh.instanciate(m)
 
 def surf_square():
-    m = M.mesh.new_surface()
+    m = M.mesh.empty()
     m.vertices += [
         M.Vec(1.,0.,0.),
         M.Vec(0.,1.,0.),
@@ -27,11 +23,10 @@ def surf_square():
     ]
     m.edges += [(0,1), (1,2), (2,3), (0,3), (1,3)]
     m.faces += [(0,1,3), (1,2,3)]
-    m.face_corners += [0,1,2,3,1,2,3]
-    return m
+    return M.mesh.instanciate(m)
 
 def surf_cube():
-    m = M.mesh.new_surface()
+    m = M.mesh.empty()
     m.vertices += [
         M.Vec(0., 0., 0.),
         M.Vec(1., 0., 0.),
@@ -43,12 +38,17 @@ def surf_cube():
         M.Vec(0., 1., 1.),
     ]
     m.faces += [
-        
+        (0,2,1), (0,3,2),
+        (0,1,5), (0,5,4),
+        (1,2,6), (1,6,5),
+        (2,3,7), (2,7,6),
+        (3,0,4), (3,4,7),
+        (4,5,6), (4,6,7)
     ]
-    return m
+    return M.mesh.instanciate(m)
 
 def surf_tetrahedron():
-    m = M.mesh.new_surface()
+    m = M.mesh.empty()
     m.vertices += [
         M.Vec(0., 0., 0.),
         M.Vec(1., 0., 0.),
@@ -57,8 +57,7 @@ def surf_tetrahedron():
     ]
     m.edges += [(0,1), (1,2), (0,2), (0,3), (1,3), (2,3)]
     m.faces += [[0,1,2], [0,1,3], [1,2,3], [2,0,3]]
-    m.face_corners += [0,1,2,0,1,3,1,2,3,2,0,3]
-    return m
+    return M.mesh.instanciate(m)
 
 def surf_one_ring():
     return M.procedural.ring(10,0.1)

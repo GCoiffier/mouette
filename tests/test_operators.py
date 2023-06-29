@@ -1,6 +1,8 @@
 import mouette as M
 from data import *
 
+import pytest
+
 @pytest.mark.parametrize("m", surfaces)
 def test_cotan_laplacian(m):
     mat = M.operators.laplacian(m, False)

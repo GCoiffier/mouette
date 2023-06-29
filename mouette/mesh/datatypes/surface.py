@@ -329,7 +329,6 @@ class SurfaceMesh(Mesh):
             self._adjV2F   : dict = dict() # vertex -> face
             self._adjF2F   : dict = None # face -> face
             self._adjVF2Cn : dict = None # vertex,face -> face_corner
-            self._adjCn2F  : dict = None # face_corner -> face
             self._adjF2Cn  : dict = None # face -> first face_corner
             self._face_id  : dict = None     
 
@@ -411,7 +410,6 @@ class SurfaceMesh(Mesh):
 
         def _compute_corner_adj(self):
             self._adjVF2Cn = dict()
-            self._adjCn2F = dict()
             self._adjF2Cn = dict()
             c = 0
             for iF,F in enumerate(self.mesh.faces):
@@ -419,7 +417,6 @@ class SurfaceMesh(Mesh):
                 for v in F:
                     assert self.mesh.face_corners[c] == v
                     self._adjVF2Cn[(v,iF)] = c
-                    self._adjCn2F[c] = iF
                     c += 1
 
         ##### Vertex to Faces #####
@@ -502,9 +499,7 @@ class SurfaceMesh(Mesh):
             Returns:
                 int: face id or `None` if `C` is not a valid corner
             """
-            if self._adjCn2F is None:
-                self._compute_corner_adj()
-            return self._adjCn2F.get(C,None)
+            return self.mesh.face_corners.adj(C)
         
         def face_to_first_corner(self,F:int)->int:
             """

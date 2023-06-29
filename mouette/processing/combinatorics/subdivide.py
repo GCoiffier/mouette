@@ -1,6 +1,6 @@
 from ...mesh.datatypes import *
 from ...mesh.mesh_data import RawMeshData
-from ...mesh.mesh import _instanciate_raw_mesh_data
+from ...mesh.mesh import instanciate, empty
 from ...geometry import Vec
 from ...utils import keyify, Logger
 
@@ -32,7 +32,7 @@ class SurfaceSubdivision(Logger):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.mesh.prepare()
-        self.mesh = _instanciate_raw_mesh_data(self.mesh, 2)
+        self.mesh = instanciate(self.mesh, 2)
 
     @allowed_mesh_types(SurfaceMesh)
     def triangulate_face(self, face_id:int) :
@@ -87,7 +87,7 @@ class SurfaceSubdivision(Logger):
         self.triangulate()
 
         for _ in range(n):
-            newMeshData = RawMeshData()
+            newMeshData = empty()
             newMeshData.vertices += self.mesh.vertices
             # cut every edge in half
             half = dict()
@@ -129,7 +129,7 @@ class SurfaceSubdivision(Logger):
             If the mesh is not triangulated, will triangulate the mesh first.
         """
         self.triangulate()
-        newMeshData = RawMeshData()
+        newMeshData = empty() 
         newMeshData.vertices += self.mesh.vertices
         # cut every edge in half
         half = dict()
@@ -182,7 +182,7 @@ class VolumeSubdivision(Logger):
 
     def __exit__(self, exc_type, exc_value, tb):
         self.mesh.prepare()
-        self.mesh = _instanciate_raw_mesh_data(self.mesh, 3)
+        self.mesh = instanciate(self.mesh, 3)
 
     def split_tet_as_fan(self, cell_id:int):
         """

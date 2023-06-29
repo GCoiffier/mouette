@@ -3,9 +3,8 @@ from math import pi, cos, sin
 from scipy.spatial import ConvexHull
 
 from ..geometry import Vec,cross,dot
-from ..mesh.mesh_data import RawMeshData
 from ..mesh.datatypes import *
-from ..mesh.mesh import merge, _instanciate_raw_mesh_data
+from ..mesh.mesh import merge, instanciate, empty
 
 from ..geometry import transform
 
@@ -23,7 +22,7 @@ def sphere_uv( n_lat : int, n_long : int, center : Vec = Vec(0.,0.,0.), radius :
     Returns:
         SurfaceMesh: the sphere
     """
-    sp = RawMeshData()
+    sp = empty()
     # add two points at poles
     sp.vertices.append(center + radius*Vec(0.,0.,1.))
     sp.vertices.append(center + radius*Vec(0.,0.,-1.))
@@ -47,7 +46,7 @@ def sphere_uv( n_lat : int, n_long : int, center : Vec = Vec(0.,0.,0.), radius :
             sp.faces.append([face[0], face[2], face[1]])
         else:
             sp.faces.append(face)
-    return _instanciate_raw_mesh_data(sp,2)
+    return instanciate(sp,2)
 
 def icosphere(n_refine : int= 3, center : Vec = Vec(0.,0.,0.), radius : float = 1.) -> SurfaceMesh :
     ico = icosahedron(center)
@@ -98,10 +97,10 @@ def sphere_fibonacci( n_pts : int, radius:float =1., build_surface : bool = True
         z = sphi
         points.append(Vec(x,y,z))
 
-    data = RawMeshData()
+    data = empty()
     data.vertices += points
     if build_surface:
         # Triangulate points on a sphere : Delaunay is equivalent to convex hull since every points lay in the hull
         ch = ConvexHull(points, qhull_options="QJ")
         data.faces += list(ch.simplices)
-    return _instanciate_raw_mesh_data(data)
+    return instanciate(data)

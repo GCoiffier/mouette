@@ -1,6 +1,8 @@
 import mouette as M
 from data.polylines import *
 
+import pytest
+
 def test_rings():
     r = M.procedural.ring(10, 0.1, False, 1)
     assert len(r.vertices)==11

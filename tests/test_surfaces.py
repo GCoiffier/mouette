@@ -2,8 +2,11 @@ import mouette as M
 from data.surfaces import *
 from utils import *
 
+import pytest
+
 def test_new():
-    m = M.mesh.new_surface()
+    m = M.mesh.empty()
+    m = M.mesh.instanciate(m, dim=2)
     assert len(m.vertices)==0
     assert len(m.edges)==0
     assert len(m.faces)==0

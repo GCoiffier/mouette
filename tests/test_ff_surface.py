@@ -4,6 +4,8 @@ from mouette.mesh.datatypes.type_checks import BadMeshTypeException
 from mouette.utils.argument_check import InvalidArgumentTypeError,InvalidArgumentValueError, InvalidRangeArgumentError
 from data import *
 
+import pytest
+
 @pytest.mark.parametrize("m",[surf_spline(), surf_half_sphere()])
 def test_connection_faces(m):
     conn = SurfaceConnectionFaces(m)
@@ -15,7 +17,8 @@ def test_connection_vertices(m):
     assert True
 
 def test_surface_framefield_wrong_mesh():
-    m = M.mesh.new_polyline()
+    m = M.mesh.empty()
+    m = M.mesh.instanciate(m,dim=1)
     try:
         _ = ff.SurfaceFrameField(m, "vertices")
         assert False
@@ -23,7 +26,8 @@ def test_surface_framefield_wrong_mesh():
         assert True
 
 def test_surface_framefield_wrong_elements():
-    m = M.mesh.new_surface()
+    m = M.mesh.empty()
+    m = M.mesh.instanciate(m,dim=2)
     try:
         _ = ff.SurfaceFrameField(m, 42)
         assert False
@@ -38,7 +42,8 @@ def test_surface_framefield_wrong_elements():
 
 
 def test_surface_frame_field_bad_numerical_values():
-    m = M.mesh.new_surface()
+    m = M.mesh.empty()
+    m = M.mesh.instanciate(m,dim=2)
     try:
         _ = ff.SurfaceFrameField(m, "vertices", n_smooth="pouet")
         assert False

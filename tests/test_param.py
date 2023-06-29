@@ -2,6 +2,8 @@ from mouette.processing import parametrization as PARAM
 from utils import *
 from data import *
 
+import pytest
+
 ########## LSCM ##########
 
 @pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere()])

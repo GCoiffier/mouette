@@ -1,9 +1,7 @@
-import numpy as np
 from math import pi, cos, sin
-from ..geometry import cotan, Vec, angle_3pts, rotate_2d
+from ..geometry import Vec, angle_3pts, rotate_2d
 from ..mesh.datatypes import SurfaceMesh
-from ..mesh.mesh import _instanciate_raw_mesh_data
-from ..mesh.mesh_data import RawMeshData
+from ..mesh.mesh import instanciate, empty
 
 def ring(N : int, defect : float, open :bool = False, n_cover:int = 1) -> SurfaceMesh:
     """
@@ -22,7 +20,7 @@ def ring(N : int, defect : float, open :bool = False, n_cover:int = 1) -> Surfac
         SurfaceMesh: the ring
     """
 
-    ring = RawMeshData()
+    ring = empty()
     max_defect = 2*pi-0.01
     defect = max(min(defect,max_defect), 0.) # 0 is ok, but 2pi is point at infinity
 
@@ -63,10 +61,10 @@ def ring(N : int, defect : float, open :bool = False, n_cover:int = 1) -> Surfac
             P2 = Pmid
         stop = (abs(dfct1 - dfct2) < 1e-6)
     ring.vertices[0] = (P1 + P2)/2
-    return _instanciate_raw_mesh_data(ring, 2)
+    return instanciate(ring, 2)
 
 def flat_ring(N : int, defect : float, n_cover:int = 1) -> SurfaceMesh:
-    ring = RawMeshData()
+    ring = empty()
     max_defect = 2*pi-0.01
     defect = max(min(defect,max_defect), 0.) # 0 is ok, but 2pi is point at infinity
 
@@ -81,4 +79,4 @@ def flat_ring(N : int, defect : float, n_cover:int = 1) -> SurfaceMesh:
         dir = Vec(dir.x, dir.y, 0.)
         ring.vertices.append(dir)
         ring.faces.append((0,i+1,i+2))
-    return _instanciate_raw_mesh_data(ring,2)
+    return instanciate(ring,2)

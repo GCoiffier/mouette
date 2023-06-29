@@ -1,15 +1,15 @@
 from ..mesh.datatypes import *
-from ..mesh.mesh import _instanciate_raw_mesh_data
+from ..mesh.mesh import instanciate, empty
 from ..mesh.mesh_data import RawMeshData
 from ..geometry import Vec
 from math import sqrt
 
 def tetrahedron(P1,P2,P3,P4, volume=False) -> SurfaceMesh:
-    tet = RawMeshData()
+    tet = empty()
     tet.vertices += [P1,P2,P3,P4]
     tet.faces += [(1,2,3), (0,2,3),(0,1,3),(0,1,2)]
     if volume: tet.cells.append((0,1,2,3))
-    return _instanciate_raw_mesh_data(tet)
+    return instanciate(tet)
 
 def hexahedron(P1, P2, P3, P4, P5, P6, P7, P8, colored=False, volume=False) -> SurfaceMesh:
     """Generate an hexahedron in arbitrary configuration given 8 points. Order and connectivity of points is:
@@ -32,7 +32,7 @@ def hexahedron(P1, P2, P3, P4, P5, P6, P7, P8, colored=False, volume=False) -> S
     Returns:
         SurfaceMesh: a cube
     """
-    hexa = RawMeshData()
+    hexa = empty()
     hexa.vertices += [P1,P2,P3,P4,P5,P6,P7,P8]
 
     if volume:
@@ -64,14 +64,14 @@ def hexahedron(P1, P2, P3, P4, P5, P6, P7, P8, colored=False, volume=False) -> S
             col[5] = BLUE
             col[8] = BLUE
             col[9] = BLUE
-    return _instanciate_raw_mesh_data(hexa)
+    return instanciate(hexa)
 
 def octahedron():
     raise NotImplementedError
 
-def icosahedron(center : Vec = Vec(0,0,0), uv=False):
+def icosahedron(center : Vec = Vec(0,0,0)):
     phi = (1 + sqrt(5)) / 2
-    m = RawMeshData()
+    m = empty()
 
     m.vertices += [ a+center for a in 
     [
@@ -113,7 +113,7 @@ def icosahedron(center : Vec = Vec(0,0,0), uv=False):
         (8, 6, 7),
         (9, 8, 1)
     ]
-    return _instanciate_raw_mesh_data(m, 2)
+    return instanciate(m, 2)
 
 def dodecahedron() -> SurfaceMesh:
     raise NotImplementedError

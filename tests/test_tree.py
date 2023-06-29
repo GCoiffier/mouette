@@ -1,11 +1,12 @@
 import mouette as M
 from data import *
 
+import pytest
+
 @pytest.mark.parametrize("m", polylines + surfaces + volumes)
 def test_edge_spanning_tree(m):
     _ = M.processing.trees.EdgeSpanningTree(m)()
     assert True
-
 
 @pytest.mark.parametrize("m", [surf_circle()])
 def test_edge_spanning_tree_avoid_edges(m):

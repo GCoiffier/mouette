@@ -1,5 +1,3 @@
-import numpy as np
-
 from ..geometry import Vec
 from .platonic import hexahedron
 from ..mesh.datatypes import *

@@ -18,8 +18,6 @@ def import_off(path : str):
         ...
         3 vm_1 vm_2 vm_3
         /////////////////
-
-        if surfacic, 3 is given at beginning of each simplex line (triangle), otherwise 4 (tetrahedron)
     Parameters:
         path (str): the input file path
     """
@@ -46,19 +44,10 @@ def parse_off_data(data):
         output.vertices.append(Vec(vertex))
 
     for _ in range(nf):
-        simplex = data.popleft()
-        nvi = int(simplex[0])
-        if nvi==3:
-            face = [int(u) for u in simplex[1:nvi+1]]
-            output.faces.append(face)
-            output.face_corners += face
-        elif nvi==2:
-            a,b = simplex[1], simplex[2]
-            output.edges.append((min(a,b), max(a,b)))
-        elif nvi==4:
-            cell = [int(u) for u in simplex[1:nvi+1]]
-            output.cells.append(cell)
-            output.cell_corners += cell
+        elem = data.popleft()
+        nvi = int(elem[0])
+        face = [int(u) for u in elem[1:nvi+1]]
+        output.faces.append(face)
     return output
 
 def export_off(mesh, path):

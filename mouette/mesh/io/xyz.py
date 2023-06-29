@@ -1,5 +1,4 @@
 from ..mesh_data import RawMeshData
-from ...geometry import Vec
 from ..mesh import PointCloud
 
 def import_xyz(filepath : str) -> RawMeshData:

@@ -2,44 +2,16 @@ from .mesh_data import RawMeshData
 from .datatypes import Mesh, PointCloud, PolyLine, SurfaceMesh, VolumeMesh
 from .io.io import read_by_extension, write_by_extension
 
-def new_point_cloud() -> PointCloud: 
+def empty() -> RawMeshData:
     """
-    Create a new empty point cloud
+    Creates an empty raw mesh
 
     Returns:
-        PointCloud
+        RawMeshData: an empty mesh object with unspecified dimensionality
     """
-    return PointCloud()
-    
-def new_polyline() -> PolyLine:
-    """
-    Creates a new empty poly line
+    return RawMeshData()
 
-    Returns:
-        PolyLine
-    """
-    return PolyLine()
-
-def new_surface() -> SurfaceMesh:
-    """
-    Creates a new empty surface mesh
-
-    Returns:
-        SurfaceMesh
-    """
-    return SurfaceMesh()
-
-def new_volume() -> VolumeMesh:
-    """
-    Creates a new empty volume mesh
-
-    Returns:
-        VolumeMesh
-    """
-    return VolumeMesh()
-
-
-def _instanciate_raw_mesh_data(mesh_data : RawMeshData, dim : int = None) -> Mesh:
+def instanciate(mesh_data : RawMeshData, dim : int = None) -> Mesh:
     mesh_data.prepare()
     if dim is None: dim = -1
     dim = max(dim, mesh_data.dimensionality)
@@ -65,7 +37,7 @@ def load(filename : str, dim : int = None, raw : bool = False) -> Mesh:
     """
     data = read_by_extension(filename)
     if raw: return data
-    return _instanciate_raw_mesh_data(data, dim)
+    return instanciate(data, dim)
     
 
 def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
@@ -151,4 +123,4 @@ def merge(mesh_list : list) -> Mesh:
         if hasattr(to_merge, "cells") :
             merged.cells += [tuple((vertex_offset+u for u in c)) for c in to_merge.cells]
         vertex_offset += len(to_merge.vertices)
-    return _instanciate_raw_mesh_data(merged)
+    return instanciate(merged)

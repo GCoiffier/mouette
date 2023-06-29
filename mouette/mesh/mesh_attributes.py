@@ -3,6 +3,7 @@ from abc import abstractmethod, ABC
 
 from ..geometry import Vec
 from aenum import MultiValueEnum
+import warnings
 
 class BaseAttribute(ABC):
 
@@ -281,7 +282,7 @@ class ArrayAttribute(BaseAttribute):
         self._default_value = default_value
         self._check_default_value_type()
         self._data = np.full((n_elem, elem_size), self.default_value, dtype= self.type.dtype)
-    
+
     def _check_out_of_bounds(self,key):
         if key<0 or key>self.n_elem:
             raise Attribute.OutOfBoundsError(key, self.n_elem)
