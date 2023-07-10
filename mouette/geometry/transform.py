@@ -1,6 +1,7 @@
 from scipy.spatial.transform import Rotation
 from ..mesh.datatypes import *
 from . import Vec
+from .aabb import AABB
 import numpy as np
 
 def translate(mesh : Mesh, tr : Vec) -> Mesh:
@@ -59,7 +60,7 @@ def scale(mesh : Mesh, factor : float, orig : Vec = None) -> Mesh:
     # if abs(factor)<1e-8:
     #     print("Warning: mesh will be scaled with a very small factor ({})".format(factor))
     if orig is None:
-        orig = mesh.vertices[0]
+        orig = Vec.zeros(3)
     for i in mesh.id_vertices:
         mesh.vertices[i] = orig + factor*(mesh.vertices[i] - orig)
     return mesh
@@ -76,7 +77,7 @@ def scale_xyz(mesh : Mesh, fx : float = 1., fy : float = 1., fz : float = 1., or
         orig (Vec, optional): Fixed point of the scaling. If not provided, it is set at (0,0,0). Defaults to None.
 
     Returns:
-        Mesh: the scaled input mesh.
+        Mesh: the scaled mesh.
     """
     # for f in (fx,fy,fx):
     #     if abs(f)<1e-8:
@@ -87,6 +88,20 @@ def scale_xyz(mesh : Mesh, fx : float = 1., fy : float = 1., fz : float = 1., or
         Pi = mesh.vertices[i]
         mesh.vertices[i] = orig + Vec( fx*(Pi.x - orig.x), fy*(Pi.y - orig.y), fz *(Pi.z - orig.z))
     return mesh
+
+def fit_into_unit_cube(mesh : Mesh) -> Mesh:
+    """Applies translation and global scaling for the mesh to fit inside a cube [0;1]^3
+
+    Args:
+        mesh (Mesh): the input mesh. Can be any mesh data structure
+
+    Returns:
+        Mesh: the scaled and translated mesh
+    """
+    bounding = AABB.of_mesh(mesh)
+    sc = 1/np.max(bounding.span)
+    tr = bounding.min_coords
+    return scale(translate(mesh, -tr), sc)
 
 def flatten(mesh : Mesh, dim : int = None) -> Mesh:
     """
