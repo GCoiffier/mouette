@@ -10,19 +10,29 @@ class Vec(np.ndarray):
             obj = np.asarray(a).view(cls)
         return obj
     
-    @staticmethod
-    def random(n : int):
-        data = np.random.random(n)
-        return Vec(data)
+    @classmethod
+    def from_complex(cls, c : complex):
+        return cls(c.real, c.imag)
 
-    @staticmethod
-    def zeros(n : int):
-        data = np.zeros(n)
-        return Vec(data)
+    @classmethod
+    def random(cls, n : int):
+        return Vec(np.random.random(n))
+
+    @classmethod
+    def zeros(cls, n : int):
+        return Vec(np.zeros(n))
     
-    @staticmethod
-    def from_complex(c : complex):
-        return Vec(c.real, c.imag)
+    @classmethod
+    def X(cls): 
+        return Vec(1.,0.,0.)
+
+    @classmethod
+    def Y(cls): 
+        return Vec(0.,1.,0.)
+
+    @classmethod
+    def Z(cls): 
+        return Vec(0.,0.,1.)
 
     ###### Accessors ######
     @property

@@ -77,15 +77,13 @@ class _BaseFrameField2DVertices(FrameField):
             for e in self.feat.feature_edges:
                 A,B = self.mesh.edges[e]
                 edge = self.mesh.vertices[B] - self.mesh.vertices[A]
-                XB,YB = self.conn.base(B)
-                vx,vy = np.dot(XB, edge), np.dot(YB, edge)
+                vx,vy = self.conn.project(edge,B)
                 v = complex(vx, vy)
                 vpow = (v/abs(v)) ** self.order
                 if abs(self.var[B] + vpow)>1e-10:
                     self.var[B] += vpow
 
-                XA,YA = self.conn.base(A)
-                vx,vy = np.dot(XA, edge), np.dot(YA, edge)
+                vx,vy = self.conn.project(edge,A)
                 v = complex(vx, vy)
                 vpow = (v/abs(v)) ** self.order
                 if abs(self.var[A] + vpow)>1e-10:

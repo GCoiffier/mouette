@@ -56,7 +56,6 @@ class SurfaceConnectionVertices(SurfaceConnection):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, mesh : SurfaceMesh,  feat : FeatureEdgeDetector = None, **kwargs):
         self.vnormals = kwargs.get("vnormals", None)
-        
         if self.vnormals is None: 
             if mesh.vertices.has_attribute("normals"):
                 self.vnormals = mesh.vertices.get_attribute("normals")
@@ -112,26 +111,33 @@ class SurfaceConnectionVertices(SurfaceConnection):
                     c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
                     ang += self.angles[c]
 
-            # ang = 0.
-            # # if u in self.feat.feature_vertices:
-            # if self.mesh.is_vertex_on_border(u) :
-            #     fst, lst = vert_u[0], vert_u[-1]
-            #     pfst, plst = (self.mesh.vertices[x] for x in (fst, lst))
-            #     comp_angle = geom.signed_angle_3pts(plst,P,pfst, N) # complementary angle, ie "exterior" angle between two edges on the boundary
-            #     comp_angle = 2*np.pi + comp_angle if comp_angle<0 else comp_angle
-                
-            #     for v in vert_u:
-            #         T = self.mesh.half_edges.adj(u,v)[0]
-            #         self._transport[(u,v)] = ang * 2 * np.pi / (self.total_angle[u] + comp_angle)
-            #         if T is None : continue
-            #         c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
-            #         ang += self.angles[c]
-            # else:
-            #     for v in vert_u:
-            #         T = self.mesh.half_edges.adj(u,v)[0]
-            #         c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
-            #         self._transport[(u,v)] = ang * 2 * np.pi / self.total_angle[u]
-            #         ang += self.angles[c]
+class FlatConnectionVertices(SurfaceConnection):
+    """
+    Surface connection on vertices where all local bases are taken as the canonical basis ([1 0 0], [0 1 0]).
+    /!\ This only makes sense if the considered surface is embedded in R^2, meaning that there is no curvature.
+
+    Args:
+        mesh (SurfaceMesh): the supporting mesh
+    """
+
+    @allowed_mesh_types(SurfaceMesh)
+    def __init__(self, mesh : SurfaceMesh):
+        super().__init__(mesh, None) # no feature detection
+
+    def _initialize(self):
+        return  # nothing to do
+
+    def transport(self, iA:int, iB:int):
+        E = self.mesh.vertices[iB] - self.mesh.vertices[iA]
+        return np.arctan2(E.y, E.x)
+
+    def base(self, i:int):
+        # Same base everywhere
+        return Vec.X(), Vec.Y()
+
+    def project(self, V:Vec, i:int):
+        # projection does not depend on the considered vertex i
+        return Vec(V[0], V[1])
 
 class SurfaceConnectionFaces(SurfaceConnection):
     """
