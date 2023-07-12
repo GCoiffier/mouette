@@ -122,22 +122,28 @@ class FlatConnectionVertices(SurfaceConnection):
 
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, mesh : SurfaceMesh):
-        super().__init__(mesh, None) # no feature detection
+        super().__init__(mesh, None)
+        self._baseX = Vec.X()
+        _,_,sample_normal = geom.face_basis(*(self.mesh.vertices[_u] for _u in self.mesh.faces[0][:3]))
+        if sample_normal.z<0:
+            self._baseY = -Vec.Y()
+        else:
+            self._baseY = Vec.Y()
 
     def _initialize(self):
-        return  # nothing to do
+        return # nothing to do
 
-    def transport(self, iA:int, iB:int):
+    def transport(self, iA,iB):
         E = self.mesh.vertices[iB] - self.mesh.vertices[iA]
-        return np.arctan2(E.y, E.x)
+        return np.arctan2(E.y,E.x)
 
     def base(self, i:int):
         # Same base everywhere
-        return Vec.X(), Vec.Y()
+        return self._baseX, self._baseY
 
     def project(self, V:Vec, i:int):
         # projection does not depend on the considered vertex i
-        return Vec(V[0], V[1])
+        return Vec(self._baseX.dot(V), self._baseY.dot(V))
 
 class SurfaceConnectionFaces(SurfaceConnection):
     """
