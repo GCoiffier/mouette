@@ -177,6 +177,7 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
     def initialize(self):
         self._initialize_attributes()
         self._initialize_variables()
+        self.initialized = True
 
     def optimize(self):
         self._check_init()

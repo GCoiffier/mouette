@@ -230,3 +230,26 @@ def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
     ca = distance(C,A)
     s = (ab+bc+ca)/2
     return ab*bc*ca/(8*(s-ab)*(s-bc)*(s-ca))
+
+
+def distance_to_segment2D(P : Vec, A : Vec, B : Vec) -> float:
+    """
+    Computes the distance of point P to the segment [A;B]
+
+    Args:
+        P (Vec): Query point in 2D
+        A (Vec): First segment extremity
+        B (Vec): Second segment extremity
+
+    Returns:
+        float: the euclidean distance from P to [A;B]
+    """
+    P,A,B = P[:2], A[:2], B[:2]
+    seg = B-A
+    seg_length_sq = dot(seg,seg)
+    if seg_length_sq<1e-12: 
+        # segment is a single point
+        return distance(P,A)
+    t = max(0, min(1, dot(P-A, seg)/seg_length_sq))
+    proj = A + t*seg
+    return distance(P, proj)

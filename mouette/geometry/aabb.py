@@ -67,6 +67,8 @@ class BB2D:
     def width(self): return self._d.x
     @property
     def height(self): return self._d.y
+    @property
+    def span(self) -> Vec: return self._d
 
     @staticmethod
     def intersection(b1,b2):
