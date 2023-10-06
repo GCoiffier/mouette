@@ -187,3 +187,36 @@ class SurfaceConnectionFaces(SurfaceConnection):
             angle2 = math.atan2( geom.dot(E,Y2), geom.dot(E,X2))
             self._transport[(T1,T2)] = angle1 - angle2
             self._transport[(T2,T1)] = angle2 - angle1
+
+class FlatConnectionFaces(SurfaceConnection):
+    """
+    Surface connection on faces where all local bases are taken as the canonical basis ([1 0 0], [0 1 0]).
+    /!\ This only makes sense if the considered surface is embedded in R^2, meaning that there is no curvature.
+
+    Args:
+        mesh (SurfaceMesh): the supporting mesh
+    """
+
+    @allowed_mesh_types(SurfaceMesh)
+    def __init__(self, mesh : SurfaceMesh):
+        super().__init__(mesh, None)
+        self._baseX = Vec.X()
+        _,_,sample_normal = geom.face_basis(*(self.mesh.vertices[_u] for _u in self.mesh.faces[0][:3]))
+        if sample_normal.z<0:
+            self._baseY = -Vec.Y()
+        else:
+            self._baseY = Vec.Y()
+
+    def _initialize(self):
+        return # nothing to do
+
+    def transport(self, iA,iB):
+        return 0.
+
+    def base(self, i:int):
+        # Same base everywhere
+        return self._baseX, self._baseY
+
+    def project(self, V:Vec, i:int):
+        # projection does not depend on the considered vertex i
+        return Vec(self._baseX.dot(V), self._baseY.dot(V))

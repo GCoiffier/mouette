@@ -36,6 +36,7 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
             if mesh.is_vertex_on_border(v) and v!=point1:
                 point1, point2 = point2, v
                 break
+    eborder.append(mesh.connectivity.edge_id(point1, point2)) # add last edge to close the cycle
     return vborder, eborder
 
 @allowed_mesh_types(SurfaceMesh)

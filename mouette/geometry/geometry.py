@@ -234,7 +234,7 @@ def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
 
 def distance_to_segment2D(P : Vec, A : Vec, B : Vec) -> float:
     """
-    Computes the distance of point P to the segment [A;B]
+    Computes, **in the plane**, the distance of point P to the segment [A;B]
 
     Args:
         P (Vec): Query point in 2D

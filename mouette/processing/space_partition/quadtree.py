@@ -122,8 +122,7 @@ class QuadTree:
         v0 -- v4 -- v1 
         """
         node : QuadTree.Node = self._nodes[node_id]
-        if len(node.children)!=0 : return
-        # leaf node -> trigger subdivision
+        if len(node.children)!=0 : return # not a leaf -> cannot subdivide
         nv = len(self._tree_vert.vertices)
         v0,v1,v2,v3 = node.corners
         p0,p1,p2,p3 = (self.vertex(v) for v in node.corners)

@@ -1,11 +1,11 @@
 import argparse
 import mouette as M
-from mouette.processing import SurfaceFrameField, PrincipalDirections
+from mouette import framefield
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input_mesh", type=str, help="path to the input mesh")
-    parser.add_argument("-outp", "--outp", default="output/output.geogram_ascii")
+    parser.add_argument("-outp", "--outp", default="output.geogram_ascii")
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("-elem", "--elements", type=str, choices=["vertices", "faces"])
     parser.add_argument("-order", "--order", type=int, default=4)
@@ -32,9 +32,9 @@ if __name__ == "__main__":
             singus[args.singular_indices[2*i]] = args.singular_indices[2*i+1]
 
     if args.curvature:
-        ff = PrincipalDirections(mesh, args.elements, args.features, args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha)
+        ff = framefield.PrincipalDirections(mesh, args.elements, args.features, args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha)
     else:
-        ff = SurfaceFrameField(mesh, args.elements, args.order, args.features, verbose=args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha, cad_correction=args.cadff, singularity_indices=singus)
+        ff = framefield.SurfaceFrameField(mesh, args.elements, args.order, args.features, verbose=args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha, cad_correction=args.cadff, singularity_indices=singus)
 
     ff.run()
     ff.flag_singularities()

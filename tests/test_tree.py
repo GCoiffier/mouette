@@ -14,7 +14,7 @@ def test_edge_spanning_tree_avoid_edges(m):
 
 @pytest.mark.parametrize("m", [surf_circle(), surf_half_sphere()])
 def test_edge_spanning_tree_traverse(m):
-    tree = M.processing.trees.EdgeSpanningTree(m, starting_vertex=0, avoid_boundary=True)
+    tree = M.processing.trees.EdgeSpanningTree(m, starting_vertex=0, avoid_boundary=True)()
     for _ in tree.traverse(): continue
     assert True
 

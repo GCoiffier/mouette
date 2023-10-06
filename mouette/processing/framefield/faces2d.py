@@ -151,16 +151,18 @@ class _BaseFrameField2DFaces(FrameField) :
         """
         FFMesh = PolyLine()
         L = mean_edge_length(self.mesh)/3
+        n = self.order+1
         for id_face, face in enumerate(self.mesh.faces):
             basis,Y = self.conn.base(id_face)
             normal = geom.cross(basis,Y)
             pA,pB,pC = (self.mesh.vertices[_v] for _v in face)
-            angle = cmath.phase(self.var[id_face])/4
+            angle = cmath.phase(self.var[id_face])/self.order
             bary = (pA+pB+pC)/3 # reference point for display
-            r1,r2,r3,r4 = (geom.rotate_around_axis(basis, normal, angle + k*pi/2) for k in range(4))
-            p1,p2,p3,p4 = (bary + abs(self.var[id_face])*L*r for r in (r1,r2,r3,r4))
-            FFMesh.vertices += [bary, p1, p2, p3, p4]
-            FFMesh.edges += [(5*id_face, 5*id_face+k) for k in range(1,5)]            
+            cmplx = [geom.rotate_around_axis(basis, normal, angle + 2*k*pi/self.order) for k in range(self.order)]
+            pts = [bary + abs(self.var[id_face])*L*r for r in cmplx]
+            FFMesh.vertices.append(bary)
+            FFMesh.vertices += pts
+            FFMesh.edges += [(n*id_face, n*id_face+k) for k in range(1,n)]
         return FFMesh
 
 class FrameField2DFaces(_BaseFrameField2DFaces) : 

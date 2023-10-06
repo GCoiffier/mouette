@@ -1,7 +1,7 @@
 from scipy.spatial.transform import Rotation
 from ..mesh.datatypes import *
 from . import Vec
-from .aabb import AABB
+from .aabb import BB3D
 import numpy as np
 
 def translate(mesh : Mesh, tr : Vec) -> Mesh:
@@ -98,7 +98,7 @@ def fit_into_unit_cube(mesh : Mesh) -> Mesh:
     Returns:
         Mesh: the scaled and translated mesh
     """
-    bounding = AABB.of_mesh(mesh)
+    bounding = BB3D.of_mesh(mesh)
     sc = 1/np.max(bounding.span)
     tr = bounding.min_coords
     return scale(translate(mesh, -tr), sc)
