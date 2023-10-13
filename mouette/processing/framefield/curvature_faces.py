@@ -74,17 +74,19 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
 
         if self.n_smooth > 0:
             # diffuse the curvature results to get a smoother results (especially where curvature was not defined)
-            lap = operators.laplacian_triangles(self.mesh, order=4)
-            A = operators.area_weight_matrix_faces(self.mesh).astype(complex)
-            alpha = self.smooth_attach_weight or 1e-3
-
+            lap = operators.laplacian_triangles(self.mesh, order=4, connection=self.conn).tocsc()
+            A = operators.area_weight_matrix_faces(self.mesh)
+            self.log(f"Solve linear system {self.n_smooth} times with diffusion")
+            alpha = self.smooth_attach_weight or self._compute_attach_weight(A, 0.1)
+            A = A.astype(complex)
+            self.log("Attach weight: {}".format(alpha))
             if len(self.feat.feature_vertices)>0: # we have a boundary
-                pass
-            
+                raise NotImplementedError
             else:
                 mat = lap - alpha * A
+                solve = linalg.factorized(mat)
                 for _ in range(self.n_smooth):
                         valI2 = alpha * A.dot(self.var)
-                        self.var = linalg.spsolve(mat, - valI2)
+                        self.var = solve(-valI2)
                         self.normalize()
         self.smoothed = True

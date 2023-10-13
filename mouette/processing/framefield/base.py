@@ -50,7 +50,7 @@ class FrameField(Worker):
     def normalize(self):
         if self.var is None: return
         for i in range(self.var.size):
-            if abs(self.var[i])>1e-8: 
+            if abs(self.var[i])>1e-10: 
                 self.var[i] /= abs(self.var[i])
 
     @abstractmethod

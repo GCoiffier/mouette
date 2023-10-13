@@ -85,7 +85,7 @@ def SurfaceFrameField(
     ### Assert sanity of arguments
     check_argument("elements", elements, str, ["vertices", "faces"])
     check_argument("order", order, int)
-    if order<=1: raise InvalidRangeArgumentError("order",order, ">1")  
+    if order<1: raise InvalidRangeArgumentError("order",order, ">=1")  
     check_argument("n_smooth", n_smooth, int)
     if n_smooth<0: raise InvalidRangeArgumentError("n_smooth", n_smooth, ">=0")
     if smooth_attach_weight is not None and smooth_attach_weight<=0 :

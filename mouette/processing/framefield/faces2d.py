@@ -240,8 +240,9 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
             self.log("Initial solve of linear system using an eigensolver")
             self.var = optimize.inverse_power_method(lap)
             if self.n_smooth>0:
-                alpha = self.smooth_attach_weight or 0.01
                 self.log(f"Solve linear system {self.n_smooth} times with diffusion")
+                alpha = self.smooth_attach_weight or self._compute_attach_weight(A)
+                self.log("Attach weight: {}".format(alpha))
                 mat = lap - alpha * A
                 solve = sp.linalg.factorized(mat)
                 for _ in range(self.n_smooth):

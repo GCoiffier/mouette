@@ -197,7 +197,7 @@ def laplacian_triangles(
             T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)
             if T1 is not None and T2 is not None:
                 Nabla[ie,T1] = -1
-                Nabla[ie,T2] = cmath.rect(1, order*(connection.transport(T1,T2) + math.pi))
+                Nabla[ie,T2] = cmath.rect(1, order*connection.transport(T1,T2))
     else:
          for ie,(ei,ej) in enumerate(mesh.edges):
             T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)
