@@ -155,18 +155,21 @@ def cotan_edge_diagonal(mesh : SurfaceMesh, inverse:bool=True) -> sp.csc_matrix:
     return sp.diags(coeffs, format="csc")
 
 @allowed_mesh_types(SurfaceMesh)
-def area_weight_matrix_faces(mesh : SurfaceMesh) -> sp.csc_matrix:
+def area_weight_matrix_faces(mesh : SurfaceMesh, inverse : bool=False) -> sp.csc_matrix:
     """
     Returns the diagonal matrix A of area weights on faces
     Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix
 
     Args:
         mesh (SurfaceMesh): the input mesh
+        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
 
     Returns:
         sp.csc_matrix
     """
     area = face_area(mesh, persistent=False).as_array()
+    if inverse:
+        area = 1/area
     return sp.diags(area, format="csc")
 
 @allowed_mesh_types(SurfaceMesh)
