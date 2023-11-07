@@ -8,7 +8,7 @@ if len(sys.argv)<2:
 mesh = M.mesh.load(sys.argv[1])
 conn = M.processing.SurfaceConnectionVertices(mesh)
 
-expmap = M.processing.DiscreteExponentialMap(mesh, conn, dist=10)
+expmap = M.processing.DiscreteExponentialMap(mesh, conn, radius=10)
 
 ### Take an origin vertex at random
 Vorig = mesh.boundary_vertices[0] # randint(0, len(mesh.vertices)-1)
