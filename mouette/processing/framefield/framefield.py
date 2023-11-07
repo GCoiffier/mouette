@@ -28,7 +28,7 @@ def SurfaceFrameField(
     smooth_normals : bool = True,
     singularity_indices : Attribute = None,
     custom_connection : SurfaceConnection = None,
-    custom_feature : FeatureEdgeDetector = None
+    custom_features : FeatureEdgeDetector = None
 ) -> FrameField :
     """
     Framefield implementation selector.
@@ -94,15 +94,15 @@ def SurfaceFrameField(
     ### Build the correct FF class
     if elements=="vertices":
         if singularity_indices is not None:
-            return TrivialConnectionVertices(mesh, singularity_indices, order, verbose, use_cotan=use_cotan, cad_correction=cad_correction, custom_connection=custom_connection, custom_feature=custom_feature)
+            return TrivialConnectionVertices(mesh, singularity_indices, order, verbose, use_cotan=use_cotan, cad_correction=cad_correction, custom_connection=custom_connection, custom_features=custom_features)
         else:
             return FrameField2DVertices(mesh, order, features, verbose, n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight, 
-            use_cotan=use_cotan, cad_correction=cad_correction, smooth_normals=smooth_normals, custom_connection=custom_connection, custom_feature=custom_feature)
+            use_cotan=use_cotan, cad_correction=cad_correction, smooth_normals=smooth_normals, custom_connection=custom_connection, custom_features=custom_features)
 
     elif elements=="faces":
         if singularity_indices is not None:
             return TrivialConnectionFaces(mesh, singularity_indices, order=order, verbose=verbose, custom_connection=custom_connection, custom_feature=custom_feature)
-        return FrameField2DFaces(mesh, order, features, verbose, n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight,use_cotan=use_cotan,custom_connection=custom_connection,custom_feature=custom_feature)
+        return FrameField2DFaces(mesh, order, features, verbose, n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight,use_cotan=use_cotan,custom_connection=custom_connection,custom_features=custom_features)
 
 @allowed_mesh_types(SurfaceMesh)
 def PrincipalDirections(

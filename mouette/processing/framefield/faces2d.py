@@ -78,7 +78,7 @@ class _BaseFrameField2DFaces(FrameField) :
             try:
                 self.log("First estimation of alpha failed: {}".format(e))
                 lap_no_pt = operators.laplacian_triangles(self.mesh, cotan=False)
-                eigs = sp.linalg.eigsh(lap_no_pt+0.01*sp.identity(lap_no_pt.shape[0]), M=A, k=2, which="SM", tol=1e-3, maxiter=100, return_eigenvectors=False)
+                eigs = sp.linalg.eigsh(lap_no_pt+1e-3*sp.identity(lap_no_pt.shape[0]), M=A, k=2, which="SM", tol=1e-3, maxiter=100, return_eigenvectors=False)
             except:
                 self.log("Second estimation of alpha failed: taking alpha = ", fail_value)
                 return fail_value
