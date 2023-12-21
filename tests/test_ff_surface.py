@@ -69,6 +69,18 @@ def test_surface_framefield_faces(m):
     framefield.flag_singularities()
     assert m.vertices.has_attribute("singuls")
 
+@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
+def test_CurvatureVertices(m):
+    framefield = ff.PrincipalDirections(m, "vertices")()
+    framefield.flag_singularities()
+    assert m.faces.has_attribute("singuls")
+
+@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
+def test_CurvatureFaces(m):
+    framefield = ff.PrincipalDirections(m, "faces")()
+    framefield.flag_singularities()
+    assert m.vertices.has_attribute("singuls")
+
 @pytest.mark.parametrize("m", [surf_circle()])
 def test_surface_framefield_custom_connection_vertices(m):
     conn = SurfaceConnectionVertices(m)
@@ -83,14 +95,14 @@ def test_surface_framefield_custom_connection_faces(m):
 
 @pytest.mark.parametrize("m", [surf_feat()])
 def test_surface_framefield_custom_features_vertices(m):
-    feat = FeatureEdgeDetector()
-    _ = ff.SurfaceFrameField(m, "vertices", custom_feature=feat)()
+    feat = FeatureEdgeDetector().run(m)
+    _ = ff.SurfaceFrameField(m, "vertices", custom_features=feat)()
     assert True
 
 @pytest.mark.parametrize("m", [surf_feat()])
 def test_surface_framefield_custom_features_faces(m):
-    feat = FeatureEdgeDetector()
-    _ = ff.SurfaceFrameField(m, "faces", custom_feature=feat)()
+    feat = FeatureEdgeDetector().run(m)
+    _ = ff.SurfaceFrameField(m, "faces", custom_features=feat)()
     assert True
 
 @pytest.mark.parametrize("m", [surf_circle()])
@@ -123,15 +135,3 @@ def test_surface_framefield_custom_singus_faces_invalid_topo(m):
         assert False
     except Exception as e:
         assert True
-
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
-def test_CurvatureVertices(m):
-    framefield = ff.PrincipalDirections(m, "vertices")()
-    framefield.flag_singularities()
-    assert m.faces.has_attribute("singuls")
-
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
-def test_CurvatureFaces(m):
-    framefield = ff.PrincipalDirections(m, "faces")()
-    framefield.flag_singularities()
-    assert m.vertices.has_attribute("singuls")

@@ -224,7 +224,7 @@ class FrameField3DCells(FrameField):
         self.log(" | Initial solve of linear system")
         instance = OSQP()
         instance.setup(Q, None, A=cstrMat, l=cstrRHS, u=cstrRHS, verbose=self.verbose, polish=True, check_termination=10, 
-                        adaptive_rho=True, linsys_solver='mkl pardiso')
+                        adaptive_rho=True,  linsys_solver=utils.get_osqp_lin_solver())
         res = instance.solve()
         self.var = res.x
 

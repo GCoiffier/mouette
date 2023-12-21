@@ -8,7 +8,7 @@ from tqdm import tqdm, trange
 from tqdm.utils import _term_move_up
 prefix = _term_move_up() + '\r'
 
-from ..utils import Logger
+from ..utils import Logger, get_osqp_lin_solver
 from .. import geometry as geom
 
 @dataclass
@@ -81,7 +81,7 @@ class LevenbergMarquardt(Logger):
         self._stop_criterion_instance = None # OSQP instance to compute projected gradient norm
         
         ### Additionnal parameters
-        self._linsys_solver = kwargs.get("lin_solver", "mkl pardiso")
+        self._linsys_solver = kwargs.get("lin_solver", get_osqp_lin_solver())
 
     def register_constraints(self, A : sp.spmatrix, l : np.ndarray = None, u : np.ndarray = None):
         """

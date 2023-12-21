@@ -80,13 +80,13 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
             alpha = self.smooth_attach_weight or self._compute_attach_weight(A, 0.1)
             A = A.astype(complex)
             self.log("Attach weight: {}".format(alpha))
-            if len(self.feat.feature_vertices)>0: # we have a boundary
-                raise NotImplementedError
-            else:
-                mat = lap - alpha * A
-                solve = linalg.factorized(mat)
-                for _ in range(self.n_smooth):
-                        valI2 = alpha * A.dot(self.var)
-                        self.var = solve(-valI2)
-                        self.normalize()
+            # TODO : take boundary into account
+            # if len(self.feat.feature_vertices)>0: # we have a boundary
+            #     raise NotImplementedError
+            mat = lap - alpha * A
+            solve = linalg.factorized(mat)
+            for _ in range(self.n_smooth):
+                valI2 = alpha * A.dot(self.var)
+                self.var = solve(-valI2)
+                self.normalize()
         self.smoothed = True

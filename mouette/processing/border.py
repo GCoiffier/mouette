@@ -62,6 +62,14 @@ def extract_border_cycle_all(mesh : SurfaceMesh) -> list:
 
 @allowed_mesh_types(SurfaceMesh)
 def extract_curve_boundary(mesh : SurfaceMesh) -> PolyLine :
+    """Returns the boundary of a surface mesh as a polyline
+
+    Args:
+        mesh (SurfaceMesh): input mesh
+
+    Returns:
+        PolyLine: boundary curves of the mesh
+    """
     bound = PolyLine()
     visited = Attribute(bool)
     component = bound.vertices.create_attribute("component", int)

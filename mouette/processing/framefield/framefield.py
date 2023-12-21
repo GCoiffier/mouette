@@ -101,7 +101,7 @@ def SurfaceFrameField(
 
     elif elements=="faces":
         if singularity_indices is not None:
-            return TrivialConnectionFaces(mesh, singularity_indices, order=order, verbose=verbose, custom_connection=custom_connection, custom_feature=custom_feature)
+            return TrivialConnectionFaces(mesh, singularity_indices, order=order, verbose=verbose, custom_connection=custom_connection, custom_features=custom_features)
         return FrameField2DFaces(mesh, order, features, verbose, n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight,use_cotan=use_cotan,custom_connection=custom_connection,custom_features=custom_features)
 
 @allowed_mesh_types(SurfaceMesh)
