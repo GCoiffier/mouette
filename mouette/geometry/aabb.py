@@ -13,9 +13,8 @@ class BB2D:
             x2 (float): x coordinate of second point
             y2 (float): y coordinate of second point
         """
-        self._x1 = Vec(min(x1,x2), min(y1,y2))
-        self._x2 = Vec(max(x1,x2), max(y1,y2))
-        self._d = self._x2 - self._x1
+        self._p1 = Vec(min(x1,x2), min(y1,y2))
+        self._p2 = Vec(max(x1,x2), max(y1,y2))
     
     @classmethod
     def of_mesh(cls, mesh : "Mesh", padding:float=0.):
@@ -35,46 +34,38 @@ class BB2D:
 
     @property
     def left(self) -> float:
-        """
-        Returns:
-            float
-        """
-        return self._x1.x
+        return self._p1.x
+    @left.setter
+    def left(self, value:float):
+        self._p1.x = min(float(value), self._p2.x)
+        
     @property
     def right(self) -> float:
-        """
-        Returns:
-            float
-        """
-        return self._x2.x
+        return self._p2.x
+    @right.setter
+    def right(self,value:float):
+        self._p2.x = max(self._p1.x, float(value))
+
     @property
     def top(self) -> float:
-        """
-        Returns:
-            float
-        """
-        return self._x2.y
+        return self._p2.y
+    @top.setter
+    def top(self, value:float):
+        self._p2.y = max(self._p1.y, float(value))
+
     @property
     def bottom(self) -> float:
-        """
-        Returns:
-            float
-        """
-        return self._x1.y
+        return self._p1.y
+    @bottom.setter
+    def bottom(self, value:float):
+        self._p1.y = min(self._p2.y, value)
+    
     @property
     def width(self) -> float:
-        """
-        Returns:
-            float
-        """
-        return self._d.x
+        return self._p2.x - self._p1.x 
     @property
     def height(self) -> float:
-        """
-        Returns:
-            float
-        """ 
-        return self._d.y
+        return self._p2.y - self._p1.y
     @property
     def center(self) -> Vec:
         """Coordinates of the center point
@@ -82,7 +73,21 @@ class BB2D:
         Returns:
             Vec: center point
         """
-        return (self._x1 + self._x2)/2
+        return (self._p1 + self._p2)/2
+    
+    def pad(self,x:float,y:float):
+        """Enlarges the bounding box by adding `x` on the width on each side and `y` on the height on each side. Does nothing if the padding values are negative.
+
+        Args:
+            x (float): Additional width to be added on the left and right. Should be >=0.
+            y (float): Additional height to be added on the top and bottom. Should be >=0.
+        """
+        x = max(0,x)
+        y = max(0,y)
+        self.left   -= x
+        self.right  += x
+        self.bottom -= y
+        self.top    += y
 
     @staticmethod
     def intersection(b1,b2):
@@ -161,7 +166,7 @@ class BB2D:
         Returns:
             bool: whether the bounding box is empty
         """
-        return np.any(self._x1 >= self._x2)
+        return np.any(self._p1 >= self._p2)
 
 class BB3D:
     """

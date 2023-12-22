@@ -17,6 +17,56 @@ def test_dim():
     assert bb.center.x == 0.
     assert bb.center.y == 0.
 
+def test_set_left():
+    bb = geom.BB2D(0.,0.,1.,1.)
+    bb.left = -1
+    assert bb.left == -1
+    bb.left -= 1
+    assert bb.left == -2
+    bb.left = 6
+    assert bb.left == 1.
+
+def test_set_bottom():
+    bb = geom.BB2D(0.,0.,1.,1.)
+    bb.bottom = -1
+    assert bb.bottom == -1
+    bb.bottom -= 1
+    assert bb.bottom == -2
+    bb.bottom = 6
+    assert bb.bottom == 1.
+
+def test_set_right():
+    bb = geom.BB2D(0.,0.,1.,1.)
+    bb.right = 2
+    assert bb.right == 2.
+    bb.right -= 1
+    assert bb.right == 1.
+    bb.right = -12
+    assert bb.right == 0.
+
+def test_set_top():
+    bb = geom.BB2D(0.,0.,1.,1.)
+    bb.right = 2
+    assert bb.right == 2.
+    bb.right -= 1
+    assert bb.right == 1.
+    bb.right = -12
+    assert bb.right == 0.
+
+def test_pad():
+    bb = geom.BB2D(0.,0.,1.,1.)
+    bb.pad(-1,-1) # should do nothing
+    assert bb.left   == 0.
+    assert bb.right  == 1.
+    assert bb.bottom == 0.
+    assert bb.top    == 1.
+
+    bb.pad(1.,1.)
+    assert bb.left   == -1.
+    assert bb.right  == 2.
+    assert bb.bottom == -1.
+    assert bb.top    == 2.
+
 def test_contains():
     for _ in range(10):
         pt_max = 1.001 + geom.Vec.random(2)

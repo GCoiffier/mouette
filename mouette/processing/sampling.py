@@ -67,10 +67,13 @@ def sample_points_from_polyline(
         PointCloud | np.ndarray:  a sampled point cloud of `n_pts` points
     """
     NE = len(mesh.edges)
-    lengths = edge_length(mesh).as_array()
-    lengths /= np.sum(lengths)
     pts = np.zeros((n_pts, 3))
-    edges = choice(NE, size=n_pts, p=lengths)
+    if NE>1:
+        lengths = edge_length(mesh).as_array()
+        lengths /= np.sum(lengths)
+        edges = choice(NE, size=n_pts, p=lengths)
+    else:
+        edges = [0]*n_pts
     for i,e in enumerate(edges):
         pA,pB = (mesh.vertices[_v] for _v in mesh.edges[e])
         t = np.random.random()
