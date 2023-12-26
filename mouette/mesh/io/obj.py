@@ -1,5 +1,4 @@
 from ..mesh_data import RawMeshData
-from ..mesh import PolyLine
 from ...geometry import Vec
 from ... import config
 from ...utils import keyify

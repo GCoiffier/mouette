@@ -12,19 +12,19 @@ def test_new():
 
 @pytest.mark.parametrize("s", surfaces)
 def test_io_obj(s, tmp_path):
-    assert build_test_io(s, tmp_path, "obj", 2)
+    build_test_io(s, tmp_path, "obj", 2)
 
 @pytest.mark.parametrize("s", surfaces)
 def test_io_geogram_ascii(s, tmp_path):
-    assert build_test_io(s, tmp_path, "geogram_ascii", 2)
+    build_test_io(s, tmp_path, "geogram_ascii", 2)
 
 @pytest.mark.parametrize("s", surfaces)
 def test_io_off(s, tmp_path):
-    assert build_test_io(s, tmp_path, "off", 2)
+    build_test_io(s, tmp_path, "off", 2)
 
 @pytest.mark.parametrize("s", surfaces)
 def test_io_medit(s, tmp_path):
-    assert build_test_io(s, tmp_path, "mesh", 2)
+    build_test_io(s, tmp_path, "mesh", 2)
 
 ### connectivity Tests ###
 

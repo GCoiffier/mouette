@@ -141,8 +141,8 @@ class BB2D:
         Returns:
             BB2D: a bounding box representing the union
         """
-        pmin = np.min((b1._x1, b2._x1), axis=0)
-        pmax = np.max((b1._x2, b2._x2), axis=0)
+        pmin = np.min((b1._p1, b2._p1), axis=0)
+        pmax = np.max((b1._p2, b2._p2), axis=0)
         return BB2D(pmin[0], pmin[1], pmax[0], pmax[1])
     
     def __or__(self, other):
@@ -180,9 +180,8 @@ class BB3D:
             x2,y2,z2 = args[1]
         else:
             raise Exception("BB3D expected either (x1,y1,z1,x2,y2,z2) or ((x1,y1,z1), (x2,y2,z2)) as argument.")
-        self._x1 : Vec = Vec(x1,y1,z1)
-        self._x2 : Vec = Vec(x2,y2,z2)
-        self._d  : Vec = self._x2 - self._x1
+        self._p1 : Vec = Vec(x1,y1,z1)
+        self._p2 : Vec = Vec(x2,y2,z2)
 
     @classmethod
     def of_mesh(cls, mesh : "Mesh", padding:float = 0.):
@@ -208,7 +207,7 @@ class BB3D:
         Returns:
             Vec: minimum coordinates
         """
-        return self._x1
+        return self._p1
     
     @property
     def max_coords(self) -> Vec:
@@ -218,7 +217,7 @@ class BB3D:
         Returns:
             Vec: maximum coordinates
         """
-        return self._x2
+        return self._p2
     
     @property
     def span(self) -> Vec:
@@ -227,7 +226,7 @@ class BB3D:
         Returns:
             Vec: dimensions of the box
         """
-        return self._d
+        return self._p2 - self._p1
 
     @property
     def center(self) -> Vec:
@@ -236,7 +235,7 @@ class BB3D:
         Returns:
             Vec: center point
         """
-        return (self._x1 + self._x2)/2
+        return (self._p1 + self._p2)/2
 
     @staticmethod
     def intersection(b1,b2):
@@ -289,8 +288,8 @@ class BB3D:
         Returns:
             BB3D: a bounding box representing the union
         """
-        pmin = np.min((b1._x1, b2._x1), axis=0)
-        pmax = np.max((b1._x2, b2._x2), axis=0)
+        pmin = np.min((b1._p1, b2._p1), axis=0)
+        pmax = np.max((b1._p2, b2._p2), axis=0)
         return BB3D(pmin, pmax)
     
     def __or__(self, other):
@@ -306,7 +305,7 @@ class BB3D:
         Returns:
             bool: whether the point 'pt' is inside the bounding box.
         """
-        return (self._x1 <= pt).all() and (pt < self._x2).all()
+        return (self._p1 <= pt).all() and (pt < self._p2).all()
     
     def is_empty(self)->bool:
         """Tests if the bounding box encloses an empty domain

@@ -5,6 +5,7 @@ from .medit import import_medit, export_medit
 from .off import import_off, export_off
 from .xyz import import_xyz, export_xyz
 from .tet import import_tet, export_tet
+from .stl import import_stl, export_stl
 
 def read_by_extension(filename : str):
     ext = get_extension(filename)
@@ -15,7 +16,8 @@ def read_by_extension(filename : str):
         "off" : import_off,
         "xyz" : import_xyz,
         "tet" : import_tet,
-    }.get(ext, None)
+        "stl" : import_stl,
+    }.get(ext.lower(), None)
     if import_fun is None:
         raise Exception("Unsupported file extension '{}'".format(ext))
     data = import_fun(filename)
@@ -30,7 +32,8 @@ def write_by_extension(mesh : "RawMeshData", filename : str):
         "off" : export_off,
         "xyz" : export_xyz,
         "tet" : export_tet,
-    }.get(ext, None)
+        "stl" : export_stl,
+    }.get(ext.lower(), None)
     if export_fun is None:
         raise Exception("Unsupported file extension '{}'".format(ext))
     export_fun(mesh, filename)
