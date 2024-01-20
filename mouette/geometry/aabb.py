@@ -295,6 +295,20 @@ class BB3D:
     def __or__(self, other):
         return BB3D.union(self,other)
 
+    def pad(self,x:float,y:float,z:float):
+        """Enlarges the bounding box by adding `x` on the width on each side and `y` on the height on each side. Does nothing if the padding values are negative.
+
+        Args:
+            x (float): Additional width to be added. Should be >=0.
+            y (float): Additional height to be added. Should be >=0.
+            y (float): Additional depth to be added. Should be >=0.
+        """
+        x = max(0,x)
+        y = max(0,y)
+        z = max(0,z)
+        self._p1 -= Vec(x,y,z)
+        self._p2 += Vec(x,y,z)
+
     def contains_point(self,pt:Vec) -> bool:
         """Point - bounding box intersection predicate.
         If the point is on the boundary of the box, the convention is as follows: inclusive if the point touches the min coordinates, exclusive for the max coordinates
