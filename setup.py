@@ -19,6 +19,6 @@ setuptools.setup(
         'stl-reader',
         'scipy',
         'osqp',
-        'tqdm'
+        'tqdm',
     ]
 )

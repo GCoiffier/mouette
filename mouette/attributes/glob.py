@@ -122,3 +122,14 @@ def total_area(mesh : SurfaceMesh) -> float:
     else:
         farea = face_area(mesh, persistent=False)
     return sum([farea[iF] for iF in mesh.id_faces])
+
+def barycenter(mesh : Mesh) -> Vec:
+    """Barycenter of the vertices of the mesh
+
+    Args:
+        mesh (Mesh): input mesh
+
+    Returns:
+        Vec: coordinates of the barycenter
+    """
+    return sum(mesh.vertices)/len(mesh.vertices)

@@ -48,7 +48,7 @@ def test_sample_polyline(m):
 def test_sample_surface(m):
     pts = sampling.sample_points_from_surface(m, 100)
     assert pts.shape == (100,3)
-    pc = sampling.sample_points_from_surface(m, 100, return_point_cloud=True, sample_normals=True)
+    pc = sampling.sample_points_from_surface(m, 100, return_point_cloud=True, return_normals=True)
     assert isinstance(pc, M.mesh.PointCloud)
     assert len(pc.vertices)==100
     assert pc.vertices.has_attribute("normals")

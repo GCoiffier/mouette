@@ -3,6 +3,7 @@ from ..mesh.datatypes import *
 from .. import geometry as geom
 from ..geometry import Vec
 import numpy as np
+import math
 
 @allowed_mesh_types(SurfaceMesh)
 def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, dense:bool = True) -> Attribute:
@@ -64,7 +65,7 @@ def cotangent(mesh : SurfaceMesh, name = "cotan", persistent=True, dense=True) -
         # Compute cotan from angles
         angles = mesh.face_corners.get_attribute("angles")
         for c in mesh.id_corners:
-            cot[c] = 1/np.math.tan(angles[c])
+            cot[c] = math.cotan(angles[c])
     else:
         for i, (iA,iB,iC) in enumerate(mesh.faces):
             pA, pB, pC = (mesh.vertices[_i] for _i in (iA,iB,iC))

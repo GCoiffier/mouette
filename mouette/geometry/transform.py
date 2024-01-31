@@ -103,6 +103,17 @@ def fit_into_unit_cube(mesh : Mesh) -> Mesh:
     tr = bounding.min_coords
     return scale(translate(mesh, -tr), sc)
 
+def translate_to_origin(mesh : Mesh) -> Mesh:
+    """Translates all vertices of the mesh so that its barycenter is at origin (0., 0., 0.)
+
+    Parameters:
+        mesh (Mesh): the input mesh
+
+    Returns:
+        Mesh: the translated mesh
+    """
+    return translate(mesh, -sum(mesh.vertices)/len(mesh.vertices))
+
 def flatten(mesh : Mesh, dim : int = None) -> Mesh:
     """
     Snaps to 0 one dimension to retrieve a flat 2D mesh.

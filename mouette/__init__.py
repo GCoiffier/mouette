@@ -16,6 +16,7 @@ from . import optimize
 
 from .processing import framefield
 from .processing import parametrization
+from .processing import sampling
 
 from .geometry.vector import Vec
 from .geometry import transform
