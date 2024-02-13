@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mouette"
-version = "1.1.6"
+version = "1.1.7"
 authors = [
   { name="Guillaume Coiffier" },
 ]
