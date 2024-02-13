@@ -253,3 +253,16 @@ def distance_to_segment2D(P : Vec, A : Vec, B : Vec) -> float:
     t = max(0, min(1, dot(P-A, seg)/seg_length_sq))
     proj = A + t*seg
     return distance(P, proj)
+
+
+def project_to_plane(P : Vec, N : Vec, orig : Vec) -> Vec:
+    """Projects vector P onto the plane of normal N and passing through point 'orig'
+
+    Args:
+        P (Vec): query position to project
+        N (Vec): normal vector of the plane
+
+    Returns:
+        Vec: P projected onto the plane
+    """
+    return P - dot(P-orig,N)/dot(N,N)*N

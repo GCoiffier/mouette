@@ -113,7 +113,7 @@ def icosahedron(center : Vec = Vec(0,0,0), uv=False):
         (8, 6, 7),
         (9, 8, 1)
     ]
-    return _instanciate_raw_mesh_data(m, 2)
+    return SurfaceMesh(m)
 
 def dodecahedron() -> SurfaceMesh:
     raise NotImplementedError

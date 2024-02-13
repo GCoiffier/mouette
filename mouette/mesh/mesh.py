@@ -2,6 +2,8 @@ from .mesh_data import RawMeshData
 from .datatypes import Mesh, PointCloud, PolyLine, SurfaceMesh, VolumeMesh
 from .io.io import read_by_extension, write_by_extension
 
+import numpy as np
+
 def new_point_cloud() -> PointCloud: 
     """
     Create a new empty point cloud
@@ -91,13 +93,41 @@ def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
             raw_mesh.cell_faces.clear()
     write_by_extension(raw_mesh, filename)
 
+def from_arrays(V : np.ndarray, E : np.ndarray = None, F : np.ndarray = None, C : np.ndarray = None) -> Mesh:
+    """Creates a mesh object from numpy arrays.
+
+    Args:
+        V (np.ndarray): vertex coordinates (shape |V|*3)
+        E (np.ndarray, optional): Edge indices (shape |E|*2). Defaults to None.
+        F (np.ndarray, optional): Face indices (shape |F|*n for n-regular faces). Defaults to None.
+        C (np.ndarray, optional): Cell indices (shape |C|*n for n-regular cells). Defaults to None.
+
+    Returns:
+        Mesh: a mesh object (PointCloud to VolumeMesh depending on the data provided)
+    """
+    m = RawMeshData()
+    if V.shape[1]!=3: raise Exception("Vertex array should have shape (n,3)")
+    n_vert = V.shape[0]
+    m.vertices += list(V)
+    if E is not None:
+        if np.any(E>=n_vert): raise Exception("Edges indices should be between 0 and n_vertices")
+        if E.shape[1]!=2: raise Exception("Edge array should have shape (n,2)")
+        m.edges += list(E)
+    if F is not None:
+        if np.any(F>=n_vert): raise Exception("Face indices should be between 0 and n_vertices")
+        m.faces += list(F)
+    if C is not None:
+        if np.any(C>=n_vert): raise Exception("Cell indices should be between 0 and n_vertices")
+        m.cells += list(C)
+    return _instanciate_raw_mesh_data(m)
+
 def copy(mesh : Mesh, copy_attributes=False, copy_connectivity=False, copy_half_edges=False) -> Mesh:
-    """[summary]
+    """Makes a copy of the input mesh
 
     Parameters:
-        mesh (Mesh): [description]
-        copy_attributes (bool, optional): [description]. Defaults to False.
-
+        mesh (Mesh): input mesh
+        copy_attributes (bool, optional): whether to also copy attributes data. Defaults to False.
+        copy_half_edges (bool, optional): whether to also copy pre-computed half-edge structure for connectivity. Defaults to False.
     Returns:
         Mesh: a hard copy of the given mesh
     """

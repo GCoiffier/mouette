@@ -4,7 +4,7 @@ from ..geometry import *
 from ..attributes import mean_edge_length
 from ..mesh.datatypes import *
 from ..mesh.mesh_data import RawMeshData
-from ..mesh.mesh import merge, _instanciate_raw_mesh_data
+from ..mesh.mesh import merge
 
 def cylinder(P1 : Vec, P2 : Vec, radius: float = 1., N=50, fill_caps=True) -> SurfaceMesh:
     cy = RawMeshData()
@@ -27,7 +27,7 @@ def cylinder(P1 : Vec, P2 : Vec, radius: float = 1., N=50, fill_caps=True) -> Su
     for i in range(N):
         cy.faces.append((i,  N+i, (i+1)%N))
         cy.faces.append((N+i, N+(i+1)%N, (i+1)%N))
-    return _instanciate_raw_mesh_data(cy, 2)
+    return SurfaceMesh(cy)
 
 @forbidden_mesh_types(PointCloud)
 def cylindrify_edges( mesh : PolyLine, radius: float = 5e-2, N=50) -> SurfaceMesh:

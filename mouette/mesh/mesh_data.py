@@ -1,3 +1,5 @@
+import numpy as np
+
 from .mesh_attributes import Attribute, ArrayAttribute
 from ..geometry import Vec
 from .. import utils
@@ -5,6 +7,7 @@ from .. import config
 import itertools
 import warnings
 from .. import config
+
 
 class DataContainer:
     """
@@ -73,6 +76,22 @@ class DataContainer:
             else:
                 self._attr[name] = Attribute(data_type, elem_size=elem_size, default_value=default_value)
         return self._attr[name]
+
+    def register_array_as_attribute(self, name, data, default_value=None):
+         # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
+        if name in self._attr and not config.disable_duplicate_attribute_warning:
+            warnings.warn(f"Warning ! Attribute '{name}' already exists on {self.id}")
+        else:
+            if len(data.shape)==1: 
+                data = data[:,np.newaxis] # change array of size (n,) to size (n,1)
+            try:
+                n_elem = data.shape[0]
+                elem_size = data.shape[1]
+                assert n_elem == len(self)
+            except Exception as e:
+                raise Exception(f"data array has invalid shape {data.shape}")
+            self._attr[name] = ArrayAttribute(type(data[0,0].item()), n_elem, elem_size=elem_size, default_value=default_value)
+            self._attr[name]._data = data
 
     def delete_attribute(self, name):
         if name in self._attr:
