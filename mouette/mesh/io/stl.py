@@ -1,13 +1,58 @@
 import stl_reader
 import struct
 from ..mesh_data import RawMeshData
+from collections import deque
+
+def is_stl_ascii(path : str):
+    try:
+        with open(path, 'r', encoding="utf-8") as f:
+            return "solid" in f.readline().strip().split()
+    except Exception as e:
+        return False
 
 def import_stl(path : str):
-    vertices, faces =  stl_reader.read(path)
-    data = RawMeshData()
-    data.vertices += list(vertices)
-    data.faces += list(faces)
-    return data
+    if is_stl_ascii(path):
+        return _import_stl_ascii(path)
+    else:
+        vertices, faces =  stl_reader.read(path)
+        out = RawMeshData()
+        out.vertices += list(vertices)
+        out.faces += list(faces)
+        return out
+
+def _import_stl_ascii(path : str):
+    data = deque()
+    with open(path, "r", encoding="utf-8") as stlf:
+        data = deque([x.strip().split() for x in stlf.readlines()])
+    
+    out = RawMeshData()
+    normals = out.faces.create_attribute("normals", float, 3)
+    iF = 0
+    while data:
+        line = data.popleft()
+        if line[0]=="solid": continue
+        
+        elif line[0]=="facet":
+            assert line[1] == "normal"
+            normals[iF] = [float(x) for x in line[2:]]
+            out_loop = data.popleft()
+            assert out_loop[0] == "outer"
+            vertices = []
+            for _ in range(3):
+                v = data.popleft()
+                assert v[0] == "vertex"
+                vertices.append([float(x) for x in v[2:]])
+            end_loop = data.popleft()
+            assert end_loop[0] == "endloop"
+            endfacet = data.popleft()
+            assert endfacet[0] == "endfacet"
+
+            out.vertices += vertices
+            out.faces.append((3*iF,3*iF+1,3*iF+2))
+            iF += 1
+
+        elif line[0] == "endsolid": continue
+    return out
 
 # Exporter adapted from https://gist.github.com/ryansturmer/9329299
 # License: MIT License 

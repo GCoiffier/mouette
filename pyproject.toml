@@ -32,6 +32,8 @@ dependencies = [
   "scipy",
   "osqp",
   "mkdocstrings[python]>=0.18",
+  "stl-reader",
+  "plyfile"
 ]
 
 

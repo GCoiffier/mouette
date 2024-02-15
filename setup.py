@@ -16,9 +16,10 @@ setuptools.setup(
     install_requires=[
         "aenum",
         'numpy',
-        'stl-reader',
         'scipy',
         'osqp',
         'tqdm',
+        'stl-reader',
+        "plyfile",
     ]
 )
