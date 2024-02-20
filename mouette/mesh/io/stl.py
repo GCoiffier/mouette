@@ -41,7 +41,7 @@ def _import_stl_ascii(path : str):
             for _ in range(3):
                 v = data.popleft()
                 assert v[0] == "vertex"
-                vertices.append([float(x) for x in v[2:]])
+                vertices.append([float(x) for x in v[1:]])
             end_loop = data.popleft()
             assert end_loop[0] == "endloop"
             endfacet = data.popleft()
