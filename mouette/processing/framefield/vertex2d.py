@@ -9,7 +9,6 @@ from ... import geometry as geom
 from ...optimize import inverse_power_method
 
 from math import pi
-from copy import copy
 import numpy as np
 import cmath
 import scipy.sparse as sp

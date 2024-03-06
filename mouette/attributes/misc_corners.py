@@ -65,7 +65,7 @@ def cotangent(mesh : SurfaceMesh, name = "cotan", persistent=True, dense=True) -
         # Compute cotan from angles
         angles = mesh.face_corners.get_attribute("angles")
         for c in mesh.id_corners:
-            cot[c] = math.cotan(angles[c])
+            cot[c] = -np.tan(angles[c] + np.pi/2)
     else:
         for i, (iA,iB,iC) in enumerate(mesh.faces):
             pA, pB, pC = (mesh.vertices[_i] for _i in (iA,iB,iC))
