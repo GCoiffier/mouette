@@ -6,19 +6,18 @@ def import_ply(path : str):
     plydata = PlyData.read(path)
     out = RawMeshData()
     for element in plydata.elements:
-        match element.name:
-            case "vertex":
-                pos = np.vstack([element["x"], element["y"], element["z"]])
-                out.vertices += list(pos.T)
-            case "face":
-                for face in element["vertex_indices"]:
-                    out.faces.append(face)
-            case "edge":
-                ind = np.vstack([element["v1"], element["v2"]])
-                out.edges += list(ind.T)
-            case "cell":
-                for cell in element["vertex_indices"]:
-                    out.cells.append(cell)
+        if element.name == "vertex":
+            pos = np.vstack([element["x"], element["y"], element["z"]])
+            out.vertices += list(pos.T)
+        elif element.name == "face":
+            for face in element["vertex_indices"]:
+                out.faces.append(face)
+        elif element.name == "edge":
+            ind = np.vstack([element["v1"], element["v2"]])
+            out.edges += list(ind.T)
+        elif element.name == "cell":
+            for cell in element["vertex_indices"]:
+                out.cells.append(cell)
     return out
 
 

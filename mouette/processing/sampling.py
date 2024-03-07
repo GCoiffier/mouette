@@ -8,7 +8,7 @@ def sample_bounding_box_2D(
         box : BB2D, 
         n_pts : int, 
         return_point_cloud : bool = False
-    ) -> PointCloud | np.ndarray:
+    ):
     """Sample a point cloud uniformly at random inside an axis-aligned 2D rectangle. Works by sampling the unit square and applying an affine transformation.
 
     Args:
@@ -37,7 +37,7 @@ def sample_bounding_box_3D(
         box : BB3D, 
         n_pts : int, 
         return_point_cloud : bool = False
-    ) -> PointCloud | np.ndarray:
+    ):
     """Sample a point cloud uniformly at random inside an axis-aligned 3D box. Works by sampling the unit cube and applying an affine transformation.
 
     Args:
@@ -61,7 +61,7 @@ def sample_points_from_polyline(
     mesh : PolyLine, 
     n_pts : int,
     return_point_cloud : bool = False
-    ) -> PointCloud | np.ndarray:
+    ):
     """
     Sample a point cloud uniformly at random from a polyline
 
@@ -98,7 +98,7 @@ def sample_points_from_surface(
     n_pts : int, 
     return_point_cloud : bool = False, 
     return_normals : bool=False
-    ) -> PointCloud | np.ndarray:
+    ):
     """
     Sample a point cloud uniformly at random from a surface mesh
 
