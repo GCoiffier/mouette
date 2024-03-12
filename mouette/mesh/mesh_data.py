@@ -92,6 +92,7 @@ class DataContainer:
                 raise Exception(f"data array has invalid shape {data.shape}")
             self._attr[name] = ArrayAttribute(type(data[0,0].item()), n_elem, elem_size=elem_size, default_value=default_value)
             self._attr[name]._data = data
+            return self._attr[name]
 
     def delete_attribute(self, name):
         if name in self._attr:
