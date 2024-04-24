@@ -1,13 +1,13 @@
-from ..worker import Worker
+from .worker import Worker
 
-from ...geometry import distance
-from ...mesh.datatypes import *
-from ...mesh.mesh_data import RawMeshData
-from ...mesh.mesh_attributes import *
-from ...utils import keyify, UnionFind, PriorityQueue
-from ..paths import shortest_path, shortest_path_to_border, shortest_path_to_vertex_set
-from ..trees import FaceSpanningForest
-from ... import attributes
+from ..geometry import distance
+from ..mesh.datatypes import *
+from ..mesh.mesh_data import RawMeshData
+from ..mesh.mesh_attributes import *
+from ..utils import keyify, UnionFind, PriorityQueue
+from .paths import shortest_path, shortest_path_to_border, shortest_path_to_vertex_set
+from .trees import FaceSpanningForest
+from .. import attributes
 from collections import deque
 
 class SingularityCutter(Worker):

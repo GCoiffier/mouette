@@ -1,8 +1,8 @@
-from ...mesh.datatypes import *
-from ...mesh.mesh_data import RawMeshData
-from ...mesh.mesh import _instanciate_raw_mesh_data
-from ...geometry import Vec
-from ...utils import keyify, Logger
+from .datatypes import *
+from .mesh_data import RawMeshData
+from .mesh import _instanciate_raw_mesh_data
+from ..geometry import Vec
+from ..utils import keyify, Logger
 
 ### Polyline Subdivision ###
 
@@ -91,8 +91,7 @@ class SurfaceSubdivision(Logger):
             newMeshData.vertices += self.mesh.vertices
             # cut every edge in half
             half = dict()
-            for e in self.mesh.id_edges:
-                A,B = self.mesh.edges[e]
+            for (A,B) in self.mesh.edges:
                 C = len(newMeshData.vertices)
                 pC = (self.mesh.vertices[A] + self.mesh.vertices[B])/2
                 newMeshData.vertices.append(pC)
@@ -102,13 +101,17 @@ class SurfaceSubdivision(Logger):
                 mAB = half[keyify(A,B)]
                 mBC = half[keyify(B,C)]
                 mCA = half[keyify(C,A)]
-                for new_tris in [
+                for new_tri in [
                     (mAB,mBC,mCA),
                     (A,mAB,mCA),
                     (B,mBC,mAB),
                     (C,mCA,mBC)
                 ]:
-                    newMeshData.faces.append(new_tris)
+                    newMeshData.faces.append(new_tri)
+                for new_edge in [
+                    (A,mAB),(mAB,B),(B,mBC),(mBC,C),(C,mCA),(mCA,A), (mAB,mBC),(mBC,mCA),(mCA,mAB)
+                ]:
+                    newMeshData.edges.append(keyify(new_edge))
             self.mesh = newMeshData
 
     @allowed_mesh_types(SurfaceMesh)

@@ -1,6 +1,6 @@
-from ...mesh.datatypes import *
-from ...mesh.mesh_data import DataContainer, RawMeshData
-from ...geometry import Vec, BB2D
+from ..mesh.datatypes import *
+from ..mesh.mesh_data import DataContainer, RawMeshData
+from ..geometry import Vec, BB2D
 import numpy as np
 
 from dataclasses import dataclass

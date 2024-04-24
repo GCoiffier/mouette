@@ -1,8 +1,8 @@
 from ..mesh.datatypes import *
+from ..mesh.subdivision import SurfaceSubdivision
 from ..attributes.misc_vertices import degree
 from ..operators.laplacian_op import laplacian
 from ..geometry import distance
-from .combinatorics import SurfaceSubdivision
 
 import numpy as np
 import scipy.sparse as sp

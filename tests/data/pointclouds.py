@@ -10,12 +10,14 @@ def pc_sample1():
         M.Vec(0., 1., 0.),
         M.Vec(0., 0., 1.),
     ]
+    return m
 
 def pc_random10():
     m = M.mesh.new_point_cloud()
     m.vertices += [
         M.Vec.random(3) for _ in range(10)
     ]
+    return m
 
 def pc_grid():
     m = M.mesh.new_point_cloud()

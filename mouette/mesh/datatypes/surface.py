@@ -6,9 +6,8 @@ from ... import utils
 from ... import config
 
 class SurfaceMesh(Mesh):
-    """
-    A data structure for representing polygonal surfaces.
-
+    """A data structure for representing polygonal surfaces.
+    
     Attributes:
         vertices (DataContainer): the container for all vertices
         edges (DataContainer): the container for all edges
@@ -16,9 +15,9 @@ class SurfaceMesh(Mesh):
         face_corners (DataContainer): the container for all corner of faces
 
         boundary_edges (list): list of all edges on the boundary
-        interior_edges (list): list of all interior edges (all edges \ boundary_edges)
+        interior_edges (list): list of all interior edges (all edges \\ boundary_edges)
         boundary_vertices (list): list of all vertices on the boundary
-        interior_vertices (list): list of all interior vertices (all vertices \ boundary_vertices)
+        interior_vertices (list): list of all interior vertices (all vertices \\ boundary_vertices)
 
         __str__: Representation of the object and its elements as a string.
     """
@@ -354,7 +353,7 @@ class SurfaceMesh(Mesh):
                 self._adjV2F[U] = list(self._adjV2F[U])
             
             # Neighborhood should be sorted to have a clockwise order
-            if config.sort_neighborhoods and isinstance(self.mesh, SurfaceMesh):
+            if config.sort_neighborhoods and isinstance(self.mesh, SurfaceMesh) and self.mesh.is_triangular():
                 self._sort_vertex_neighborhoods()
 
         def _sort_vertex_neighborhoods(self):

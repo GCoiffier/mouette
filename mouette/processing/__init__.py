@@ -4,8 +4,7 @@ submodule for algorithms applied on meshes
 """
 
 from .misc import *
-from .combinatorics.subdivide import *
-from .combinatorics.cutting import SingularityCutter
+from .cutting import SingularityCutter
 from .features import FeatureEdgeDetector
 from .expmap import DiscreteExponentialMap
 

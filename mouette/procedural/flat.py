@@ -9,7 +9,7 @@ def triangle(P0: Vec, P1: Vec, P2: Vec):
     out = RawMeshData()
     out.vertices += [P0, P1, P2]
     out.faces.append((0,1,2))
-    return _instanciate_raw_mesh_data(out)
+    return _instanciate_raw_mesh_data(out, 2)
 
 def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False):
     """
@@ -23,7 +23,7 @@ def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False):
         triangulate (bool): whether to output two triangles instead of a quad. Defaults to False.
     """
     P0, P1, P2 = Vec(P0), Vec(P1), Vec(P2)
-    P3 = P2 + P1 - P0
+    P3 = P2 + P1 - 2*P0
 
     out = RawMeshData()
     out.vertices += [P0, P1, P3, P2]
@@ -31,6 +31,7 @@ def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False):
         out.faces += [(0,1,2), (0,2,3)]
     else:
         out.faces += [(0,1,2,3)]
+    return _instanciate_raw_mesh_data(out,2)
 
 def unit_grid(nu: int, nv: int, triangulate: bool = False, generate_uvs: bool=False):
     out = RawMeshData()

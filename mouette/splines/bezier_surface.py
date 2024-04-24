@@ -11,7 +11,7 @@ class BezierPatch:
 
     @property
     def order(self):
-        return (len(self.pts), len(self.pts[0]))
+        return (len(self.pts)-1, len(self.pts[0])-1)
     
     def evaluate_row(self,u):
         return [de_casteljau(self.pts[i],u) for i in range(len(self.pts))]

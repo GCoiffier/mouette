@@ -22,20 +22,20 @@ def euler_characteristic(mesh : SurfaceMesh) -> int:
     f = len(mesh.faces)
     return v-e+f
 
-@allowed_mesh_types(SurfaceMesh)
-def genus(mesh : SurfaceMesh) -> int:
-    """Computes the genus g of a mesh.
-    The genus is the number of "holes" a surface contains. It is linked to the euler characteristic X by
-    X = 2 - 2g
+# @allowed_mesh_types(SurfaceMesh)
+# def genus(mesh : SurfaceMesh) -> int:
+#     """Computes the genus g of a mesh.
+#     The genus is the number of "holes" a surface contains. It is linked to the euler characteristic X by
+#     X = 2 - 2g
 
-    Parameters:
-        mesh (Mesh): the mesh
+#     Parameters:
+#         mesh (Mesh): the mesh
 
-    Returns:
-        (int): the Euler characteristic
-    """
-    X = euler_characteristic(mesh)
-    return 1 - X//2
+#     Returns:
+#         (int): the Euler characteristic
+#     """
+#     X = euler_characteristic(mesh)
+#     return 1 - X//2
 
 @forbidden_mesh_types(PointCloud)
 def mean_edge_length(mesh : Mesh, n : int = None) -> float:

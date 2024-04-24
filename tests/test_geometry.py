@@ -19,7 +19,6 @@ def test_norm():
     a = np.array([[1,0],[0,1]])
     assert abs(geom.norm(a) - sqrt(2)) < 1e-15
 
-
 def test_dot():
     x = M.Vec(1.,1.,1.)
     y = M.Vec(0.,1.,0.)

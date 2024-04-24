@@ -34,6 +34,22 @@ def test_sample_BB3D(bb):
     assert len(pc.vertices)==20
 
 
+def test_sample_ball():
+    center = M.Vec.random(3)
+    pts = sampling.sample_ball(center, 1., 100)
+    assert pts.shape == (100,3)
+    assert np.all(np.linalg.norm(pts-center, axis=1) <= 1.)
+    pc = sampling.sample_ball(M.Vec(0,0,1), 1., 100, return_point_cloud=True)
+    assert len(pc.vertices)==100
+    
+def test_sample_sphere():
+    center = M.Vec.random(3)
+    pts = sampling.sample_sphere(center, 1., 100)
+    assert pts.shape == (100,3)
+    assert np.all( abs(np.linalg.norm(pts-center, axis=1) - 1.) < 1e-10)
+    pc = sampling.sample_sphere(center, 1., 100, return_point_cloud=True)
+    assert len(pc.vertices)==100
+
 @pytest.mark.parametrize("m", [surf_circle(), surf_pointy()])
 def test_sample_polyline(m):
     bnd = M.processing.extract_curve_boundary(m)[0]

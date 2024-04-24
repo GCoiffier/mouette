@@ -4,7 +4,7 @@ from ...mesh.datatypes import SurfaceMesh,PolyLine
 from ...mesh.mesh_attributes import Attribute
 from ...mesh.mesh import copy
 
-from ..combinatorics.cutting import SingularityCutter
+from ..cutting import SingularityCutter
 from ..connection import SurfaceConnectionFaces
 from ..features import FeatureEdgeDetector
 from ..framefield import FrameField

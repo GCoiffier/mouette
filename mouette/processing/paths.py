@@ -232,4 +232,4 @@ def shortest_path_to_border(mesh : SurfaceMesh, start : int, weights = "length",
     if len(mesh.boundary_vertices)==0:
         raise Exception("Mesh has no border")
     
-    return shortest_path_to_vertex_set(mesh, start, mesh.boundary_vertices, weights, export_path_mesh)[1] # ignore first argument (id of vertex)
+    return shortest_path_to_vertex_set(mesh, start, mesh.boundary_vertices, weights, export_path_mesh)[1:] # ignore first argument (id of vertex)
