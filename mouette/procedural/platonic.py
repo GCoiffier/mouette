@@ -25,7 +25,7 @@ def hexahedron(P1, P2, P3, P4, P5, P6, P7, P8, colored=False, volume=False) -> S
     1--------2
 
     Parameters:
-        P1 to P8 (Vec) : coordinates of height vertices
+        P1 to P8 (Vec) : coordinates of eight vertices
         colored (bool, optional): if set to true, will add a color attribute on faces. Defaults to False.
         volume (bool, optional): if set to true, will also generate three tetrahedra to fill the volume. Defaults to False.
 
