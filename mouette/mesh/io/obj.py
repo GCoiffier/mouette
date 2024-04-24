@@ -74,7 +74,7 @@ def export_obj(mesh, path):
                 ofile.write('vt '+' '.join([str(vt) for vt in tex])+'\n')
                     
         elif has_texcoords_vert:
-            texcoords = mesh.vertices.get_attribute("uv_coords").as_array()
+            texcoords = mesh.vertices.get_attribute("uv_coords").as_array(len(mesh.vertices))
             for tex in texcoords:
                 ofile.write('vt '+' '.join([str(vt) for vt in tex])+'\n')
 
