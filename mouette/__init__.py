@@ -13,10 +13,12 @@ from . import operators
 from . import geometry
 from . import processing
 from . import optimize
+from . import sampling
+from . import space_partition
+from . import splines
 
 from .processing import framefield
 from .processing import parametrization
-from .processing import sampling
 
 from .geometry.vector import Vec
 from .geometry import transform

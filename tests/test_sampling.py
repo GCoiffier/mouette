@@ -1,7 +1,7 @@
 import pytest
 from mouette import geometry as geom
 import numpy as np
-from mouette.processing import sampling
+from mouette import sampling
 from data import *
 
 @pytest.mark.parametrize("bb",[
