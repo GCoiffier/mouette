@@ -5,47 +5,24 @@ Mouette (French for seagull) stands for _Maillages, OUtils Et Traitement auTomat
 ## Installation
 
 Using pip: 
-```pip install mouette```
-
-## Overview
-
-Mouette allows to easily load data from various file format and access geometrical primitives
-
-#### Import and Export made simple
-
-```python
-import mouette as M
-
-mesh = M.mesh.load("path/to/my/mesh/mesh.obj")
-print(mesh.vertices[0])
-print(mesh.faces[2])
-M.mesh.save(mesh,"path/to/export/mesh.obj")
+```
+pip install mouette
 ```
 
-#### Define quantities over meshes and work with it
+## Dependencies
 
-It is possible to define any quantity on mesh elements
+#### Numpy and Scipy
+Mouette makes use of numpy and scipy for the representation of dense and sparse matrices.
 
-```python
-my_v_attribute = mesh.vertices.create_attribute("my_attribute", float) # an attribute storing one floating-point number per vertex
-my_v_attribute[3] = 4.
+#### Numba
 
-my_f_attribute = mesh.faces.create_attribute("my_attribute", 2, int) # an attribute storing two integers per face
-m_f_attribute[2] = [1,3]
-```
 
-Attributes can store booleans, integers, floating-point numbers, complex numbers and strings, using the provided python types `bool`, `int`, `float`, `complex` and `str`.
+#### OSQP
 
-#### Call Geometry Processing Algorithms
+OSQP ( Operator Splitting Quadratic Program ) is a quadratic programming algorithm supporting linear equalities and inequalities as constraints. Mouette relies on this solver for least-square problems when linear constraints are involved.
 
-```python
+See the website https://osqp.org/ for a complete documentation
 
-ff = M.processing.framefield.FrameField2DVertices(mesh)
-ff.run()
-ffmesh = ff.export_as_mesh()
-M.mesh.save(ffmesh, "framefield.mesh")
-```
-
-### Run tests
-
-`python -m pytest tests/`
+#### IO libraries
+    stl-reader
+    plyfile

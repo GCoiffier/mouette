@@ -7,14 +7,14 @@ title: "Surface meshes"
   <figcaption>A triangular surface mesh</figcaption>
 </figure>
 
-## SurfaceMesh Class
+# SurfaceMesh Class
 
 :::mouette.mesh.datatypes.surface.SurfaceMesh
 
-## Surface Half edges
+# Surface Half edges
 
 :::mouette.mesh.datatypes.surface.SurfaceMesh._HalfEdgeStructure
 
-## Surface Connectivity
+# Surface Connectivity
 
 :::mouette.mesh.datatypes.surface.SurfaceMesh._Connectivity

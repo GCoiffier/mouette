@@ -42,28 +42,28 @@ class VolumeMesh(Mesh):
     @property
     def id_vertices(self):
         """
-        Shortcut for range(len(self.vertices))
+        Shortcut for `range(len(self.vertices))`
         """
         return range(len(self.vertices))
 
     @property
     def id_edges(self):
         """
-        Shortcut for range(len(self.edges))
+        Shortcut for `range(len(self.edges))`
         """
         return range(len(self.edges))
 
     @property
     def id_faces(self):
         """
-        Shortcut for range(len(self.faces))
+        Shortcut for `range(len(self.faces))`
         """
         return range(len(self.faces))
 
     @property
     def id_cells(self):
         """
-        Shortcut for range(len(self.cells))
+        Shortcut for `range(len(self.cells))`
         """
         return range(len(self.cells))
 
@@ -109,6 +109,14 @@ class VolumeMesh(Mesh):
                 self._interior_edges.append(e)
 
     def is_face_on_border(self, *args) -> bool:
+        """Simple test to determine if a given face is on the boundary of the mesh.
+        
+        Parameters:
+            Either an integer index representing a face, or n integer indices representing the vertices
+            
+        Returns:
+            bool: Returns True is the given face exists and is on the boundary of the mesh
+        """
         if len(args)==1:
             n = self.connectivity.n_F2C(args[0])
         else:
@@ -121,7 +129,8 @@ class VolumeMesh(Mesh):
         return self._is_vertex_on_border[V]
     
     def is_edge_on_border(self, *args) -> bool:
-        """
+        """Simple test to determine if a given edge is on the boundary of the mesh.
+
         Parameters:
             Either an integer index representing an edge, or two integer indices representing two (adjacent) vertices
 

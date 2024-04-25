@@ -8,7 +8,7 @@ from ..mesh.datatypes import *
 from ..attributes.misc_faces import face_area
 
 @allowed_mesh_types(SurfaceMesh)
-def gradient(mesh : SurfaceMesh, conn : SurfaceConnectionFaces, as_complex: bool =True) -> sp.csc_matrix:
+def gradient(mesh: SurfaceMesh, conn: SurfaceConnectionFaces = None, as_complex: bool = True) -> sp.csc_matrix:
     """
     Computes the gradient operator, i.e. a [F| x |V| matrix G such that for any scalar function f defined over vertices of a surface mesh, Gf is its gradient inside faces.
 
@@ -16,7 +16,7 @@ def gradient(mesh : SurfaceMesh, conn : SurfaceConnectionFaces, as_complex: bool
 
     Args:
         mesh (SurfaceMesh): The input mesh
-        conn (SurfaceConnectionFaces): Connection objects specifying local bases of faces.
+        conn (SurfaceConnectionFaces, optional): Connection objects specifying local bases of faces. Will be computed if not provided. Defaults to None.
         as_complex (bool, optional): whether the output is |F| complex values of 2|F| float values
 
     Raises:

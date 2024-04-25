@@ -10,10 +10,10 @@ Polylines are made of vertices (points in 3D space) and edges linking them. They
 </figure>
 
 
-## Polyline Class
+# Polyline Class
 
 :::mouette.mesh.datatypes.linear.PolyLine
 
-## Polyline Connectivity
+# Polyline Connectivity
 
 :::mouette.mesh.datatypes.linear.PolyLine._Connectivity
