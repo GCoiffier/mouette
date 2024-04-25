@@ -6,7 +6,7 @@ from typing import Union
 def sign0(x: float):
     """
     $$\\text{sign0}(x)=\\begin{cases} 
-        1 \\text{ if } x\geqslant0 \\\\
+        1 \\text{ if } x\\geqslant0 \\\\
         -1 \\text{ if } x<0
     \\end{cases}$$
 
@@ -14,7 +14,7 @@ def sign0(x: float):
         x (float): input number
 
     Returns:
-        [float]: the sign of x
+        float: the sign of x
     """
     if x>=0: return 1
     return -1
@@ -38,7 +38,7 @@ def sign(x: float):
     return 0
 
 def norm(x: np.ndarray) -> float:
-    """Euclidean norm of vector x, defined as $\sqrt{x^Tx}$
+    """Euclidean norm of vector x, defined as $\\sqrt{x^Tx}$
 
     Args:
         x (np.ndarray): vector
@@ -61,7 +61,7 @@ def dot(A: np.ndarray, B: np.ndarray) -> float:
     return np.dot(A,B)
 
 def distance(A: Vec, B: Vec) -> float:
-    """Euclidean distance between A and B, defined as $||B-A|| = \sqrt{(B-A)^T(B-A)}$
+    """Euclidean distance between A and B, defined as $||B-A|| = \\sqrt{(B-A)^T(B-A)}$
 
     Args:
         a (Vec): first point
@@ -89,7 +89,7 @@ def cross(A: Vec, B: Vec) -> Vec:
     )
 
 def cotan(A: Vec, B: Vec, C: Vec) -> float:
-    """cotangent of the angle $\hat{ABC}$
+    """cotangent of the angle $\\hat{ABC}$
     Parameters:
         A (Vec): point A
         B (Vec): point B
@@ -260,7 +260,7 @@ def det_3x3(*args) -> float:
     """Computes a 3x3 using the rule of Sarrus
     
     Parameters:
-        Either a 3*3 numpy array representing a matrix, or 3 3*1 numpy array representing three column vectors
+        args: Either a 3x3 numpy array representing a matrix, or 3 3x1 numpy array representing three column vectors
 
     Returns:
         float: the determinant

@@ -114,7 +114,7 @@ class SurfaceConnectionVertices(SurfaceConnection):
 class FlatConnectionVertices(SurfaceConnection):
     """
     Surface connection on vertices where all local bases are taken as the canonical basis ([1 0 0], [0 1 0]).
-    /!\ This only makes sense if the considered surface is embedded in R^2, meaning that there is no curvature.
+    /!\\ This only makes sense if the considered surface is embedded in R^2, meaning that there is no curvature.
 
     Args:
         mesh (SurfaceMesh): the supporting mesh
@@ -191,7 +191,7 @@ class SurfaceConnectionFaces(SurfaceConnection):
 class FlatConnectionFaces(SurfaceConnection):
     """
     Surface connection on faces where all local bases are taken as the canonical basis ([1 0 0], [0 1 0]).
-    /!\ This only makes sense if the considered surface is embedded in R^2, meaning that there is no curvature.
+    /!\\ This only makes sense if the considered surface is embedded in R^2, meaning that there is no curvature.
 
     Args:
         mesh (SurfaceMesh): the supporting mesh

@@ -22,7 +22,7 @@ Whether to export edges as 'l <v> <v>' fields in .obj file format
 export_edges_in_obj = True
 
 """
-/!\ If set to true, this will compute the half edge structure on the mesh (which can cause a lot of computations)
+/!\\ If set to true, this will compute the half edge structure on the mesh (which can cause a lot of computations)
 """
 sort_neighborhoods = True
 

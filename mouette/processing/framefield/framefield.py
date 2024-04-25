@@ -62,7 +62,7 @@ def SurfaceFrameField(
         singularity_indices (Attribute, optional): custom singularity indices for the frame field. If provided, will use the algorithm described in [3] to get the smoothest frame field with these singularities.
             If elements is "vertices", the attribute should be indexed by the faces (where singularities appear)
             If elements is "faces", the attribute should be indexed by the vertices
-            /!\ Indices should respect the Poincarré-Hopf theorem. Defaults to None.
+            /!\\ Indices should respect the Poincarré-Hopf theorem. Defaults to None.
         
         custom_connection (SurfaceConnection, optional): custom connection object to be used for parallel transport. If not provided, a connection will be automatically computed (see SurfaceConnection class). Defaults to None.
         
