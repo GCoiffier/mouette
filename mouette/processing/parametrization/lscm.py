@@ -17,9 +17,9 @@ class LSCM(BaseParametrization):
     Computed UVs are stored in the self.uvs container
 
     References:
-        - [1] Least Squares Conformal Maps for Automatic Texture Atlas Generation, Levy et al. (2002)
-        - [2] Spectral Conformal Parameterization, Mullen et al. (2008)
-        - See also : Intrinsic Parameterizations of Surface Meshes, Desbrun et al. (2002)
+        - [1] _Least Squares Conformal Maps for Automatic Texture Atlas Generation_, Levy et al. (2002)
+        - [2] _Spectral Conformal Parameterization_, Mullen et al. (2008)
+        - [3] _Intrinsic Parameterizations of Surface Meshes_, Desbrun et al. (2002)
     """
 
     @allowed_mesh_types(SurfaceMesh)

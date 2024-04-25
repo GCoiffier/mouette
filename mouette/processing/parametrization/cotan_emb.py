@@ -24,7 +24,7 @@ class CotanEmbedding(BaseParametrization):
     Given a parametrization of a disk where boundary is fixed, we can optimize the difference between unsigned and signed areas of triangles to compute a parametrization that is foldover-free.
 
     References:
-        Embedding a triangular graph within a given boundary, Xu et al. (2011)
+        [1] _Embedding a triangular graph within a given boundary_, Xu et al. (2011)
     """
 
     @allowed_mesh_types(SurfaceMesh)

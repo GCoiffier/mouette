@@ -3,10 +3,12 @@ import numpy as np
 import math
 from typing import Union
 
-def sign0(x : float):
-    """sign of x
-        1 if x >= 0
-        -1 if x < 0
+def sign0(x: float):
+    """
+    $$\\text{sign0}(x)=\\begin{cases} 
+        1 \\text{ if } x\geqslant0 \\\\
+        -1 \\text{ if } x<0
+    \\end{cases}$$
 
     Parameters:
         x (float): input number
@@ -17,42 +19,84 @@ def sign0(x : float):
     if x>=0: return 1
     return -1
 
-def sign(x : float):
-    """sign of x
-        1 if x > 0
-        -1 if x < 0
-        0 if x = 0
+def sign(x: float):
+    """
+    $$\\text{sign}(x)=\\begin{cases} 
+        0 \\text{ if } x=0 \\\\
+        1 \\text{ if } x>0 \\\\
+        -1 \\text{ if } x<0
+    \\end{cases}$$
 
     Parameters:
         x (float): input number
 
     Returns:
-        [float]: x/|x|
+        float: x/|x| and 0 for x=0
     """
     if x>0: return 1
     elif x<0 : return -1
     return 0
 
-def norm(x : np.ndarray):
+def norm(x: np.ndarray) -> float:
+    """Euclidean norm of vector x, defined as $\sqrt{x^Tx}$
+
+    Args:
+        x (np.ndarray): vector
+
+    Returns:
+        float: Euclidean norm
+    """
     return np.sqrt(np.dot(x.flatten(), x.flatten()))
 
-def dot(A,B):
+def dot(A: np.ndarray, B: np.ndarray) -> float:
+    """dot product $A^TB$ between two vectors
+
+    Args:
+        A (np.ndarray): first vector
+        B (np.ndarray): second vector
+
+    Returns:
+        float: dot product
+    """
     return np.dot(A,B)
 
-def distance(a : np.ndarray, b : np.ndarray):
-    return norm(b-a)
+def distance(A: Vec, B: Vec) -> float:
+    """Euclidean distance between A and B, defined as $||B-A|| = \sqrt{(B-A)^T(B-A)}$
 
-def cross(v1,v2):
+    Args:
+        a (Vec): first point
+        b (Vec): second point
+
+    Returns:
+        float: distance
+    """
+    return norm(B-A)
+
+def cross(A: Vec, B: Vec) -> Vec:
+    """Cross product of vectors A and B
+
+    Args:
+        A (Vec): Size 3 vector
+        B (Vec): Size 3 vector
+        
+    Returns:
+        Vec: cross product AxB
+    """
     return Vec(
-        v1[1]*v2[2] - v1[2] * v2[1],
-        v2[0]*v1[2] - v2[2] * v1[0],
-        v1[0]*v2[1] - v1[1] * v2[0]
+        A[1]*B[2] - A[2] * B[1],
+        B[0]*A[2] - B[2] * A[0],
+        A[0]*B[1] - A[1] * B[0]
     )
 
-def cotan(A:Vec, B:Vec, C:Vec):
-    """ 
-    A,B,C three points in R^3
-    returns the cotangent of the angle from BA to BC
+def cotan(A: Vec, B: Vec, C: Vec) -> float:
+    """cotangent of the angle $\hat{ABC}$
+    Parameters:
+        A (Vec): point A
+        B (Vec): point B
+        C (Vec): point C
+
+    Returns:
+        float: the cotangent
     """
     A, B, C = Vec(A), Vec(B), Vec(C)
     BA = Vec.normalized(A-B)
@@ -61,7 +105,7 @@ def cotan(A:Vec, B:Vec, C:Vec):
     sine = norm(cross(BA,BC))
     return cosine/sine
 
-def angle_3pts(A:Vec, B:Vec, C:Vec) -> float:
+def angle_3pts(A: Vec, B: Vec, C: Vec) -> float:
     """Angle ABC between three points
 
     Parameters:
@@ -79,7 +123,7 @@ def angle_3pts(A:Vec, B:Vec, C:Vec) -> float:
     return math.atan2(s, c)
 
 
-def signed_angle_2vec3D(V1:Vec, V2:Vec, N:Vec) -> float:
+def signed_angle_2vec3D(V1: Vec, V2: Vec, N: Vec) -> float:
     """Signed angle between two vectors with orientation given by normal N
 
     Parameters:
@@ -110,16 +154,40 @@ def signed_angle_3pts(A:Vec, B:Vec, C:Vec, N:Vec) -> float:
     return signed_angle_2vec3D(A-B, C-B, N)
 
 def angle_2vec2D(V1:Vec, V2:Vec) -> float:
+    """Angle between two **2D** vectors
+
+    Args:
+        V1 (Vec): first vector
+        V2 (Vec): second vector
+
+    Returns:
+        float: the angle
+    """
     return math.atan2(V2.y, V2.x) - math.atan2(V1.y, V1.x)
 
 def angle_2vec3D(V1:Vec, V2:Vec) -> float:
+    """Angle between two **3D** vectors
+
+    Args:
+        V1 (Vec): first vector
+        V2 (Vec): second vector
+
+    Returns:
+        float: the angle
+    """
     C = cross(V1,V2)
     return math.atan2(C.norm(), dot(V1,V2))
 
 def face_basis(*f):
-    """ 
+    """
     Orthonormal basis of face
     Given three points A,B,C, returns a basis such that the first vector is along direction AB and third vector is normal to the plane ABC
+
+    Args:
+        A,B,C: three points (in a list or not)
+
+    Returns:
+        Vec,Vec,Vec: an orthonormal 3D basis of the face
     """
     if len(f)==1: f = f[0]
     pA,pB,pC = (x for x in f)
@@ -128,13 +196,44 @@ def face_basis(*f):
     Y = Vec.normalized(cross(Z,X))
     return X,Y,Z
 
-def triangle_area(A:Vec, B:Vec, C:Vec) -> float :
+def triangle_area(A: Vec, B: Vec, C: Vec) -> float:
+    """Area of 3D triangle ABC
+
+    Args:
+        A (Vec): first point
+        B (Vec): second point
+        C (Vec): third point
+
+    Returns:
+        float: area
+    """
     return cross(B-A,C-A).norm()/2
 
-def triangle_area_2D(A:Vec, B:Vec, C:Vec) -> float :
+def triangle_area_2D(A: Vec, B: Vec, C: Vec) -> float:
+    """Area of 2D triangle ABC
+
+    Args:
+        A (Vec): first point
+        B (Vec): second point
+        C (Vec): third point
+
+    Returns:
+        float: area
+    """
     return abs(det_2x2(B-A,C-A)/2)
 
 def quad_area(A:Vec, B:Vec, C:Vec, D:Vec) -> float:
+    """Area of the quad ABCD
+
+    Args:
+        A (Vec): first point
+        B (Vec): second point
+        C (Vec): third point
+        D (Vec): fourth point
+
+    Returns:
+        float: area
+    """
     return (triangle_area(A,B,C) + triangle_area(A,C,D) + triangle_area(B,C,D) + triangle_area(B,D,A))/2
 
 def det_2x2(A:Union[complex,np.ndarray], B:Union[complex,np.ndarray]) -> float:
@@ -181,6 +280,17 @@ def det_3x3(*args) -> float:
     return d
 
 def intersect_2lines2D(p1 : Vec, d1 : Vec, p2: Vec, d2 : Vec) -> Vec:
+    """Computes the intersection of two lines in the plane
+
+    Args:
+        p1 (Vec): point on the first line
+        d1 (Vec): direction vector of the first line
+        p2 (Vec): point on the second line
+        d2 (Vec): direction vector of the second line
+
+    Returns:
+        Vec: the intersection point. None if lines are parallel
+    """
     p1,d1,p2,d2 = (u[:2] for u in (p1,d1,p2,d2))
     if abs(det_2x2(d1,d2))<1e-12 : return None #parallel lines
     n2 = Vec(d2.y, -d2.x)
@@ -190,12 +300,13 @@ def intersect_2lines2D(p1 : Vec, d1 : Vec, p2: Vec, d2 : Vec) -> Vec:
 def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
     """Circumcenter of the triangle formed by three points in space
 
-    /!\ circumcenter of triangle (v1,v2,v3) may not lay inside the triangle
-
     Parameters:
         v1 (Vec): first point
         v2 (Vec): second point
         v3 (Vec): third point
+
+    Warning:
+        Circumcenter of triangle (v1,v2,v3) may not lay inside the triangle
 
     Returns:
         Vec: coordinates of the circumcenter
