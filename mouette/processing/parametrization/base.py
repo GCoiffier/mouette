@@ -19,7 +19,7 @@ class BaseParametrization(Worker):
         super().__init__(name, verbose)
         self.mesh : SurfaceMesh = mesh
         self.save_on_corners : bool = kwargs.get("save_on_corners", True)
-        self.uvs : ArrayAttribute = kwargs.get("uv_attr", None) # attribute on corners or faces
+        self.uvs : ArrayAttribute = kwargs.get("uv_attr", None) # attribute on corners or vertices
 
         self._flat_mesh : SurfaceMesh = None
 

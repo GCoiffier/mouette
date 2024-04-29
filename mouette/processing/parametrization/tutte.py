@@ -19,9 +19,9 @@ class TutteEmbedding(BaseParametrization):
     The parametrization is locally injective (Floater, 1997) provided the boundary is convex.
 
     References:
-        [1] How to draw a graph, Tutte, 1963.
+        [1] _How to draw a graph_, Tutte, 1963.
         
-        [2] Parametrization and smooth approximation of surface triangulations, Floater, 1996.
+        [2] _Parametrization and smooth approximation of surface triangulations_, Floater, 1996.
     """
 
     class BoundaryMode(Enum):

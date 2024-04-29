@@ -121,9 +121,7 @@ class ParamDistortion(Worker):
                 if abs(detJ)<1e-8:
                     raise ZeroDivisionError
 
-                normJ = np.linalg.norm(J)
-
-                confDistT = ((normJ**2)/detJ)/2
+                confDistT = (np.trace(np.transpose(J) * J)/detJ)/2
                 self._conformal[T] = confDistT
                 conformalDist += confDistT * area[T] / xy_area
 

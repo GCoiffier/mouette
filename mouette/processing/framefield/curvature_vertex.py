@@ -9,33 +9,31 @@ from ... import operators
 import numpy as np
 import scipy.sparse as sp
 from scipy.sparse import linalg
-try:
-    from numba import jit, prange
-    
-    @jit(parallel=True, nopython=True)
-    def aggregate_mats(curvV, curvE, areas, iV,iE, n):
-        nvert = curvV.shape[0]
-        total_area = np.zeros(nvert, dtype=np.float64)
-        for i in prange(n):
-            v,e = iV[i], iE[i]
-            curvV[v,:,:] += areas[e]*curvE[e,:,:]
-            total_area[v] += areas[e]
-        for v in prange(nvert):
-            curvV[v,:,:] /= total_area[v]
-        return curvV
+from numba import jit, prange
 
-except ImportError:
+@jit(parallel=True, nopython=True)
+def aggregate_mats(curvV, curvE, areas, iV,iE, n):
+    nvert = curvV.shape[0]
+    total_area = np.zeros(nvert, dtype=np.float64)
+    for i in prange(n):
+        v,e = iV[i], iE[i]
+        curvV[v,:,:] += areas[e]*curvE[e,:,:]
+        total_area[v] += areas[e]
+    for v in prange(nvert):
+        curvV[v,:,:] /= total_area[v]
+    return curvV
 
-    def aggregate_mats(curvV, curvE, areas, iV,iE, n):
-        nvert = curvV.shape[0]
-        total_area = np.zeros(nvert, dtype=np.float64)
-        for i in range(n):
-            v,e = iV[i], iE[i]
-            curvV[v,:,:] += areas[e]*curvE[e,:,:]
-            total_area[v] += areas[e]
-        for v in range(nvert):
-            curvV[v,:,:] /= total_area[v]
-        return curvV
+# version without numba
+# def aggregate_mats(curvV, curvE, areas, iV,iE, n):
+#     nvert = curvV.shape[0]
+#     total_area = np.zeros(nvert, dtype=np.float64)
+#     for i in range(n):
+#         v,e = iV[i], iE[i]
+#         curvV[v,:,:] += areas[e]*curvE[e,:,:]
+#         total_area[v] += areas[e]
+#     for v in range(nvert):
+#         curvV[v,:,:] /= total_area[v]
+#     return curvV
 
 class PrincipalDirectionsVertices(_BaseFrameField2DVertices):
     """
