@@ -19,115 +19,127 @@ def chi_deriv(D,eps):
     return 0.5 + D/(2 * np.sqrt(eps*eps + D*D))
 
 @jit(cache=True)
-def jacobian(t, pts, tri, ref_jacs):
-    iA,iB,iC = tri[t,0], tri[t,1], tri[t,2]
+def jacobian(pts, tri, ref_jac):
+    iA,iB,iC = tri[0], tri[1], tri[2]
     A,B,C = pts[2*iA:2*iA+2], pts[2*iB:2*iB+2], pts[2*iC:2*iC+2]
-    return np.vstack((C-A, B-A)) @ ref_jacs[t]
+    return np.vstack((B-A, C-A)).T @ ref_jac
 
 @jit(cache=True, parallel=True)
-def energy_and_gradient(X, locked, tri, area, ref_jacs, wf, wg, eps):
+def min_det(pts, tris, ref_jacs):
+    n_tri = tris.shape[0]
+    dets = np.zeros(n_tri, dtype=np.float64)
+    for t in prange(n_tri):
+        dets[t] = np.linalg.det(jacobian(pts, tris[t], ref_jacs[t]))
+    return np.min(dets)
+
+@jit(cache=True, parallel=True)
+def energy_and_gradient(X, locked, tri, ref_jacs, areas, wf, wg, eps):
     E = 0
     grad = np.zeros_like(X)
     n = tri.shape[0]
-    Z = np.array([[-1,-1],[0,1],[1,0]], dtype=np.float64)
+    Z = np.array([[-1,-1], [1,0], [0,1]], dtype=np.float64)
     for t in prange(n):
-        J = jacobian(t, X, tri, ref_jacs)
+        J = jacobian(X, tri[t], ref_jacs[t])
+        K = np.array([[J[1,1],-J[1,0]],[-J[0,1],J[0,0]]])
         detJ = np.linalg.det(J)
         chiJ = chi(detJ, eps)
-        fJ = np.trace( np.transpose(J) * J) / chiJ
+        fJ = np.trace( np.transpose(J) @ J) / chiJ
         gJ = (detJ*detJ + 1) / chiJ
         # hJ = chiJ - np.log(chiJ)
         
-        E += area[t] * ( wf * fJ + wg * gJ)
-        # E += area[t] * ( wf * fJ + wg * hJ )
+        E += areas[t] * (wf * fJ  + wg * gJ)
+        # E += areas[t] * ( wf * fJ + wg * hJ )
 
         # compute gradient according to J
         chi_derivJ = chi_deriv(detJ, eps)
         ZJ = Z @ ref_jacs[t]
-        for dim in range(2): # iterate over the columns of J
-            a_i = J[:,dim] 
-            if dim==0:
-                b_i = np.array([ J[1,1], -J[0,1]])
-            else:
-                b_i = np.array([-J[1,0],  J[0,0]])
-            dfda = (2 * a_i - fJ * chi_derivJ * b_i) / chiJ
-            dgda = (2 * detJ - gJ * chi_derivJ) / chiJ  * b_i
-            # dhda = chi_derivJ * (1 - 1/chiJ) * b_i
-
-            dEda =  area[t] * (wf * dfda + wg * dgda)
-            # dEda =  area[t] * ( wf * dfda + wg * dhda )
-
-            # Apply chain rule to get gradient according to variables
-            for k,iV in enumerate(tri[t]):
-                grad[2*iV+dim] += np.dot(dEda, ZJ[k,:])
-    grad[locked] = 0.
+        
+        df_dj = (2*J -  K * fJ * chi_derivJ) / chiJ
+        dg_dj = (2*detJ - gJ * chi_derivJ) / chiJ * K
+        # dh_dj = (chi_derivJ * (1 - 1/chiJ)) * K
+        dphi_dj = areas[t] * (wf * df_dj + wg * dg_dj)
+        # dphi_dj = areas[t] * (wf * df_dj + wg * dh_dj)
+        dphi_du = ZJ @ np.transpose(dphi_dj) # chain rule for the actual variables
+        for i,v in enumerate(tri[t]):
+            if locked[v] : continue
+            grad[2*v  ] += dphi_du[i,0]
+            grad[2*v+1] += dphi_du[i,1]
     return E,grad
 
 def untangle(
     points: np.ndarray,
     locked: np.ndarray,
     triangles: np.ndarray,
-    areas : np.ndarray,
     ref_jacs: np.ndarray,
     verbose: bool = False,
     **kwargs
 ) -> np.ndarray :
     """
-    Untangle a triangular mesh in 2D
+    Minimizes the regularized Winslow functional to untangle a 2D triangulation.
 
     Args:
-        points (np.ndarray): Initial position of points in 2D
-        locked (np.ndarray): Which points have a fixed position
-        triangles (np.ndarray): Indices of triangles
-        areas (np.ndarray): Areas of triangles in original mesh. Used as a weighting term in the energy's summation.
-        ref_jacs (np.ndarray): Perfect element to consider for Jacobian computation for each triangle
+        points (np.ndarray[float]): Initial position of points in 2D. Should be of shape (2*V,)
+        locked (np.ndarray[bool]): Which points have a fixed position. Should be of shape (V,)
+        triangles (np.ndarray[int]): Indices of triangles. Should be of shape (T,3)
+        ref_jacs (np.ndarray[float]): Perfect element to consider for Jacobian computation for each triangle. Should be of shape (T,2,2).
         verbose (bool,optional): Verbose mode. Defaults to False.
     
     Keyword Args:
-        weight_angles (float, optional):        
-        weight_areas (float, optional):        
-        n_eps_update (int, optional):
-        stop_if_positive (bool, optional):
+        areas (np.ndarray[float]): Areas of triangles in original mesh. Used as a weighting term in the energy's summation. Should be of shape (T,). Defaults to np.ones(T).
+        weight_angles (float, optional): weight coefficient for the angle conservation term (f). Defaults to 1.
+        weight_areas (float, optional): weight coefficient for the area conservation term (g). Defaults to 1.
+        n_eps_update (int, optional): number of updates of the regularization's epsilon. Defaults to 10.
+        stop_if_positive (bool, optional): enable early stopping as soon as all dets are positive. Defaults to False.
 
     Returns:
-        np.ndarray: final positions of points in 2D
+        np.ndarray[float]: final positions of points in 2D, in shape (2V,)
+
+    References:
+        [1] _Foldover-free maps in 50 lines of code_, Garanzha et al., ACM ToG 2021
     """
     n_eps_update = kwargs.get("n_eps_update", 10)
     wf = kwargs.get("weight_angles", 1.)
     wg = kwargs.get("weight_areas", 1.)
     bfgs_iter_max = kwargs.get("iter_max", 10_000)
     stop_if_pos = kwargs.get("stop_if_positive",False)
+    areas = kwargs.get("areas", None)
+    if areas is None:
+        areas = np.ones(triangles.shape[0])
 
     if verbose:
         print("WEIGHT ANGLES:", wf)
         print("WEIGHT AREAS:", wg)
 
     for _ in range(n_eps_update):
-        mindet = min([ np.linalg.det(jacobian(t,points,triangles,ref_jacs)) for t in range(triangles.shape[0])])
+        mindet = min_det(points, triangles, ref_jacs)
         if mindet>0 and stop_if_pos: break
         eps = np.sqrt(1e-12 + .04*min(mindet, 0)**2) # the regularization parameter e
         if verbose:
             print("min det=", mindet)
             print("epsilon=", eps)
-        callback = lambda X : energy_and_gradient(X, np.repeat(locked,2), triangles, areas, ref_jacs, wf, wg, eps)
+        callback = lambda X : energy_and_gradient(X, locked, triangles, ref_jacs, areas, wf, wg, eps)
         points = fmin_l_bfgs_b(callback, points, disp=10 if verbose else 0, maxiter=bfgs_iter_max)[0]
     
-    if verbose:
-        mindet = min([ np.linalg.det(jacobian(t,points,triangles,ref_jacs)) for t in range(triangles.shape[0])])
-        print("min det=", mindet)
+    if verbose: print("min det=", min_det(points, triangles, ref_jacs))
 
     return points
 
 
 class WinslowInjectiveEmbedding(BaseParametrization):
     """
-    Foldover-free maps to the plane.
-    /!\\ The input mesh should have the topology of a disk.
-    Computed UVs are stored in the self.uvs container.
-    UVs are per vertex.
+    Foldover-free map to the plane: computes an injective embedding in the plane starting from the provided $uv$-coordinates by minimizing the regularized Winslow functionnal
+    of Garanzha et al. [1]. This class is essentially a wrapper around the `untangle` function.
+    
+    Warning: 
+        The input mesh should have the topology of a disk.
+
+        UV coordinates are computed per vertex and not per corner. See `mouette.attributes.scatter_vertices_to_corners` for conversion.
 
     References:
-        - [1] _Foldover-free maps in 50 lines of code_, Garanzha et al., ACM ToG 2021
+        [1] _Foldover-free maps in 50 lines of code_, Garanzha et al., ACM ToG 2021
+
+    Example:
+        See [https://github.com/GCoiffier/mouette/blob/main/examples/winslow_untangle.py](https://github.com/GCoiffier/mouette/blob/main/examples/winslow_untangle.py)
     """
             
     @allowed_mesh_types(SurfaceMesh)
@@ -142,7 +154,7 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         
         Keyword Args:
             stop_if_positive (bool, optional): whether to stop the optimization as soon as all determinants are positive. Defaults to False.
-            solver_verbose (bool, optional): verbose level. Defaults to False.
+            solver_verbose (bool, optional): Verbose tag for the L-BFGS solver. Defaults to False.
         """
         super().__init__("Winslow", mesh, verbose=verbose, uv_attr=uv_init, **kwargs)
         self._save_on_corners = False
@@ -170,11 +182,10 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         triangles = np.array(self.mesh.faces)
         
         areas = face_area(self.mesh, persistent=False, dense=True).as_array()
-        # areas = np.ones(len(self.mesh.faces))
 
-        final_points = untangle(points, locked, triangles, areas, ref_jacs, 
-            weight_angles=1., weight_areas=self.lmbd, verbose=self.verbose,
-            stop_if_positive = self.stop_if_pos)
+        final_points = untangle(points, locked, triangles, ref_jacs,
+            areas=areas, weight_angles=1., weight_areas=self.lmbd, 
+            verbose=self.verbose, stop_if_positive = self.stop_if_pos)
         final_points /= scale
 
         # Retrieve uvs and write them in attribute
