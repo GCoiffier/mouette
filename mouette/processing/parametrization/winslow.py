@@ -1,4 +1,4 @@
-from numba import jit, prange
+from numba import njit, prange, set_num_threads
 import numpy as np
 from scipy.optimize import fmin_l_bfgs_b
 from .base import BaseParametrization
@@ -9,22 +9,22 @@ from ... import geometry as geom
 from ...attributes.glob import euler_characteristic
 from ...attributes.misc_faces import face_area
 
-@jit(cache=True)
+@njit(cache=True, fastmath=True)
 def chi(D, eps):
     # regularization function
     return (D + np.sqrt(eps*eps + D*D))/2
 
-@jit(cache=True)
+@njit(cache=True, fastmath=True)
 def chi_deriv(D,eps):
     return 0.5 + D/(2 * np.sqrt(eps*eps + D*D))
 
-@jit(cache=True)
+@njit(cache=True, fastmath=True)
 def jacobian(pts, tri, ref_jac):
     iA,iB,iC = tri[0], tri[1], tri[2]
     A,B,C = pts[2*iA:2*iA+2], pts[2*iB:2*iB+2], pts[2*iC:2*iC+2]
     return np.vstack((B-A, C-A)).T @ ref_jac
 
-@jit(cache=True, parallel=True)
+@njit(cache=True, parallel=True)
 def min_det(pts, tris, ref_jacs):
     n_tri = tris.shape[0]
     dets = np.zeros(n_tri, dtype=np.float64)
@@ -32,12 +32,12 @@ def min_det(pts, tris, ref_jacs):
         dets[t] = np.linalg.det(jacobian(pts, tris[t], ref_jacs[t]))
     return np.min(dets)
 
-@jit(cache=True, parallel=True)
+@njit(cache=True, parallel=True)
 def energy_and_gradient(X, locked, tri, ref_jacs, areas, wf, wg, eps):
     E = 0
     grad = np.zeros_like(X)
     n = tri.shape[0]
-    Z = np.array([[-1,-1], [1,0], [0,1]], dtype=np.float64)
+    Z = np.array([[-1.,-1.], [1.,0.], [0.,1.]])
     for t in prange(n):
         J = jacobian(X, tri[t], ref_jacs[t])
         K = np.array([[J[1,1],-J[1,0]],[-J[0,1],J[0,0]]])
@@ -59,7 +59,7 @@ def energy_and_gradient(X, locked, tri, ref_jacs, areas, wf, wg, eps):
         # dh_dj = (chi_derivJ * (1 - 1/chiJ)) * K
         dphi_dj = areas[t] * (wf * df_dj + wg * dg_dj)
         # dphi_dj = areas[t] * (wf * df_dj + wg * dh_dj)
-        dphi_du = ZJ @ np.transpose(dphi_dj) # chain rule for the actual variables
+        dphi_du = ZJ @ dphi_dj.T # chain rule for the actual variables
         for i,v in enumerate(tri[t]):
             if locked[v] : continue
             grad[2*v  ] += dphi_du[i,0]
@@ -88,6 +88,7 @@ def untangle(
         areas (np.ndarray[float]): Areas of triangles in original mesh. Used as a weighting term in the energy's summation. Should be of shape (T,). Defaults to np.ones(T).
         weight_angles (float, optional): weight coefficient for the angle conservation term (f). Defaults to 1.
         weight_areas (float, optional): weight coefficient for the area conservation term (g). Defaults to 1.
+        iter_max (int, optional): Maximum number of iterations in the L-BFGS solver. Defaults to 10000.
         n_eps_update (int, optional): number of updates of the regularization's epsilon. Defaults to 10.
         stop_if_positive (bool, optional): enable early stopping as soon as all dets are positive. Defaults to False.
 
@@ -103,6 +104,8 @@ def untangle(
     bfgs_iter_max = kwargs.get("iter_max", 10_000)
     stop_if_pos = kwargs.get("stop_if_positive",False)
     areas = kwargs.get("areas", None)
+    set_num_threads(2)
+        
     if areas is None:
         areas = np.ones(triangles.shape[0])
 
