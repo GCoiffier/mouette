@@ -27,8 +27,10 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
 
     vborder, eborder = [starting_point], []
     point1, point2 = starting_point, mesh.connectivity.vertex_to_vertices(starting_point)[0]
-    
-    while point2 != starting_point:
+    nvisited = 0
+    MAX_VISITED = len(mesh.vertices)
+        
+    while point2 != starting_point and nvisited < MAX_VISITED:
         # while we have not come back to origin
         vborder.append(point2)
         eborder.append(mesh.connectivity.edge_id(point1, point2))
@@ -36,6 +38,7 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
             if mesh.is_vertex_on_border(v) and v!=point1:
                 point1, point2 = point2, v
                 break
+        nvisited += 1
     eborder.append(mesh.connectivity.edge_id(point1, point2)) # add last edge to close the cycle
     return vborder, eborder
 

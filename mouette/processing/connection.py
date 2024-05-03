@@ -85,7 +85,7 @@ class SurfaceConnectionVertices(SurfaceConnection):
             P = Vec(self.mesh.vertices[u])
             N = self.vnormals[u]
             # extract basis edge
-            vert_u = self.mesh.connectivity.vertex_to_vertices(u)
+            vert_u = self.mesh.connectivity.vertex_to_vertices(u)[::-1]
             E = self.mesh.vertices[vert_u[0]] - P
             X = Vec.normalized(E - np.dot(E,N)*N) # project on tangent plane
             self._baseX[u] = X

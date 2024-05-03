@@ -294,7 +294,7 @@ class SurfaceMesh(Mesh):
             for iF,F in enumerate(self.mesh.faces):
                 n = len(F)
                 for iV in range(n):
-                    P, Pprev, Pnext = F[iV], F[(iV+1)%n], F[(iV-1)%n]
+                    P, Pprev, Pnext = F[iV], F[(iV-1)%n], F[(iV+1)%n]
                     iC, iCprev, iCnext = (self._adjVF2Cn[(p,iF)] for p in (P,Pprev,Pnext)) 
                     self._half_edges[ (P, Pnext) ] = [iC, iCprev, iCnext, None, iF, iV, (iV+1)%n]
                     self._Cn2he[iC] = (P,Pnext)
@@ -315,25 +315,25 @@ class SurfaceMesh(Mesh):
         def _sort_vertex_neighborhoods(self):
             for A in self.mesh.id_vertices:
                 corners_A = self._adjV2Cn[A]
+                if len(corners_A)==0: continue
                 sort_index = dict([(c,0) for c in corners_A])
                 ind = 0
                 is_boundary = False
                 Cn = corners_A[0]
                 for _ in range(len(sort_index)):
                     sort_index[Cn] = ind 
-                    ind += 1 
+                    ind -= 1 
                     Cn = self.opposite_corner(self.previous_corner(Cn))
                     if Cn is None: 
                         is_boundary = True
                         break
-
                 if is_boundary:
                     # also go counter clockwise 
                     ind = 0
                     Cn = corners_A[0]
                     for _ in range(len(sort_index)):
                         sort_index[Cn] = ind 
-                        ind -=1
+                        ind +=1
                         Cn = self.opposite_corner(Cn)
                         if Cn is None : break
                         Cn = self.next_corner(Cn)
@@ -341,7 +341,7 @@ class SurfaceMesh(Mesh):
                 sort_indexV = dict()
                 for v in self._adjV2V[A]:
                     # all vertices have an associated corner except the last one (opposite half edge does not exist on boundary)
-                    sort_indexV[v] = sort_index.get(self.half_edge_to_corner(A,v), float("inf"))
+                    sort_indexV[v] = sort_index.get(self.half_edge_to_corner(A,v), -float("inf"))
                 self._adjV2V[A].sort(key = lambda v : sort_indexV[v])
 
         ##### Vertices to elements
@@ -479,10 +479,6 @@ class SurfaceMesh(Mesh):
             else:
                 if return_inds: return None,None,None
                 return None
-            
-        def indirect_face(self, u: int, v: int, return_inds: bool = False):
-            """Alias for direct_face(v,u)"""
-            return self.direct_face(v,u,return_inds)
 
         def edge_to_faces(self, u: int, v: int):
             return self.direct_face(u,v), self.direct_face(v,u)
@@ -492,15 +488,17 @@ class SurfaceMesh(Mesh):
 
             if (u,v) are not two vertices of the face T, returns None
             """
-            T1 = self.direct_face(u,v, return_inds)
-            T2 = self.direct_face(v,u, return_inds)
-            tT1 = T1[0] if return_inds else T1
-            tT2 = T2[0] if return_inds else T2
-            if tT1==T:
-                return T2
-            if tT2==T:
-                return T1
-            return (None,None,None) if return_inds else None
+            if return_inds:
+                T1, u1, v1 = self.direct_face(u,v, True)
+                T2, v2, u2 = self.direct_face(v,u, True)
+                if T1==T: return T2,u2,v2
+                if T2==T: return T1,u1,v1
+                return None,None,None
+            else:
+                T1, T2 = self.direct_face(u,v), self.direct_face(v,u)
+                if T==T1: return T2
+                if T==T2: return T1
+                return None
 
         def common_edge(self, iF1: int, iF2: int):
             """Returns the two vertices (u,v) of the edge that separates faces iF1 and iF2 if it exists, and (None,None) otherwise.

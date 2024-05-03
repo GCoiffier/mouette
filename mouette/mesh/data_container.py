@@ -198,7 +198,8 @@ class CornerDataContainer(_BaseDataContainer):
         return not self._elem
 
     def clear(self):
-        self._data = []
+        self._elem = []
+        self._adj = []
         self._attr = dict()
 
     def append(self, val_elem, val_adj):

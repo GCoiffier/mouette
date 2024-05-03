@@ -126,7 +126,6 @@ class SingularityCutter(Worker):
             return l
             
         # Compute all edge paths between singularities (and border)
-
         path_btw_singus = dict()
         for i,a in enumerate(self.singularities):
             paths_a = shortest_path(self.input_mesh, a, set(self.singularities[i:]), weights=self.edge_lengths)
@@ -342,14 +341,16 @@ class SingularityCutter(Worker):
         uf = UnionFind(range(3*len(self.input_mesh.faces)))
         duplicate_vertices = dict([(v, set()) for v in self.input_mesh.id_vertices])
 
-        # First, no faces are adjacent
+        # At first, no faces are adjacent
+        kF = 0
         for iF,F in enumerate(self.input_mesh.faces):
             nF = len(F)
-            self._output_mesh.faces.append([nF*iF+_i for _i in range(nF)])
+            self._output_mesh.faces.append([kF+_i for _i in range(nF)])
             for iv,v in enumerate(F):
                 pv = self.input_mesh.vertices[v]
                 self._output_mesh.vertices.append(pv)
-                duplicate_vertices[v].add(nF*iF+iv)
+                duplicate_vertices[v].add(kF+iv)
+            kF += nF
 
         # Fusion vertices along edges that are not a cut
         for e in self.input_mesh.interior_edges:
@@ -361,26 +362,27 @@ class SingularityCutter(Worker):
                 uf.union(self._output_mesh.faces[F1][iB1], self._output_mesh.faces[F2][iB2])
 
         for i,F in enumerate(self._output_mesh.faces):
-            self._output_mesh.faces[i] = [uf.find(a) for a in F]
-
-        # Reorder vertices to get rid of non connected duplicates
+            self._output_mesh.faces[i] = [uf.find(v) for v in F]
+            
+        # Reorder vertices to [0,n-1] and get rid of non connected duplicates
         imap = dict()
         i=0
         for F in self._output_mesh.faces:
-            for u in F:
-                if u not in imap:
-                    imap[u]=i # assign new index to u
-                    i+=1
+            for v in F:
+                if v in imap: continue
+                imap[v]=i # assign new index to first version of vertex u met
+                i+=1
 
         for iF,F in enumerate(self._output_mesh.faces):
             self._output_mesh.faces[iF] = [imap[v] for v in F]
         order_verts = [None]*len(imap)
 
         for u in range(len(self._output_mesh.vertices)):
-            if u in imap:
-                order_verts[imap[u]] = self._output_mesh.vertices[u]
+            if u not in imap: continue
+            order_verts[imap[u]] = self._output_mesh.vertices[u]
         self._output_mesh.vertices.clear()
         self._output_mesh.vertices += order_verts
+        self._output_mesh = SurfaceMesh(self._output_mesh)
         
         # get rid of duplicated and isolated vertices in map
         for v in duplicate_vertices:
@@ -392,4 +394,3 @@ class SingularityCutter(Worker):
             for u in duplicate_vertices[v]:
                 self.ref_vertex[u] = v
 
-        self._output_mesh = SurfaceMesh(self._output_mesh)

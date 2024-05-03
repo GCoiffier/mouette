@@ -175,14 +175,14 @@ class _BaseFrameField2DVertices(FrameField):
             if repr_vector:
                 # Representation vector only: 
                 angle = cmath.phase(self.var[id_vertex])
-                r = geom.rotate_around_axis(E, -N, angle)
+                r = geom.rotate_around_axis(E, N, angle)
                 p = P + L*r
                 FFMesh.vertices += [P, p]
                 FFMesh.edges.append((2*id_vertex, 2*id_vertex+1))
             else:
                 # Representation of the whole frame
                 angle = cmath.phase(self.var[id_vertex])/self.order
-                cmplx = [geom.rotate_around_axis(E, -N, angle + 2*k*pi/self.order) for k in range(self.order)]
+                cmplx = [geom.rotate_around_axis(E, N, angle + 2*k*pi/self.order) for k in range(self.order)]
                 pts = [P + abs(self.var[id_vertex])*L*r for r in cmplx]
                 FFMesh.vertices.append(P)
                 FFMesh.vertices += pts

@@ -11,10 +11,6 @@ title: "Surface meshes"
 
 :::mouette.mesh.datatypes.surface.SurfaceMesh
 
-# Surface Half edges
-
-:::mouette.mesh.datatypes.surface.SurfaceMesh._HalfEdgeStructure
-
 # Surface Connectivity
 
 :::mouette.mesh.datatypes.surface.SurfaceMesh._Connectivity

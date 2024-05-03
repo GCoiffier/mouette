@@ -44,7 +44,7 @@ class FeatureEdgeDetector(Worker):
         self.compute_feature_graph: bool = compute_feature_graph
         
         self.border_cycles : list = None # result of 'M.processing.extract_border_cycle_all'
-        
+
         self.fnormals : Attribute = None # face normals
 
         # Following data structures will be filled
@@ -82,15 +82,9 @@ class FeatureEdgeDetector(Worker):
 ##### Feature detection subfunctions #####
 
     def _add_border_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:
-        if len(mesh.boundary_vertices)==0 : return feature_attr # no border
-        border_cycles = extract_border_cycle_all(mesh)
-        for border in border_cycles:
-            nb = len(border)
-            for i in range(nb):
-                a,v,b = border[i-1], border[i], border[(i+1)%nb]
-                av,vb = mesh.connectivity.edge_id(a,v), mesh.connectivity.edge_id(v,b)
-                feature_attr[av] = True
-                feature_attr[vb] = True
+        if len(mesh.boundary_edges)==0 : return feature_attr # no border
+        for e in mesh.boundary_edges:
+            feature_attr[e] = True
         return feature_attr
 
     def _add_hard_edges_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:

@@ -415,5 +415,13 @@ def sphere_fibonacci( n_pts : int, radius:float =1., build_surface : bool = True
     if build_surface:
         # Triangulate points on a sphere : Delaunay is equivalent to convex hull since every points lay in the hull
         ch = ConvexHull(points, qhull_options="QJ")
-        data.faces += list(ch.simplices)
+        for (A,B,C) in ch.simplices:
+            # Correctly orient the face with outward normal
+            pA,pB,pC = (points[_x] for _x in (A,B,C))
+            pcenter = (pA+pB+pC)/3
+            normal = geom.cross(pB-pA,pC-pA)
+            if geom.dot(pcenter,normal)<0:
+                data.faces.append((A,C,B))
+            else:
+                data.faces.append((A,B,C))
     return _instanciate_raw_mesh_data(data)
