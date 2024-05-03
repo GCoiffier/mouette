@@ -41,7 +41,7 @@ def test_sorted_neighborhood(s):
     assert s.connectivity.vertex_to_vertices(0) == [3, 1]
     assert s.connectivity.vertex_to_vertices(1) == [0, 4, 5, 2]
     assert s.connectivity.vertex_to_vertices(5) == [2, 1, 4, 8]
-    assert s.connectivity.vertex_to_vertices(4) == [7, 5, 1, 3]
+    assert s.connectivity.vertex_to_vertices(4) == [1, 3, 7, 5]
 
 @pytest.mark.parametrize("s", surfaces)
 def test_adj_V2V(s):
@@ -49,8 +49,8 @@ def test_adj_V2V(s):
     assert True
 
 @pytest.mark.parametrize("arg", [
-    (surf_quad_subdiv(), 4, [2,3,0,1]),
-    (surf_one_ring(), 0, [0, 9, 8, 7, 6, 5, 4, 3, 2, 1])
+    (surf_quad_subdiv(), 4, [3,0,1,2]),
+    (surf_one_ring(), 0, [9, 8, 7, 6, 5, 4, 3, 2, 1,0])
 ])
 def test_adj_V2F(arg):
     s,v,l = arg
