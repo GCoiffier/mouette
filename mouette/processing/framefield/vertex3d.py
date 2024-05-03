@@ -243,10 +243,10 @@ class FrameField3DVertices(FrameField):
             if abs(self.singuls[Tri])>1e-2:
                 # triangle is singular
                 if self.mesh.is_face_on_border(Tri):
-                    Tet = self.mesh.connectivity.face_to_cell(Tri)[0]
+                    Tet = self.mesh.connectivity.face_to_cells(Tri)[0]
                     singu_graph.vertices += [bary_tri[Tri], bary_tet[Tet]]
                 else:
-                    T1, T2 = self.mesh.connectivity.face_to_cell(Tri)
+                    T1, T2 = self.mesh.connectivity.face_to_cells(Tri)
                     singu_graph.vertices += [bary_tet[T1], bary_tet[T2]]
                 singu_graph.edges.append((2*n, 2*n+1))
                 singuls_on_graph[n] = self.singuls[Tri]

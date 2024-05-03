@@ -71,7 +71,7 @@ def cell_faces_on_boundary(mesh : VolumeMesh, name="boundary", persistent=True, 
         bndf = ArrayAttribute(int, len(mesh.cells)) if dense else Attribute(int)
 
     for iF in mesh.id_faces:
-        if len(mesh.connectivity.face_to_cell(iF))==1 : 
-            iC = mesh.connectivity.face_to_cell(iF)[0]
+        if len(mesh.connectivity.face_to_cells(iF))==1 : 
+            iC = mesh.connectivity.face_to_cells(iF)[0]
             bndf[iC] += 1
     return bndf

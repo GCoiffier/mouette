@@ -76,7 +76,7 @@ class DiscreteExponentialMap(Worker):
             if rad>=self.radius : continue # ignore since too far from origin
             if v in visited : continue # vertex was already set
             visited.add(v)
-            for nv in self.mesh.connectivity.vertex_to_vertex(v):
+            for nv in self.mesh.connectivity.vertex_to_vertices(v):
                 dv = dist[v] + geom.distance(self.mesh.vertices[v], self.mesh.vertices[nv])
                 if dist.get(nv, float("inf")) > dv:
                     dist[nv] = dv

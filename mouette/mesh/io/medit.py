@@ -2,13 +2,11 @@ from ..datatypes import *
 from ..mesh_data import RawMeshData
 from collections import deque
 
-def parse_field(data : deque, container, nlines, nelem, corner_container=None):
+def parse_field(data : deque, container, nlines, nelem):
     for _ in range(nlines):
         line = data.popleft().split()
         d = [int(u.strip())-1 for u in line][:nelem]
         container.append(d)
-        if corner_container is not None:
-            corner_container += d
 
 def import_medit(path):
     obj = RawMeshData()
@@ -34,19 +32,19 @@ def import_medit(path):
 
         elif line=="Triangles":
             nt = int(data.popleft())
-            parse_field(data, obj.faces, nt, 3, obj.face_corners)
+            parse_field(data, obj.faces, nt, 3)
 
         elif line=="Quadrilaterals":
             nq = int(data.popleft())
-            parse_field(data, obj.faces,  nq, 4, obj.face_corners)
+            parse_field(data, obj.faces,  nq, 4)
 
         elif line=="Tetrahedra":
             nc = int(data.popleft())
-            parse_field(data, obj.cells, nc, 4, obj.cell_corners)
+            parse_field(data, obj.cells, nc, 4)
         
         elif line=="Hexahedra":
             nc = int(data.popleft())
-            parse_field(data, obj.cells, nc, 6, obj.cell_corners)
+            parse_field(data, obj.cells, nc, 6)
 
     return obj
 

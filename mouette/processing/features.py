@@ -108,8 +108,7 @@ class FeatureEdgeDetector(Worker):
         if mesh.edges.has_attribute("hard_edges"):
             for e in mesh.edges.get_attribute("hard_edges"):
                 A,B = mesh.edges[e]
-                T1,_,_ = mesh.half_edges.adj(A,B)
-                T2,_,_ = mesh.half_edges.adj(B,A)
+                T1,T2 = mesh.connectivity.edge_to_faces(A,B)
                 if T1 is None or T2 is None : continue
                 N1,N2 = self.fnormals[T1], self.fnormals[T2]
                 # we filter hard edge also depending on their angles. if marked but flat, the edge is ignored
@@ -129,8 +128,7 @@ class FeatureEdgeDetector(Worker):
         if self.only_border : return feature_attr
         DOT_THRESHOLD = 0.5
         for e, (A,B) in enumerate(mesh.edges):
-            T1,_,_ = mesh.half_edges.adj(A,B)
-            T2,_,_ = mesh.half_edges.adj(B,A)
+            T1,T2 = mesh.connectivity.edge_to_faces(A,B)
             if T1 is None or T2 is None : continue
             N1,N2 = self.fnormals[T1], self.fnormals[T2]
             if geometry.dot(N1,N2) < DOT_THRESHOLD:
@@ -145,7 +143,7 @@ class FeatureEdgeDetector(Worker):
         angles = corner_angles(mesh, persistent=False)
         for v in self.feature_vertices:
             angle_v = 0.
-            for T in mesh.connectivity.vertex_to_face(v):
+            for T in mesh.connectivity.vertex_to_faces(v):
                 c = mesh.connectivity.vertex_to_corner_in_face(v,T)
                 angle_v += angles[c]
             if abs(angle_v) <  2*pi/self.corner_order:
@@ -192,7 +190,7 @@ class FeatureEdgeDetector(Worker):
         self.log("Build local feature edges indices")
         for v in self.feature_vertices:
             self.local_feat_edges[v] = []
-            for i, ev in enumerate(mesh.connectivity.vertex_to_edge(v)):
+            for i, ev in enumerate(mesh.connectivity.vertex_to_edges(v)):
                 if feature[ev] :
                     self.local_feat_edges[v].append(i)
 

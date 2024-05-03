@@ -75,7 +75,7 @@ def shortest_path(mesh : Mesh, start : int, targets : list, weights = "length", 
         v = queue.get().x
         if visited[v] : continue
         visited[v] = True
-        for nv in mesh.connectivity.vertex_to_vertex(v):
+        for nv in mesh.connectivity.vertex_to_vertices(v):
             d = distance[v] + edge_length(v,nv)
             if distance[nv] > d:
                 distance[nv] = d

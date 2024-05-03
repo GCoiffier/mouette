@@ -1,129 +1,7 @@
-import numpy as np
-
-from .mesh_attributes import Attribute, ArrayAttribute
+from .data_container import DataContainer, CornerDataContainer
 from ..geometry import Vec
 from .. import utils
 from .. import config
-import itertools
-import warnings
-from .. import config
-
-
-class DataContainer:
-    """
-    A DataContainer is a container class for all simplicial elements of the same type in an instance (for example, vertices, edges or faces).
-    It stores relevant information about the combinatorics (in the _data field) as well as various attributes onto the elements (in the _attr field)
-    """
-
-    def __init__(self, data : list = None, attributes : dict = None, id : str = ""):
-        self.id = id
-        if data is None:
-            self._data = []
-        else:
-            self._data = list(data)
-        
-        # self._attr : dict of str->Attribute
-        if attributes is None:
-            self._attr = dict()
-        else:
-            assert isinstance(attributes, dict)
-            self._attr = attributes 
-    
-    def __getitem__(self, key):
-        return self._data[key]
-
-    def __setitem__(self, key, value):
-        try:
-            self._data[key] = value
-        except Exception as e:
-            warnings.warn(f"Error in attribute '{key}' : {e}")
-            raise Exception("Aborting")
-
-    def __iter__(self):
-        return self._data.__iter__()
-
-    def __repr__(self):
-        return self._data.__repr__()
-
-    def __str__(self):
-        return str(self._data) + "\nAttributes: "+str(self._attr.keys())
-
-    @property
-    def size(self):
-        return len(self._data)
-
-    def __len__(self):
-        return len(self._data)
-
-    def empty(self):
-        return not self._data
-
-    def clear(self):
-        self._data = []
-        self._attr = dict()
-
-    @property
-    def attributes(self):
-        return self._attr.keys()
-
-    def create_attribute(self, name, data_type, elem_size=1, dense=False, default_value=None) -> Attribute:
-        # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
-        if name in self._attr and not config.disable_duplicate_attribute_warning:
-            warnings.warn(f"Warning ! Attribute '{name}' already exists on {self.id}")
-        else:
-            if dense:
-                self._attr[name] = ArrayAttribute(data_type, len(self), elem_size=elem_size, default_value=default_value)
-            else:
-                self._attr[name] = Attribute(data_type, elem_size=elem_size, default_value=default_value)
-        return self._attr[name]
-
-    def register_array_as_attribute(self, name, data, default_value=None):
-         # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
-        if name in self._attr and not config.disable_duplicate_attribute_warning:
-            warnings.warn(f"Warning ! Attribute '{name}' already exists on {self.id}")
-        else:
-            if len(data.shape)==1: 
-                data = data[:,np.newaxis] # change array of size (n,) to size (n,1)
-            try:
-                n_elem = data.shape[0]
-                elem_size = data.shape[1]
-                assert n_elem == len(self)
-            except Exception as e:
-                raise Exception(f"data array has invalid shape {data.shape}")
-            self._attr[name] = ArrayAttribute(type(data[0,0].item()), n_elem, elem_size=elem_size, default_value=default_value)
-            self._attr[name]._data = data
-            return self._attr[name]
-
-    def delete_attribute(self, name):
-        if name in self._attr:
-            del self._attr[name]
-
-    def has_attribute(self, name) -> bool:
-        return name in self._attr
-
-    def get_attribute(self, name) -> Attribute :
-        if name not in self._attr:
-            raise Exception("Attribute does not exist")
-        return self._attr[name]
-
-    def append(self,val):
-        self._data.append(val)
-        for attr in self._attr.values():
-            attr._expand(1)
-
-    def __iadd__(self,other):
-        if isinstance(other, list) or isinstance(other,tuple) or isinstance(other, set):
-            self._data += list(other)
-            for attr in self._attr.values():
-                attr._expand(len(other))
-        elif isinstance(other,DataContainer):
-            self._data += other._data
-            for attr in self._attr.values():
-                attr._expand(other.n_elem)
-        else:
-            raise Exception("Could not append data container of type {} onto an attribute".format(type(other)))
-        return self
-
 
 class RawMeshData:
     """
@@ -136,11 +14,11 @@ class RawMeshData:
         self.edges = DataContainer(id="edges") if (mesh is None or not hasattr(mesh,"edges")) else mesh.edges
 
         self.faces = DataContainer(id="faces") if (mesh is None or not hasattr(mesh,"faces")) else mesh.faces
-        self.face_corners = DataContainer(id="face_corners") if (mesh is None or not hasattr(mesh,"face_corners")) else mesh.face_corners
+        self.face_corners = CornerDataContainer(id="face_corners") if (mesh is None or not hasattr(mesh,"face_corners")) else mesh.face_corners
        
         self.cells = DataContainer(id="cells") if (mesh is None or not hasattr(mesh,"cells")) else mesh.cells
-        self.cell_corners = DataContainer(id="cell_corners") if (mesh is None or not hasattr(mesh,"cell_corners")) else mesh.cell_corners
-        self.cell_faces = DataContainer(id="cell_faces") if (mesh is None or not hasattr(mesh,"cell_faces")) else mesh.cell_faces
+        self.cell_corners = CornerDataContainer(id="cell_corners") if (mesh is None or not hasattr(mesh,"cell_corners")) else mesh.cell_corners
+        self.cell_faces = CornerDataContainer(id="cell_faces") if (mesh is None or not hasattr(mesh,"cell_faces")) else mesh.cell_faces
 
         self._dimensionality : int = None
         self._prepared : bool = False
@@ -148,30 +26,37 @@ class RawMeshData:
     @property
     def id_vertices(self):
         """
-        Shortcut for `range(len(self.vertices))`
+        Shortcut for range(len(self.vertices))
         """
         return range(len(self.vertices))
 
     @property
     def id_edges(self):
         """
-        Shortcut for `range(len(self.edges))`
+        Shortcut for range(len(self.edges))
         """
         return range(len(self.edges))
 
     @property
     def id_faces(self):
         """
-        Shortcut for `range(len(self.faces))`
+        Shortcut for range(len(self.faces))
         """
         return range(len(self.faces))
 
     @property
     def id_cells(self):
         """
-        Shortcut for `range(len(self.cells))`
+        Shortcut for range(len(self.cells))
         """
         return range(len(self.cells))
+
+    @property
+    def id_facecorners(self):
+        """
+        Shortcut for range(len(self.face_corners))
+        """
+        return range(len(self.face_corners))
 
     @property
     def dimensionality(self) -> int:
@@ -222,8 +107,10 @@ class RawMeshData:
         self._prepare_vertices()
         self._prepare_edges()
         self._prepare_faces()
-        self._prepare_face_corners()
+        self._generate_face_corners()
         self._prepare_cells()
+        self._generate_cell_corners()
+        self._generate_cell_faces()
         self._compute_dimensionality()
         self._prepared = True
 
@@ -263,21 +150,71 @@ class RawMeshData:
 
     def _prepare_faces(self):
         pass
-        # for iF in self.id_faces:
-        #     self.faces[iF] = tuple(self.faces[iF])
-        
 
-    def _prepare_face_corners(self):
+    def _generate_face_corners(self):
         nc = len(self.face_corners)
         nf = sum([len(f) for f in self.faces])
         if nc == 0 or nc!= nf : 
-            # corners were not generated
-            self.face_corners._data = []
-            for f in self.faces:
-                self.face_corners._data += list(f)
+            # corners were not or badly generated
+            self.face_corners._elem = []
+            self.face_corners._adj = []
+            for iF,F in enumerate(self.faces):
+                for v in F:
+                    self.face_corners.append(v,iF)
 
     def _prepare_cells(self):
         pass
+
+    def _generate_cell_corners(self):
+        nce = len(self.cell_corners._elem)
+        nca = len(self.cell_corners._adj)
+        if nce==0 or nca==0:
+            # corners were not or badly generated
+            if nca==0 and nce>0:
+                # build only adjacency
+                self.cell_corners._adj = []
+                for iC,C in enumerate(self.cells):
+                    self.cell_corners._elem += [iC]*len(C)
+            else:
+                # build both containers
+                self.cell_corners._elem = []
+                self.cell_corners._adj = []
+                for iC,C in enumerate(self.cells):
+                    for v in C:
+                        self.cell_corners.append(v,iC)
+
+    def _generate_cell_faces(self):
+        nce = len(self.cell_faces._elem)
+        nca = len(self.cell_faces._adj)
+        if nca==0 or nce==0:
+            # cell faces were not generated completely
+
+            face_id = dict() # first invert face indirection
+            for iF,F in enumerate(self.faces):
+                key = utils.keyify(F)
+                face_id[key] = iF
+
+            for iC,C in enumerate(self.cells):
+                if len(C)==4:
+                    # cell is tetrahedron
+                    v0,v1,v2,v3 = C
+                    # convention: face fi does not contain vertex vi
+                    faces_C = [(v1,v3,v2), (v0,v2,v3), (v3,v1,v0), (v0,v1,v2)]
+                elif len(C)==8:
+                    # cell is hexahedron : TODO
+                    v1,v2,v3,v4,v5,v6,v7,v8 = C
+                    faces_C = [
+                        (v1,v2,v3,v4),
+                        (v5,v6,v7,v8),
+                        (v1,v4,v8,v5),
+                        (v1,v2,v6,v5),
+                        (v2,v3,v7,v6),
+                        (v3,v4,v8,v7)
+                    ]
+                for face in faces_C:
+                    self.cell_faces._elem.append(face_id[utils.keyify(face)])
+                    if nca!=0: 
+                        self.cell_faces._adj.append(iC)
 
     def _complete_edges_from_faces(self):
         if self.faces.empty() : return # nothing to do
@@ -299,10 +236,31 @@ class RawMeshData:
         if self.cells.empty() : return # nothing to do
         face_set = set([utils.keyify(f) for f in self.faces])
         for C in self.cells:
-            if len(C)>4:
-                continue
-            for F in itertools.combinations(C,3): # all possibilities of 3-uples among the tetrahedron
-                face = utils.keyify(F)
-                if face not in face_set:
-                    face_set.add(face)
-                    self.faces.append(F)
+            faces_C = []
+            if len(C)==8:
+                # hexahedron
+                v1,v2,v3,v4,v5,v6,v7,v8 = C
+                faces_C = [
+                    (v1,v2,v3,v4),
+                    (v5,v6,v7,v8),
+                    (v1,v4,v8,v5),
+                    (v1,v2,v6,v5),
+                    (v2,v3,v7,v6),
+                    (v3,v4,v8,v7)
+                ]
+            elif len(C)==4:
+                # tetrahedron
+                v0,v1,v2,v3 = C
+                # convention: face fi does not contain vertex vi
+                faces_C = [
+                    (v1,v3,v2), 
+                    (v0,v2,v3), 
+                    (v3,v1,v0), 
+                    (v0,v1,v2)
+                ]
+            
+            for face in faces_C:
+                face_key = utils.keyify(face)
+                if face_key not in face_set:
+                    face_set.add(face_key)
+                    self.faces.append(face)

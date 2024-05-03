@@ -64,7 +64,7 @@ class EdgeSpanningTree(SpanningTree):
         queue = deque()
 
         def put_neighbours_in_queue(v):
-            for nv in self.mesh.connectivity.vertex_to_vertex(v):
+            for nv in self.mesh.connectivity.vertex_to_vertices(v):
                 if (not seen[nv]) and (not self._avoid_edge(v,nv)):
                     queue.append((v,nv))
         

@@ -179,13 +179,12 @@ def import_geogram_ascii(path):
                 ptr = facet_ptr[i]
                 face = [chk.data[ptr+_i] for _i in range(ncf)]
                 outmesh.faces.append(face)
-                outmesh.face_corners += face
+                outmesh.face_corners += [(x,i) for x in face]
 
         elif chk.container == Chunk.Container.FACE_CORNERS and chk.name == "\"GEO::Mesh::facet_corners::corner_adjacent_facet\"":
             assert chk.n_data==1
-            #chk.name = "corner_adjacent_face"
-            adj_vert = outmesh.face_corners.create_attribute("corner_adjacent_facet", int, default_value=NOT_AN_ID)
-            import_attribute(chk, adj_vert)
+            adj_corner = outmesh.face_corners.create_attribute("opposite_face", int, default_value=NOT_AN_ID)
+            import_attribute(chk, adj_corner)
 
         elif chk.container == Chunk.Container.CELL_CORNERS and chk.name == "\"GEO::Mesh::cell_corners::corner_vertex\"":
             assert chk.n_data==1
@@ -194,12 +193,12 @@ def import_geogram_ascii(path):
                 ptr = cell_ptr[i]
                 cell = [chk.data[ptr+_i] for _i in range(ncc)]
                 outmesh.cells.append(cell)
-                outmesh.cell_corners += cell
+                outmesh.cell_corners += [(x,i) for x in cell]
 
         elif chk.container == Chunk.Container.CELL_FACETS and chk.name == "\"GEO::Mesh::cell_facets::adjacent_cell\"":
             assert chk.n_data==1
             # chk.name = "adjacent_cell"
-            adj_cell = outmesh.cell_faces.create_attribute("adjacent_cell", int, default_value=NOT_AN_ID)
+            adj_cell = outmesh.cell_faces.create_attribute("opposite_cell", int, default_value=NOT_AN_ID)
             adj_cell._expand(container_sizes[Chunk.Container.CELL_FACETS])
             import_attribute(chk, adj_cell)
 

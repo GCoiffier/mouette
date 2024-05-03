@@ -33,7 +33,7 @@ def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
 
     k = 0
     for l in mesh.id_vertices:
-        adj = mesh.connectivity.vertex_to_vertex(l)
+        adj = mesh.connectivity.vertex_to_vertices(l)
         k = add(k,l,l,len(adj))
         for b in adj:
             k = add(k, l, b, -1)
@@ -133,8 +133,8 @@ def cotan_edge_diagonal(mesh : SurfaceMesh, inverse:bool=True) -> sp.csc_matrix:
     cotan = cotangent(mesh, persistent=False)
     coeffs = np.zeros(m)
     for ie,(u,v) in enumerate(mesh.edges):
-        T1,uT1,vT1 = mesh.half_edges.adj(u,v)
-        T2,vT2,uT2 = mesh.half_edges.adj(v,u)
+        T1,uT1,vT1 = mesh.connectivity.direct_face(u,v,True)
+        T2,vT2,uT2 = mesh.connectivity.direct_face(v,u,True)
         cT1,cT2 = 0., 0.
         if T1 is not None : 
             w = mesh.faces[T1][3-uT1-vT1]
@@ -197,13 +197,13 @@ def laplacian_triangles(
     Nabla = sp.lil_matrix((m,n), dtype=complex if connection else np.float32) # gradient matrix
     if connection is not None:
         for ie,(ei,ej) in enumerate(mesh.edges):
-            T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)
+            T1,T2 = mesh.connectivity.edge_to_faces(ei,ej)
             if T1 is not None and T2 is not None:
                 Nabla[ie,T1] = -1
                 Nabla[ie,T2] = cmath.rect(1, order*connection.transport(T1,T2))
     else:
          for ie,(ei,ej) in enumerate(mesh.edges):
-            T1,T2 = mesh.half_edges.edge_to_triangles(ei,ej)
+            T1,T2 = mesh.connectivity.edge_to_faces(ei,ej)
             if T1 is not None and T2 is not None:
                 Nabla[ie,T1] = -1
                 Nabla[ie,T2] = 1

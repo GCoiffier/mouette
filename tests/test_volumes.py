@@ -3,7 +3,7 @@ from data.volumes import *
 from utils import *
 
 def test_new():
-    m = M.mesh.new_volume()
+    m = M.mesh.VolumeMesh()
     assert len(m.vertices)==0
     assert len(m.edges)==0
     assert len(m.faces)==0

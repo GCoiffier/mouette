@@ -38,8 +38,8 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
         curv_mat_edges = curvature_matrices(self.mesh)
         adj_e = dict([(e,set()) for e in self.mesh.id_edges])
         for T in self.mesh.id_faces:
-            for T2 in self.mesh.connectivity.face_to_face(T):
-                for e in self.mesh.connectivity.face_to_edge(T2):
+            for T2 in self.mesh.connectivity.face_to_faces(T):
+                for e in self.mesh.connectivity.face_to_edges(T2):
                     adj_e[e].add(T)
 
         self.curv_mat_faces = np.zeros((len(self.mesh.faces),3,3))

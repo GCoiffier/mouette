@@ -128,14 +128,14 @@ def faces_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", pe
     
     near = set()
     for e in mesh.boundary_edges:
-        T1,T2 = mesh.half_edges.edge_to_triangles(*mesh.edges[e])
+        T1,T2 = mesh.connectivity.edge_to_faces(*mesh.edges[e])
         if T1 is None: near.add(T2)
         else: near.add(T1)
     for _ in range(dist-1):
         new_near = set()
         for T in mesh.id_faces:
             if T in near : continue
-            for T2 in mesh.connectivity.face_to_face(T):
+            for T2 in mesh.connectivity.face_to_faces(T):
                 if T2 in near: new_near.add(T)
         near = near | new_near
     

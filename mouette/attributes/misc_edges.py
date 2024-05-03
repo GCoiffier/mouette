@@ -35,7 +35,7 @@ def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
 
     data = np.zeros((len(mesh.edges), 3,3), dtype=np.float64)
     for e, (A,B) in enumerate(mesh.edges):
-        T1,T2 = mesh.half_edges.edge_to_triangles(A,B)
+        T1,T2 = mesh.connectivity.edge_to_faces(A,B)
         if T1 is not None and T2 is not None:
             _,_,n1 = geom.face_basis(*(mesh.vertices[u] for u in mesh.faces[T1]))
             _,_,n2 = geom.face_basis(*(mesh.vertices[u] for u in mesh.faces[T2]))
@@ -70,11 +70,11 @@ def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent:bool = Tru
         cot = cotangent(mesh,persistent=persistent)
 
     for e,(A,B) in enumerate(mesh.edges):
-        T,iA,iB = mesh.half_edges.adj(A,B)
+        T,iA,iB = mesh.connectivity.direct_face(A,B,True)
         if T is not None:
             cnr = mesh.connectivity.face_to_first_corner(T)+3-iA-iB
             cw[e] += cot[cnr]/2
-        T,iB,iA = mesh.half_edges.adj(B,A)
+        T,iB,iA = mesh.connectivity.direct_face(B,A,True)
         if T is not None:
             cnr = mesh.connectivity.face_to_first_corner(T)+3-iA-iB
             cw[e] += cot[cnr]/2

@@ -28,7 +28,7 @@ def dual_mesh(mesh: SurfaceMesh) -> SurfaceMesh:
     for F in mesh.id_faces:
         out.vertices.append(bary[F])
     for V in mesh.id_vertices:
-        out.faces.append(mesh.connectivity.vertex_to_face(V))
+        out.faces.append(mesh.connectivity.vertex_to_faces(V))
     return _instanciate_raw_mesh_data(out, 2)
 
 def tetrahedron(P1: Vec, P2: Vec, P3: Vec, P4: Vec, volume: bool=False) -> SurfaceMesh:

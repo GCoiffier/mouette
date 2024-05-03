@@ -80,10 +80,10 @@ def interpolate_faces_to_vertices(
 
     if weight=="uniform":
         for v in mesh.id_vertices:
-            for f in mesh.connectivity.vertex_to_face(v):
+            for f in mesh.connectivity.vertex_to_faces(v):
                 vattr[v] = vattr[v] + fattr[f]
         for v in mesh.id_vertices:
-            vattr[v] /= mesh.connectivity.n_VtoF(v)
+            vattr[v] /= len(mesh.connectivity.vertex_to_faces(v))
     
     elif weight=="area":
         if mesh.faces.has_attribute("area"):
@@ -93,7 +93,7 @@ def interpolate_faces_to_vertices(
         total_area = np.zeros(len(mesh.vertices))
         for v in mesh.id_vertices:
             total_area[v] = 0.
-            for f in mesh.connectivity.vertex_to_face(v):
+            for f in mesh.connectivity.vertex_to_faces(v):
                 vattr[v] = vattr[v] + fattr[f] * area[f]
                 total_area[v] = total_area[v] + area[f]
         for v in mesh.id_vertices:

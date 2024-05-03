@@ -85,28 +85,26 @@ class SurfaceConnectionVertices(SurfaceConnection):
             P = Vec(self.mesh.vertices[u])
             N = self.vnormals[u]
             # extract basis edge
-            v = self.mesh.connectivity.vertex_to_vertex(u)[0]
-            E = self.mesh.vertices[v] - P
+            vert_u = self.mesh.connectivity.vertex_to_vertices(u)
+            E = self.mesh.vertices[vert_u[0]] - P
             X = Vec.normalized(E - np.dot(E,N)*N) # project on tangent plane
             self._baseX[u] = X
             self._baseY[u] = geom.cross(N,X)
 
-            vert_u = self.mesh.connectivity.vertex_to_vertex(u)
-            
             # initialize angles of every edge in this basis
             ang = 0.
             if u in self.feat.feature_vertices:
                 dfct = self.feat.corners[u] * 2 * np.pi / self.feat.corner_order # target defect (multiple of pi/order)
                 for v in vert_u:
-                    T = self.mesh.half_edges.adj(u,v)[0]
+                    T = self.mesh.connectivity.direct_face(u,v)
                     self._transport[(u,v)] = ang * dfct / self.total_angle[u]
                     c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
                     if c is None: continue
                     ang += self.angles[c]
             else:
                 # normal vertex in interior -> flatten to 2pi
-                for v in vert_u :
-                    T = self.mesh.half_edges.adj(u,v)[0]
+                for v in vert_u:
+                    T = self.mesh.connectivity.direct_face(u,v)
                     self._transport[(u,v)] = ang * 2 * np.pi / self.total_angle[u]
                     c = self.mesh.connectivity.vertex_to_corner_in_face(u,T)
                     ang += self.angles[c]
@@ -180,7 +178,7 @@ class SurfaceConnectionFaces(SurfaceConnection):
             A,B = self.mesh.edges[e]
             pA,pB = self.mesh.vertices[A], self.mesh.vertices[B]
             E = geom.Vec(pB-pA)
-            T1,T2 = self.mesh.half_edges.edge_to_triangles(A,B)
+            T1,T2 = self.mesh.connectivity.edge_to_faces(A,B)
             X1,Y1 = self._baseX[T1], self._baseY[T1]
             X2,Y2 = self._baseX[T2], self._baseY[T2]
             angle1 = math.atan2( geom.dot(E,Y1), geom.dot(E,X1))

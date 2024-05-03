@@ -135,15 +135,15 @@ def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = 
         bnormals = ArrayAttribute(float, len(mesh.vertices), 3) if dense else Attribute(float, 3)
 
     for v in mesh.boundary_vertices:
-        v0 = mesh.connectivity.vertex_to_vertex(v)[0]
-        v1 = mesh.connectivity.vertex_to_vertex(v)[-1]
+        v0 = mesh.connectivity.vertex_to_vertices(v)[0]
+        v1 = mesh.connectivity.vertex_to_vertices(v)[-1]
         P,P0,P1 = (mesh.vertices[u] for u in (v,v0,v1))
         E0 = P - P0
         E1 = P1 - P
-        T0,_,_ = mesh.half_edges.adj(v0,v)
-        if T0 is None: T0,_,_ = mesh.half_edges.adj(v,v0)
-        T1,_,_ = mesh.half_edges.adj(v,v1)
-        if T1 is None: T1,_,_ = mesh.half_edges.adj(v1,v)
+        T0 = mesh.connectivity.direct_face(v0,v)
+        if T0 is None: T0 = mesh.connectivity.direct_face(v,v0)
+        T1 = mesh.connectivity.direct_face(v,v1)
+        if T1 is None: T1 = mesh.connectivity.direct_face(v1,v)
         _,_,N0 = geom.face_basis(*mesh.pt_of_face(T0))
         _,_,N1 = geom.face_basis(*mesh.pt_of_face(T1))
         bnormals[v] = geom.cross(E0,N0) + geom.cross(E1,N1)

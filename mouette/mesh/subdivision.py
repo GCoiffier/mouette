@@ -221,7 +221,7 @@ class VolumeSubdivision(Logger):
         pcenter = sum([Vec(self.mesh.vertices[a]) for a in f ])/3 # barycenter
         self.mesh.vertices.append(pcenter)
         
-        for c in self.conn.face_to_cell(face_id):
+        for c in self.conn.face_to_cells(face_id):
             iF = self.conn.in_cell_face_index(c,face_id)
             new_cells = []
             for i in range(4):

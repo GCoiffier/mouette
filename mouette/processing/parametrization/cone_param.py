@@ -83,7 +83,7 @@ class ConformalConeParametrization(BaseParametrization):
         edge_root = None # A boundary edge to be aligned vertically or horizontally
         if len(self.mesh.boundary_edges)>0:
             edge_root = self.mesh.boundary_edges[0]
-            tree_root = [_T for _T in self.mesh.half_edges.edge_to_triangles(*self.mesh.edges[edge_root]) if _T is not None][0]
+            tree_root = [_T for _T in self.mesh.connectivity.edge_to_faces(*self.mesh.edges[edge_root]) if _T is not None][0]
 
         ## Perform tree traversal and integrate the scale factor
         tree = FaceSpanningTree(self.mesh, starting_face=tree_root, forbidden_edges=self._cutter.cut_edges)() # traverse the faces but avoid seams
@@ -99,10 +99,10 @@ class ConformalConeParametrization(BaseParametrization):
                     self._frames[face] = c/abs(c) # the edge gives the global frame reference
                 continue
 
-            A,B = self.mesh.half_edges.common_edge(face,parent)
+            A,B = self.mesh.connectivity.common_edge(face,parent)
             e = self.mesh.connectivity.edge_id(A,B)
             w = cot[e]* (self._scale_factor[B] - self._scale_factor[A])
-            if self.mesh.half_edges.adj(A,B)[0]==face: 
+            if self.mesh.connectivity.direct_face(A,B)==face: 
                 w*=-1 # w is an oriented dual 1-form
             pt = self._conn.transport(face,parent)
             self._frames[face] = cmath.rect(1, w+pt) * self._frames[parent]
@@ -116,13 +116,13 @@ class ConformalConeParametrization(BaseParametrization):
             E = self.mesh.vertices[rB] - self.mesh.vertices[rA]
             sce = np.exp( (self._scale_factor[rA] + self._scale_factor[rB])/2) # discrete scale factor of edge
             if self.cut_mesh.is_edge_on_border(A,B):
-                T = [_T for _T in self.cut_mesh.half_edges.edge_to_triangles(A,B) if _T is not None][0]
+                T = [_T for _T in self.cut_mesh.connectivity.edge_to_faces(A,B) if _T is not None][0]
                 X,Y = self._conn.base(T)
                 ET = complex(X.dot(E), Y.dot(E))
                 ET = ET / self._frames[T]
                 scale_edges[2*e:2*e+2] = cot[e] * sce * Vec(ET.real, ET.imag)
             else:
-                T1,T2 = self.cut_mesh.half_edges.edge_to_triangles(A,B)
+                T1,T2 = self.cut_mesh.connectivity.edge_to_faces(A,B)
                 X1,Y1 = self._conn.base(T1)
                 ET1 = complex(X1.dot(E), Y1.dot(E))
                 ET1 = ET1 / self._frames[T1]

@@ -124,7 +124,7 @@ class FrameField3DCells(FrameField):
                 face_bases_sh[iF] = Vec(0., 0., 0., 0., 1., 0., 0., 0., 0.)
         for iFb in self._boundary_mesh.id_faces:
             iF = self.mesh.boundary_connectivity.b2m_face[iFb]
-            iC = self.mesh.connectivity.face_to_cell(iF)[0]
+            iC = self.mesh.connectivity.face_to_cells(iF)[0]
             f,a = SphericalHarmonics.project_to_frame(face_bases_sh[iFb])
             self.var[9*iC:9*(iC+1)] += a
             self.frames[iC] *= f
@@ -166,7 +166,7 @@ class FrameField3DCells(FrameField):
 
         for iFb in tqdm(self._boundary_mesh.id_faces, desc="normalize2"):
             iF = self.mesh.boundary_connectivity.b2m_face[iFb]
-            iC = self.mesh.connectivity.face_to_cell(iF)[0]
+            iC = self.mesh.connectivity.face_to_cells(iF)[0]
             # if self.cell_on_bnd[iC]!=1 : continue
             nrml = self._fnormals[iFb]
             frame, a = SphericalHarmonics.project_to_frame(self.var[9*iC:9*(iC+1)], stop_threshold=1e-3, nrml_cstr=nrml)
@@ -196,7 +196,7 @@ class FrameField3DCells(FrameField):
 
         for iFb in self._boundary_mesh.id_faces:
             iF = self.mesh.boundary_connectivity.b2m_face[iFb]
-            iC = self.mesh.connectivity.face_to_cell(iF)[0]
+            iC = self.mesh.connectivity.face_to_cells(iF)[0]
             if self._cell_on_bnd[iC] != 1 : 
                 continue
             axis = geom.cross(Z, self._fnormals[iFb])

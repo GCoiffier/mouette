@@ -85,10 +85,10 @@ class TutteEmbedding(BaseParametrization):
         if self.save_on_corners:
             self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
             for i,v in enumerate(freeInds):
-                for c in self.mesh.connectivity.vertex_to_corner(v):
+                for c in self.mesh.connectivity.vertex_to_corners(v):
                     self.uvs[c] = Vec(U[i], V[i])
             for i,v in enumerate(bndInds):
-                for c in self.mesh.connectivity.vertex_to_corner(v):
+                for c in self.mesh.connectivity.vertex_to_corners(v):
                     self.uvs[c] = Vec(Ubnd[i], Vbnd[i])
         else:
             self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)

@@ -63,7 +63,7 @@ class _BaseFrameField2DFaces(FrameField) :
         for e in self.feat.feature_edges:
             e1,e2 = self.mesh.edges[e] # the edge on border
             edge = self.mesh.vertices[e2] - self.mesh.vertices[e1]
-            for T in self.mesh.half_edges.edge_to_triangles(e1,e2):
+            for T in self.mesh.connectivity.edge_to_faces(e1,e2):
                 if T is None: continue # edge may be on boundary
                 X,Y = self.conn.base(T)
                 c = complex(edge.dot(X), edge.dot(Y)) # compute edge in local basis coordinates (edge.dot(Z) = 0 -> complex number for 2D vector)
@@ -110,7 +110,7 @@ class _BaseFrameField2DFaces(FrameField) :
             # if edge is uv, positive orientation is from T(uv) to T(vu)
 
         for ie,(A,B) in enumerate(self.mesh.edges):
-            T1,T2 = self.mesh.half_edges.edge_to_triangles(A,B)
+            T1,T2 = self.mesh.connectivity.edge_to_faces(A,B)
             if T1 is None or T2 is None: continue
             f1,f2 = self.var[T1], self.var[T2] # representation complex for T1 and T2
             
@@ -136,7 +136,7 @@ class _BaseFrameField2DFaces(FrameField) :
         
         for v in self.mesh.id_vertices:
             angle = self.defect[v]
-            for e in self.mesh.connectivity.vertex_to_edge(v):
+            for e in self.mesh.connectivity.vertex_to_edges(v):
                 u = self.mesh.connectivity.other_edge_end(e,v)
                 angle += edge_rot[e] if u<v else -edge_rot[e]
             if abs(angle)>ZERO_THRESHOLD:
@@ -200,7 +200,7 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
             fixed = self.mesh.faces.create_attribute("fixed", bool)
             for ie in self.feat.feature_edges:
                 u,v = self.mesh.edges[ie]
-                T1,T2 = self.mesh.half_edges.edge_to_triangles(u,v)
+                T1,T2 = self.mesh.connectivity.edge_to_faces(u,v)
                 if T1 is not None: fixed[T1] = True
                 if T2 is not None: fixed[T2] = True
             freeInds,fixedInds = [],[]
@@ -284,14 +284,14 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
         CstX = np.zeros(n_cstr)
         r = 0
         for v in self.mesh.interior_vertices:
-            for e in self.mesh.connectivity.vertex_to_edge(v):
+            for e in self.mesh.connectivity.vertex_to_edges(v):
                 v2 = self.mesh.connectivity.other_edge_end(e,v)
                 CstMat[r,e] = 1 if v<v2 else -1
             CstX[r] = self.defect[v] - self.singus[v] * 2 * pi / self.order
             r += 1
 
         for v in self.mesh.boundary_vertices:
-            for v2 in self.mesh.connectivity.vertex_to_vertex(v):
+            for v2 in self.mesh.connectivity.vertex_to_vertices(v):
                 if self.mesh.is_edge_on_border(v,v2): continue
                 e = self.mesh.connectivity.edge_id(v,v2)
                 CstMat[r,e] = 1 if v<v2 else -1
@@ -307,14 +307,14 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
 
         ### Now rebuild frame field along a tree
         for _e0 in self.feat.feature_edges : break # get a feature edge
-        root = [T for T in self.mesh.half_edges.edge_to_triangles(*self.mesh.edges[_e0]) if T is not None][0]
+        root = [T for T in self.mesh.connectivity.edge_to_faces(*self.mesh.edges[_e0]) if T is not None][0]
         tree = trees.FaceSpanningTree(self.mesh, root)()
         for face,parent in tree.traverse():
             if parent is None: # root
                 self.var[face] = complex(1., 0.)
                 continue
             zp = self.var[parent]
-            ea,eb = self.mesh.half_edges.common_edge(parent,face)
+            ea,eb = self.mesh.connectivity.common_edge(parent,face)
             ea,eb = min(ea,eb),max(ea,eb)
             e = self.mesh.connectivity.edge_id(ea,eb)
             X1,Y1 = self.conn.base(parent)
@@ -324,7 +324,7 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
             angle1 = atan2( geom.dot(E,Y1), geom.dot(E,X1))
             angle2 = atan2( geom.dot(E,Y2), geom.dot(E,X2))
             pt = utils.maths.principal_angle(angle2 - angle1)
-            w = self.rotations[e] if self.mesh.half_edges.adj(ea,eb)[0]==parent else -self.rotations[e]
+            w = self.rotations[e] if self.mesh.connectivity.direct_face(ea,eb)==parent else -self.rotations[e]
             zf = zp * cmath.rect(1, 4*(w + pt))
             self.var[face] = zf
         self.smoothed = True

@@ -1,7 +1,7 @@
 from ..mesh_data import RawMeshData
 from ..mesh_attributes import Attribute
 from .base import Mesh
-from .surface import SurfaceMesh
+from .surface import PolyLine, SurfaceMesh
 from ...utils import keyify
 from ...geometry.geometry import det_3x3
 from ... import config
@@ -66,6 +66,13 @@ class VolumeMesh(Mesh):
         Shortcut for `range(len(self.cells))`
         """
         return range(len(self.cells))
+    
+    @property
+    def id_corners(self):
+        """
+        Shortcut for `range(len(self.face_corners))`
+        """
+        return range(len(self.face_corners))
 
     @property
     def boundary_mesh(self):
@@ -118,9 +125,9 @@ class VolumeMesh(Mesh):
             bool: Returns True is the given face exists and is on the boundary of the mesh
         """
         if len(args)==1:
-            n = self.connectivity.n_F2C(args[0])
+            n = len(self.connectivity.face_to_cells(args[0]))
         else:
-            n = self.connectivity.n_F2C(self.connectivity.face_id(*args))
+            n = len(self.connectivity.face_to_cells(self.connectivity.face_id(*args)))
         return n<2
     
     def is_vertex_on_border(self, V) -> bool:
@@ -218,8 +225,8 @@ class VolumeMesh(Mesh):
             self._adjE2C : dict = None
             self._adjC2E : dict = None
 
-        def _compute_vertex_adj(self):
-            super()._compute_vertex_adj()
+        def _compute_connectivity(self):
+            super()._compute_connectivity()
             
             self._adjV2C = dict([(i,set()) for i in self.mesh.id_vertices ])
             for iC,C in enumerate(self.mesh.cells):
@@ -257,7 +264,7 @@ class VolumeMesh(Mesh):
                     # face fi does not contain vertex vi
                     f0,f1,f2,f3 = self.face_id(v1,v3,v2), self.face_id(v0,v2,v3), self.face_id(v3,v1,v0), self.face_id(v0,v1,v2)
                     for iF, F in enumerate((f0,f1,f2,f3)):
-                        for iC2 in self.face_to_cell(F):
+                        for iC2 in self.face_to_cells(F):
                             if iC2 != iC: self._adjC2C[(iC,iF)] = iC2
                             
 
@@ -286,14 +293,14 @@ class VolumeMesh(Mesh):
             for iF in self.mesh.id_faces:
                 self._adjF2C[iF] = list(self._adjF2C[iF])
 
-        def _compute_edge_adj(self):
-            super()._compute_edge_adj() # for edge_id computation
+        def _compute_edge_id(self):
+            super()._compute_edge_id() # for edge_id computation
             self._adjE2F = dict([(e, []) for e in self.mesh.id_edges])
             self._adjE2C = dict([(e, set()) for e in self.mesh.id_edges])
 
             for f in self.mesh.id_faces:
-                c = set(self.face_to_cell(f))
-                for e in self.face_to_edge(f):
+                c = set(self.face_to_cells(f))
+                for e in self.face_to_edges(f):
                     self._adjE2F[e].append(f)
                     self._adjE2C[e] |= c
             for e in self.mesh.id_edges:
@@ -345,9 +352,9 @@ class VolumeMesh(Mesh):
         ##### Faces - Cells #####
 
         def n_F2C(self, F):
-            return len(self.face_to_cell(F))
+            return len(self.face_to_cells(F))
 
-        def face_to_cell(self, iF):
+        def face_to_cells(self, iF):
             if self._adjF2C is None:
                 self._compute_cell_adj()
             return self._adjF2C[iF]
@@ -365,8 +372,8 @@ class VolumeMesh(Mesh):
             return [ self._adjC2C[(iC,i)] for i in range(len(self.mesh.cells[iC])) if self._adjC2C[(iC,i)] != config.NOT_AN_ID]
 
         def other_face_side(self, C, F):
-            if len(self.face_to_cell(F)) != 2 : return None
-            C1,C2 = self.face_to_cell(F)
+            if len(self.face_to_cells(F)) != 2 : return None
+            C1,C2 = self.face_to_cells(F)
             if C==C1: return C2
             if C==C2 : return C1
             return None
@@ -379,7 +386,7 @@ class VolumeMesh(Mesh):
         ##### Vertex - Cell #####
         def vertex_to_cell(self, V):
             if self._adjV2C is None:
-                self._compute_vertex_adj()
+                self._compute_connectivity()
             return self._adjV2C[V]
         
         def cell_to_vertex(self, C):
@@ -414,7 +421,7 @@ class VolumeMesh(Mesh):
         
         def edge_to_face(self, e):
             if self._adjE2F is None:
-                self._compute_edge_adj()
+                self._compute_edge_id()
             return self._adjE2F[e]
 
         ##### Edge - Cells #####
@@ -436,7 +443,7 @@ class VolumeMesh(Mesh):
 
         def edge_to_cell(self,e):
             if self._adjE2C is None:
-                self._compute_edge_adj()
+                self._compute_edge_id()
             return self._adjE2C[e]
 
     class _BoundaryConnectivity(SurfaceMesh._Connectivity):
@@ -487,7 +494,7 @@ class VolumeMesh(Mesh):
 
             # generate set of faces and check for orientation
             for iF in bnd_faces:
-                iC = self.complete_mesh.connectivity.face_to_cell(iF)[0]
+                iC = self.complete_mesh.connectivity.face_to_cells(iF)[0]
                 pA,pB,pC = (self.complete_mesh.vertices[_x] for _x in self.complete_mesh.faces[iF])
                 bA,bB,bC = (self.m2b_vertex[v] for v in self.complete_mesh.faces[iF])
                 D = [x for x in self.complete_mesh.cells[iC] if x not in self.complete_mesh.faces[iF]][0] # fourth point in cell but not on face
@@ -498,44 +505,30 @@ class VolumeMesh(Mesh):
                     boundary.faces.append((bA,bC,bB))
             return SurfaceMesh(boundary)
         
-        ##### Vertex to Vertex #####
+        ##### Vertex to elements #####
 
-        def vertex_to_vertex(self, V : int):
+        def vertex_to_vertices(self, V : int):
             Vb = self.m2b_vertex.get(V,None)
             if Vb is None: return []
-            return [self.b2m_vertex[_v] for _v in super().vertex_to_vertex(Vb)]
+            return [self.b2m_vertex[_v] for _v in super().vertex_to_vertices(Vb)]
         
-        def n_VtoV(self, V : int):
-            Vb = self.m2b_vertex.get(V,None)
-            if Vb is None: return 0
-            return super().n_VtoV(Vb)
-
-        ##### Vertex to Edges #####
-
-        def vertex_to_edge(self, V : int) :
+        def vertex_to_edges(self, V : int) :
             Vb = self.m2b_vertex.get(V,None)
             if Vb is None: return []
-            edges = [self.edge_id(Vb,Wb) for Wb in super().vertex_to_vertex(Vb)]
+            edges = [self.edge_id(Vb,Wb) for Wb in super().vertex_to_vertices(Vb)]
             return [self.b2m_edge[e] for e in edges]
 
-        ##### Vertex to faces #####
-
-        def n_VtoF(self, V):
-            Vb = self.m2b_vertex.get(V, None)
-            if Vb is None: return 0
-            return super().n_VtoF(Vb)
-
-        def vertex_to_face(self, V):
+        def vertex_to_faces(self, V):
             Vb = self.m2b_vertex.get(V,None)
             if Vb is None: return
-            return [self.b2m_face[f] for f in super().vertex_to_face(Vb)]
+            return [self.b2m_face[f] for f in super().vertex_to_faces(Vb)]
 
         def vertex_to_face_quad(self, V):
             raise NotImplementedError
             
-        ##### faces to Vertex #####
+        ##### Faces to elements #####
 
-        def face_to_vertex(self, F):
+        def face_to_vertices(self, F):
             Fb = self.m2b_face.get(F,None)
             if Fb is None : return []
             return list(self.mesh.faces[Fb])
@@ -554,16 +547,12 @@ class VolumeMesh(Mesh):
             if Fb is None or Vb is None : return None
             return super().in_face_index(Fb,Vb)
         
-        ##### face to Edge ######
-
-        def face_to_edge(self, F):
+        def face_to_edges(self, F):
             Fb = self.m2b_face.get(F,None)
             if Fb is None: return []
-            return  [self.b2m_edge[_e] for _e in super().face_to_edge(Fb)]
+            return  [self.b2m_edge[_e] for _e in super().face_to_edges(Fb)]
 
-        ###### face to face ######
-
-        def face_to_face(self, F):
+        def face_to_faces(self, F):
             Fb = self.m2b_face.get(F,None)
             if Fb is None: return []
-            return [self.b2m_face[_f] for _f in super().face_to_face(Fb)]
+            return [self.b2m_face[_f] for _f in super().face_to_faces(Fb)]

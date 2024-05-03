@@ -195,7 +195,7 @@ class SingularityCutter(Worker):
             if prev is not None:
                 e = self.input_mesh.connectivity.edge_id(v,prev)
                 edge_flags[e] = True
-            for e in self.input_mesh.connectivity.vertex_to_edge(v):
+            for e in self.input_mesh.connectivity.vertex_to_edges(v):
                 if e in self.feat_detector.feature_edges:
                     nv = self.input_mesh.connectivity.other_edge_end(e,v)
                     if not visited[nv]:
@@ -236,10 +236,10 @@ class SingularityCutter(Worker):
             iF = queue.get().x
             if fvisited[iF] : continue
             fvisited[iF] = True                
-            for e in self.input_mesh.connectivity.face_to_edge(iF):
+            for e in self.input_mesh.connectivity.face_to_edges(iF):
                 v1,v2 = self.input_mesh.edges[e]
                 if forbidden_edges[e] : continue # edge is on the singularity spanning tree
-                iF2 = self.input_mesh.half_edges.opposite(v1,v2,iF)[0]
+                iF2 = self.input_mesh.connectivity.opposite_face(v1,v2,iF)
                 if iF2 is not None: 
                     d = face_distance(iF,iF2)
                     if dist[iF2] > dist[iF] + d :
@@ -270,10 +270,10 @@ class SingularityCutter(Worker):
             iF = queue.get().x
             if fvisited[iF] : continue
             fvisited[iF] = True        
-            for e in self.input_mesh.connectivity.face_to_edge(iF):
+            for e in self.input_mesh.connectivity.face_to_edges(iF):
                 v1,v2 = self.input_mesh.edges[e]
                 if forbidden_edges[e] : continue # edge is on the singularity spanning tree
-                iF2 = self.input_mesh.half_edges.opposite(v1,v2,iF)[0]
+                iF2 = self.input_mesh.connectivity.opposite_face(v1,v2,iF)
                 if iF2 is not None:
                     u,v = set(self.input_mesh.faces[iF]) & set(self.input_mesh.faces[iF2])
                     blocked = self.input_mesh.connectivity.edge_id(u,v) in self.feat_detector.feature_edges and regions.connected(iF,iF2)
@@ -355,8 +355,8 @@ class SingularityCutter(Worker):
         for e in self.input_mesh.interior_edges:
             a,b = self.input_mesh.edges[e]
             if e not in self.cut_edges:
-                F1, iA1, iB1 = self.input_mesh.half_edges.adj(a,b)
-                F2, iB2, iA2 = self.input_mesh.half_edges.adj(b,a)
+                F1, iA1, iB1 = self.input_mesh.connectivity.direct_face(a,b,True)
+                F2, iB2, iA2 = self.input_mesh.connectivity.direct_face(b,a,True)
                 uf.union(self._output_mesh.faces[F1][iA1], self._output_mesh.faces[F2][iA2])
                 uf.union(self._output_mesh.faces[F1][iB1], self._output_mesh.faces[F2][iB2])
 

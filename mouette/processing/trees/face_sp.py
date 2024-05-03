@@ -34,10 +34,10 @@ class FaceSpanningTree(SpanningTree):
         queue = deque()
 
         def put_neighbours_in_queue(f):
-            for e in self.mesh.connectivity.face_to_edge(f):
+            for e in self.mesh.connectivity.face_to_edges(f):
                 if e not in self.forbidden_edges:
                     a,b = self.mesh.edges[e]
-                    nf = self.mesh.half_edges.opposite(a,b,f)[0]
+                    nf = self.mesh.connectivity.opposite_face(a,b,f)
                     if (nf is not None) and (not seen[nf]):
                         queue.append((f,nf))
         
@@ -65,7 +65,7 @@ class FaceSpanningTree(SpanningTree):
     def build_tree_as_polyline(self):
         output = PolyLine()
         if self.mesh.faces.has_attribute("barycenter"):
-            bary = self.mesh.faces.attribute("barycenter")
+            bary = self.mesh.faces.get_attribute("barycenter")
         else:
             bary = face_barycenter(self.mesh)
         for iF in self.mesh.id_faces:

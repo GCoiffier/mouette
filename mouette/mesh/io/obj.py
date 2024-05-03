@@ -44,9 +44,9 @@ def parse_obj_data(data):
     normals_attr = obj.vertices.create_attribute("normals", float, 3)
     uv_attr = obj.face_corners.create_attribute("uv_coords", float, 2)
     ic = 0
-    for f in faces:
+    for iF,F in enumerate(faces):
         face = []
-        for (vid,tid,nid) in f:
+        for (vid,tid,nid) in F:
             face.append(vid)
             if nid!=-1:
                 normals_attr[vid] = normals[nid]
@@ -54,7 +54,7 @@ def parse_obj_data(data):
                 uv_attr[ic] = uv_coords[tid]
             ic += 1
         obj.faces.append(face)
-        obj.face_corners += face
+        obj.face_corners += [(v,iF) for v in face]
     if normals_attr.empty() : obj.vertices.delete_attribute("normals")
     if uv_attr.empty(): obj.face_corners.delete_attribute("uv_coords")
     return obj

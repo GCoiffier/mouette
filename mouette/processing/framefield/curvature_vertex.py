@@ -103,7 +103,7 @@ class PrincipalDirectionsVertices(_BaseFrameField2DVertices):
         row,col = self.M.nonzero()
         areas = np.zeros(len(self.mesh.edges), dtype=np.float64)
         for e,(a,b) in enumerate(self.mesh.edges):
-            areas[e] = sum([self.face_areas[_T] for _T in self.mesh.half_edges.edge_to_triangles(a,b) if _T is not None])/2
+            areas[e] = sum([self.face_areas[_T] for _T in self.mesh.connectivity.edge_to_faces(a,b) if _T is not None])/2
         self.curv_mat_vert = aggregate_mats(self.curv_mat_vert, curv_mat_edges, areas, row, col, self.M.count_nonzero())
 
     def initialize(self):

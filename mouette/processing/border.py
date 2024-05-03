@@ -26,13 +26,13 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
         raise Exception("Starting point (vertex {}) is not on mesh border".format(starting_point))
 
     vborder, eborder = [starting_point], []
-    point1, point2 = starting_point, mesh.connectivity.vertex_to_vertex(starting_point)[0]
+    point1, point2 = starting_point, mesh.connectivity.vertex_to_vertices(starting_point)[0]
     
     while point2 != starting_point:
         # while we have not come back to origin
         vborder.append(point2)
         eborder.append(mesh.connectivity.edge_id(point1, point2))
-        for v in mesh.connectivity.vertex_to_vertex(point2):
+        for v in mesh.connectivity.vertex_to_vertices(point2):
             if mesh.is_vertex_on_border(v) and v!=point1:
                 point1, point2 = point2, v
                 break

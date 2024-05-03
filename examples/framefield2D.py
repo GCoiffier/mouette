@@ -32,9 +32,12 @@ if __name__ == "__main__":
             singus[args.singular_indices[2*i]] = args.singular_indices[2*i+1]
 
     if args.curvature:
-        ff = framefield.PrincipalDirections(mesh, args.elements, args.features, args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha)
+        ff = framefield.PrincipalDirections(mesh, args.elements, args.features, 
+            args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha)
     else:
-        ff = framefield.SurfaceFrameField(mesh, args.elements, args.order, args.features, verbose=args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha, cad_correction=args.cadff, singularity_indices=singus)
+        ff = framefield.SurfaceFrameField(mesh, args.elements, args.order, args.features, 
+            verbose=args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha, 
+            cad_correction=args.cadff, singularity_indices=singus)
 
     ff.run()
     ff.flag_singularities()

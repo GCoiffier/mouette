@@ -46,7 +46,7 @@ if __name__ == "__main__":
     signal_attr = mesh.vertices.create_attribute("f", float, dense=True)
     signal_attr._data = signal
 
-    grad_mesh = M.mesh.new_polyline()
+    grad_mesh = M.mesh.RawMeshData()
     L = M.attributes.mean_edge_length(mesh)/3
     for id_face, face in enumerate(mesh.faces):
         basis,Y = connection.base(id_face)

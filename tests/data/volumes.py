@@ -5,7 +5,7 @@ import os
 ### Volumes ###
 
 def vol_tetrahedron():
-    m = M.mesh.new_volume()
+    m = M.mesh.RawMeshData()
     m.vertices += [
         M.Vec(0., 0., 0.),
         M.Vec(1., 0., 0.),
@@ -15,7 +15,7 @@ def vol_tetrahedron():
     m.edges += [(0,1), (1,2), (0,2), (0,3), (1,3), (2,3)]
     m.faces += [[0,1,2], [0,1,3], [1,2,3], [2,0,3]]
     m.cells.append([0,1,2,3])
-    return m
+    return M.mesh.VolumeMesh(m)
 
 def vol_join():
     return M.mesh.load(os.path.join("tests/data/join.tet"))
