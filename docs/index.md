@@ -16,6 +16,7 @@ Mouette makes use of numpy and scipy for the representation of dense and sparse 
 
 #### Numba
 
+Numba is used for speeding up repetitive computations like loops over elements in some algorithms.
 
 #### OSQP
 

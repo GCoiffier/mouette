@@ -2,7 +2,6 @@ import mouette as M
 import sys
 from time import time
 
-
 input_mesh = M.mesh.load(sys.argv[1])
 
 t0 = time()

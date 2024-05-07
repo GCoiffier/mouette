@@ -146,7 +146,7 @@ def skew_matrix_from_rotvec(w : Vec) -> L4_Operator :
     Given a rotation in angle-axis form, computes the 9x9 corresponding skew-symmetric matrix
     
     Args:
-        v (Vec): a rotation axis vector where norm(v) represents the angle of rotation.
+        w (Vec): a rotation axis vector where norm(v) represents the angle of rotation.
 
     Returns:
         L4_Operator: a 9x9 matrix

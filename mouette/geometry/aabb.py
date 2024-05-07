@@ -5,7 +5,7 @@ class BB2D:
     """
     Axis aligned bounding box in 2 dimensions
     """
-    def __init__(self, x1:float, y1:float, x2:float, y2:float):
+    def __init__(self, x1: float, y1: float, x2: float, y2: float):
         """
         Args:
             x1 (float): x coordinate of first point 
@@ -17,7 +17,7 @@ class BB2D:
         self._p2 = Vec(max(x1,x2), max(y1,y2))
     
     @classmethod
-    def of_mesh(cls, mesh : "Mesh", padding:float=0.):
+    def of_mesh(cls, mesh : "Mesh", padding: float=0.) -> "BB2D":
         """Computes the bounding box of all vertices of a mesh, projected into the xy-plane.
 
         Args:
@@ -34,6 +34,11 @@ class BB2D:
 
     @property
     def left(self) -> float:
+        """Smallest x coordinate
+
+        Returns:
+            float: 
+        """
         return self._p1.x
     @left.setter
     def left(self, value:float):
@@ -41,6 +46,11 @@ class BB2D:
         
     @property
     def right(self) -> float:
+        """Largest x coordinate
+
+        Returns:
+            float:
+        """
         return self._p2.x
     @right.setter
     def right(self,value:float):
@@ -48,6 +58,11 @@ class BB2D:
 
     @property
     def top(self) -> float:
+        """Largest y coordinate
+
+        Returns:
+            float:_
+        """
         return self._p2.y
     @top.setter
     def top(self, value:float):
@@ -55,6 +70,11 @@ class BB2D:
 
     @property
     def bottom(self) -> float:
+        """Smallest y coordinate
+
+        Returns:
+            float:
+        """
         return self._p1.y
     @bottom.setter
     def bottom(self, value:float):
@@ -62,9 +82,19 @@ class BB2D:
     
     @property
     def width(self) -> float:
+        """Width of the box (right - left)
+
+        Returns:
+            float:
+        """
         return self._p2.x - self._p1.x 
     @property
     def height(self) -> float:
+        """Height of the box (top - bottom)
+
+        Returns:
+            float:
+        """
         return self._p2.y - self._p1.y
     @property
     def center(self) -> Vec:
@@ -75,7 +105,7 @@ class BB2D:
         """
         return (self._p1 + self._p2)/2
     
-    def pad(self,x:float,y:float):
+    def pad(self, x: float, y: float):
         """Enlarges the bounding box by adding `x` on the width on each side and `y` on the height on each side. Does nothing if the padding values are negative.
 
         Args:
@@ -90,8 +120,8 @@ class BB2D:
         self.top    += y
 
     @staticmethod
-    def intersection(b1,b2):
-        """Computes the intersection bounding box of two bounding boxes
+    def intersection(b1: "BB2D", b2: "BB2D") -> "BB2D":
+        """Computes the intersection bounding box of two bounding boxes. Can also be computed using the `and` operator.
 
         Args:
             b1 (BB2D): first bounding box
@@ -116,7 +146,7 @@ class BB2D:
         return BB2D.intersection(self,other)
 
     @staticmethod
-    def do_intersect(b1,b2) -> bool:
+    def do_intersect(b1: "BB2D", b2 : "BB2D") -> bool:
         """
         Intersection test between two bounding boxes
 
@@ -131,8 +161,8 @@ class BB2D:
                 (b1.bottom <= b2.top and b1.top >= b2.bottom)
     
     @staticmethod
-    def union(b1,b2):
-        """Computes the union bounding box of two bounding boxes
+    def union(b1: "BB2D", b2 : "BB2D") -> "BB2D":
+        """Computes the union bounding box of two bounding boxes. Can also be computed using the `or` operator.
 
         Args:
             b1 (BB2D): first bounding box
@@ -148,7 +178,7 @@ class BB2D:
     def __or__(self, other):
         return BB2D.union(self,other)
     
-    def contains_point(self,pt:Vec) -> bool:
+    def contains_point(self, pt:Vec) -> bool:
         """Point - bounding box intersection predicate.
         If the point is on the boundary of the box, the convention is as follows: inclusive if the point touches the min coordinates, exclusive for the max coordinates
 
@@ -170,9 +200,14 @@ class BB2D:
 
 class BB3D:
     """
-    Axis Aligned Bounding Box
-    """
+    Axis Aligned Bounding Box in 3 dimensions.
+        """
     def __init__(self, *args):
+        """Initialize with either 6 values (x1,y1,z1,x2,y2,z2) or two 3D vectors ((x1,y1,z1), (x2,y2,z2)).
+
+        Raises:
+            Exception: fails if *args is not of the two forms above
+        """
         if len(args)==6:
             x1,y1,z1,x2,y2,z2 = args
         elif len(args)==2:
@@ -184,7 +219,7 @@ class BB3D:
         self._p2 : Vec = Vec(x2,y2,z2)
 
     @classmethod
-    def of_mesh(cls, mesh : "Mesh", padding:float = 0.):
+    def of_mesh(cls, mesh : "Mesh", padding:float = 0.) -> "BB3D":
         """Computes the bounding box of all vertices of a mesh
 
         Args:
@@ -238,7 +273,7 @@ class BB3D:
         return (self._p1 + self._p2)/2
 
     @staticmethod
-    def intersection(b1,b2):
+    def intersection(b1: "BB3D", b2: "BB3D") -> "BB3D":
         """Computes the intersection bounding box of two bounding boxes
 
         Args:
@@ -263,14 +298,14 @@ class BB3D:
         return BB3D.intersection(self,other)
 
     @staticmethod
-    def do_intersect(b1,b2) -> bool:
+    def do_intersect(b1: "BB3D", b2: "BB3D") -> bool:
         """
         Intersection test between two bounding boxes
 
         Args:
             b1 (BB3D): first bounding box
             b2 (BB3D): second bounding box
-
+            
         Returns:
             bool: whether the two BB intersect
         """
@@ -278,7 +313,7 @@ class BB3D:
         return np.all(predicates)
     
     @staticmethod
-    def union(b1,b2):
+    def union(b1: "BB3D", b2: "BB3D") -> "BB3D":
         """Computes the union bounding box of two bounding boxes
 
         Args:
@@ -295,7 +330,7 @@ class BB3D:
     def __or__(self, other):
         return BB3D.union(self,other)
 
-    def pad(self,x:float,y:float,z:float):
+    def pad(self, x: float, y: float, z: float):
         """Enlarges the bounding box by adding `x` on the width on each side and `y` on the height on each side. Does nothing if the padding values are negative.
 
         Args:
@@ -309,7 +344,7 @@ class BB3D:
         self._p1 -= Vec(x,y,z)
         self._p2 += Vec(x,y,z)
 
-    def contains_point(self,pt:Vec) -> bool:
+    def contains_point(self, pt: Vec) -> bool:
         """Point - bounding box intersection predicate.
         If the point is on the boundary of the box, the convention is as follows: inclusive if the point touches the min coordinates, exclusive for the max coordinates
 

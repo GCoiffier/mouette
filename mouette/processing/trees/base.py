@@ -22,8 +22,8 @@ class SpanningTree(ABC):
         return self
 
     @abstractmethod
-    def compute(self) -> None : 
-        """Compute the list of edges as well as the connectivity of the tree"""
+    def compute(self) -> None :
+        """Runs the traversal and builds the tree"""
         self._computed = True
 
     def traverse(self, order="BFS"):
@@ -54,11 +54,6 @@ class SpanningTree(ABC):
 
     @abstractmethod
     def build_tree_as_polyline(self) -> PolyLine : 
-        """Builds the tree as a new polyline object. Useful for debug and visualization purposes
-
-        Returns:
-            PolyLine: the tree
-        """
         pass
 
 class SpanningForest(ABC):
@@ -77,14 +72,24 @@ class SpanningForest(ABC):
         return self
         
     @property
-    def n_trees(self):
+    def n_trees(self) -> int:
+        """Number of trees in the forest
+        
+        Returns:
+            int:
+        """
         return len(self.trees)
 
     def __getitem__(self, key):
         return self.trees[key]
 
     @property
-    def edges(self):
+    def edges(self) -> list:
+        """List of edges in the trees
+
+        Returns:
+            list: list of edges
+        """
         _edges = []
         for tree in self.trees:
             _edges += tree.edges

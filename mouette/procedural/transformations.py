@@ -1,9 +1,5 @@
 from ..mesh.datatypes import *
-from ..mesh.mesh_data import RawMeshData
-from ..mesh.mesh import merge, _instanciate_raw_mesh_data
-
-from ..attributes import face_barycenter
-
+from ..mesh.mesh import merge
 from .shapes import cylinder, icosphere
 from ..attributes import mean_edge_length
 

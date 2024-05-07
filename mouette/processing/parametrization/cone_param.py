@@ -19,17 +19,18 @@ import scipy.sparse as sp
 
 class ConformalConeParametrization(BaseParametrization):
     """
-    Conformal cone parametrization. Given a user-defined cone distribution on the surface, this algorithm cuts an input surface mesh into a disk topology and parametrize it using conformal mapping
+    Conformal cone parametrization. 
+    Given a user-defined cone distribution on the surface, this algorithm cuts an input surface mesh into 
+    a disk topology and parametrize it using conformal mapping
 
     References:
-        [1] Conformal equivalence of triangle meshes, Springborn B., Schröder P. and Pinkall U., ACM Transaction on Graphics, 2008
-        [2] Boundary first flattening, Sawhney R. and Crane K., ACM Transaction on Graphics, 2018
+        - [1] _Conformal equivalence of triangle meshes_, Springborn B., Schröder P. and Pinkall U., ACM Transaction on Graphics, 2008
+        
+        - [2] _Boundary first flattening_, Sawhney R. and Crane K., ACM Transaction on Graphics, 2018
     """
 
     def __init__(self, mesh:SurfaceMesh, singularities: Attribute, verbose:bool=False, **kwargs):
         """
-        Initializer.
-
         Args:
             mesh (SurfaceMesh): Input mesh
             singularities (Attribute): float Attribute on vertices. Gives the target angle defects of vertices

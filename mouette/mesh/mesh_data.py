@@ -6,7 +6,7 @@ from .. import config
 class RawMeshData:
     """
     A base container class to store all the data relative to a mesh.
-    It is not made to be used outside of the library, and serves an intermediate between io parsers and instantiated (and typed) mesh classes.
+    Serves an intermediate between io parsers or manual inputs and instantiated (and typed) mesh classes.
     """
 
     def __init__(self, mesh=None):
@@ -26,49 +26,60 @@ class RawMeshData:
     @property
     def id_vertices(self):
         """
-        Shortcut for range(len(self.vertices))
+        Shortcut for `range(len(self.vertices))`
         """
         return range(len(self.vertices))
 
     @property
     def id_edges(self):
         """
-        Shortcut for range(len(self.edges))
+        Shortcut for `range(len(self.edges))`
         """
         return range(len(self.edges))
 
     @property
     def id_faces(self):
         """
-        Shortcut for range(len(self.faces))
+        Shortcut for `range(len(self.faces))`
         """
         return range(len(self.faces))
 
     @property
     def id_cells(self):
         """
-        Shortcut for range(len(self.cells))
+        Shortcut for `range(len(self.cells))`
         """
         return range(len(self.cells))
 
     @property
     def id_facecorners(self):
         """
-        Shortcut for range(len(self.face_corners))
+        Shortcut for `range(len(self.face_corners))`
         """
         return range(len(self.face_corners))
+
+    @property
+    def id_cellcorners(self):
+        """
+        Shortcut for `range(len(self.cell_corners))`
+        """
+        return range(len(self.cell_corners))
 
     @property
     def dimensionality(self) -> int:
         """
         Dimensionality of the manifold represented by the data.
-        If only vertices -> 0
-        If vertices and edges (embedded graph) -> 1
-        If faces (surface manifold) -> 2
-        If cells (volume manifold) -> 3
+
+        - If only vertices -> 0
+
+        - If vertices and edges (embedded graph) -> 1
+
+        - If faces (surface manifold) -> 2
+
+        - If cells (volume manifold) -> 3
 
         Returns:
-            int
+            int: 0,1,2 or 3
         """
         if self._dimensionality is None:
             self._compute_dimensionality()
@@ -86,13 +97,26 @@ class RawMeshData:
 
     def prepare(self) -> None:
         """
-        Prepares the data to have the correct format.
-        On vertices : casts to M.Vec
-        On edges : sorts edge tuples to satisfy edge convention (smallest index first)
-        On faces : nothing
-        On cells : nothing
+        Prepares the data to have the correct format. This method is called by the constructors of data structures.
+        
+        First generates explicitely the set of faces from cells and the set of edges from faces. 
+        This behavior can be controlled via the [`config.complete_faces_from_cells`][mouette.config.complete_faces_from_cells] and 
+        the [`config.complete_edges_from_faces`][mouette.config.complete_edges_from_faces] global config variables.
+        
+        Then, treatments are applied on each DataContainer:
 
-        if option is set in config, adds to the edge container all the edges implicitly defined by the faces
+        - On vertices : casts 3D vectors to [`mouette.Vec`](mouette.geometry.vector.Vec)
+        
+        - On edges : sorts edge tuples to satisfy edge convention (smallest index first)
+        
+        - On faces : nothing
+
+        - On face corners : generates the face_corners container if empty
+        
+        - On cells : nothing
+
+        - On cell corners : generates the cell_corners container if empty
+
         """
         if self._prepared : return
 

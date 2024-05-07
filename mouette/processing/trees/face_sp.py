@@ -10,6 +10,10 @@ from .base import SpanningTree, SpanningForest
 class FaceSpanningTree(SpanningTree):
     """
     A spanning tree defined over the connectivity of a mesh, built over dual edges.
+
+    Warning:
+        This tree considers a unique starting point and stops when all reachable faces are visited. 
+        If the mesh is disconnected, the tree will be incomplete. In this case, use `FaceSpanningForest` class instead.
     """
 
     @allowed_mesh_types(SurfaceMesh)
@@ -63,6 +67,11 @@ class FaceSpanningTree(SpanningTree):
         super().compute() # sets the 'computed' flag
 
     def build_tree_as_polyline(self):
+        """Builds the tree as a new polyline object. Useful for debug and visualization purposes
+
+        Returns:
+            PolyLine: the tree
+        """
         output = PolyLine()
         if self.mesh.faces.has_attribute("barycenter"):
             bary = self.mesh.faces.get_attribute("barycenter")
@@ -75,14 +84,16 @@ class FaceSpanningTree(SpanningTree):
         return output
 
 class FaceSpanningForest(SpanningForest):
-
+    """A spanning forest that runs on dual edges.
+    Unlike a spanning tree, will create new roots and expand trees until all faces of the mesh have been visited
+    """
+    
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, mesh : SurfaceMesh, forbidden_edges:set = None):
         super().__init__(mesh)
         self.forbidden_edges : set = forbidden_edges
 
-    def compute(self) -> None : 
-        """Compute the list of edges as well as the connectivity of the tree"""
+    def compute(self) -> None :
         visited = [False]*len(self.mesh.faces)
         for f in self.mesh.id_faces:
             if not visited[f]:

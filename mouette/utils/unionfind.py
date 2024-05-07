@@ -3,7 +3,7 @@ import numpy as np
 class UnionFind(object):
     """Union-find disjoint sets datastructure.
 
-    Original repository: https://github.com/deehzee/unionfind/blob/master/unionfind.py
+    Original repository: [https://github.com/deehzee/unionfind/blob/master/unionfind.py](https://github.com/deehzee/unionfind/blob/master/unionfind.py)
 
     Union-find is a data structure that maintains disjoint set
     (called connected components or components in short) membership,
@@ -64,7 +64,7 @@ class UnionFind(object):
             raised.
 
     References:
-        [1] http://algs4.cs.princeton.edu/lectures/
+        [1] [http://algs4.cs.princeton.edu/lectures/](http://algs4.cs.princeton.edu/lectures/)
 
     """
 
@@ -114,7 +114,7 @@ class UnionFind(object):
         """Add a single disjoint element.
 
         Args:
-            x: immutable object
+            x (Any): immutable object
         """
         if x in self:
             return
@@ -130,7 +130,7 @@ class UnionFind(object):
         """Find the root of the disjoint set containing the given element.
 
         Args:
-            x: immutable object
+            x (Any): immutable object
 
         Returns:
             int: The (index of the) root.
@@ -154,8 +154,8 @@ class UnionFind(object):
         Return whether the two given elements belong to the same component.
            
         Args:
-            x: immutable object
-            y: immutable object
+            x (Any): immutable object
+            y (Any): immutable object
 
         Returns:
             bool: True if x and y are connected, false otherwise.
@@ -167,8 +167,8 @@ class UnionFind(object):
         Merge the components of the two given elements into one.
 
         Args:
-            x: immutable object
-            y: immutable object
+            x (Any): immutable object
+            y (Any): immutable object
         """
         # Initialize if they are not already in the collection
         for elt in [x, y]:
@@ -192,7 +192,7 @@ class UnionFind(object):
         Find the connected component containing the given element.
 
         Args:
-            x: immutable object
+            x (Any): immutable object
 
         Raises:
             ValueError:  If the given element is not found.

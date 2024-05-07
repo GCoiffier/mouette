@@ -11,16 +11,20 @@ from .base import SpanningForest, SpanningTree
 class EdgeSpanningTree(SpanningTree):
     """A spanning tree defined over the connectivity of a mesh.
     Edges of a polyline, surface mesh or volume mesh form an undirected graph, from which we can extract a spanning tree
+    
+    Warning:
+        This tree considers a unique starting point and stops when all reachable vertices are visited. 
+        If the mesh is disconnected, the tree will be incomplete. In this case, use `EdgeSpanningForest` class instead.
+
+    Attributes:
+        parent (list): the list of indices of the parent node in the tree. `None` for the root.
+        children (list): list of indices of children nodes.
+        edges (list): list of edges that form the tree.
     """
 
     @forbidden_mesh_types(PointCloud)
     def __init__(self, mesh : Mesh, starting_vertex : int = None, avoid_boundary : bool = False, avoid_edges : set = None):
-        """A spanning tree defined over the connectivity of a mesh.
-        Edges of a polyline, surface mesh or volume mesh form an undirected graph, from which we can extract a spanning tree
-
-        /!\\ Considers a unique starting point and stops when all reachable vertices are visited. 
-        If the mesh is disconnected, the tree will be incomplete. In this case, use EdgeSpanningForest class instead.
-
+        """
         Parameters:
             mesh (Mesh): the input mesh (Polyline, Surface or Volume)
             starting_vertex (int, optional): Index of the root of the tree. If None is provided, root is chosen at random. Defaults to None.
@@ -90,7 +94,12 @@ class EdgeSpanningTree(SpanningTree):
                 self.edges.append( keyify(p,v))
         super().compute() # sets the 'computed' flag
 
-    def build_tree_as_polyline(self):
+    def build_tree_as_polyline(self) -> PolyLine:
+        """Builds the tree as a new polyline object. Useful for debug and visualization purposes
+
+        Returns:
+            PolyLine: the tree
+        """
         output = PolyLine()
         for v in self.mesh.vertices:
             output.vertices.append(v)
@@ -100,19 +109,19 @@ class EdgeSpanningTree(SpanningTree):
         return output
 
 class EdgeMinimalSpanningTree(EdgeSpanningTree):
-    """Same as EdgeSpanningTree but uses Kruskal's algorithm. 
+    """Same as EdgeSpanningTree but uses Kruskal's algorithm instead of a Breadth First Search.
+    This implies that the resulting spanning tree is minimal in term of edge lengths.
 
-    This implies that the resulting spanning tree is minimal in term of edge lengths
+    Inherits from `EdgeSpanningTree`.
+
+    Warning:
+        This tree considers a unique starting point and stops when all reachable vertices are visited. 
+        If the mesh is disconnected, the tree will be incomplete. In this case, use `EdgeSpanningForest` class instead.
     """
 
     @forbidden_mesh_types(PointCloud)
     def __init__(self, mesh : Mesh, starting_vertex=None, avoid_boundary : bool = False, weights="length"):
-        """Same as EdgeSpanningTree but uses Kruskal's algorithm. 
-
-        This implies that the resulting spanning tree is minimal in term of edge lengths.
-
-        /!\\ Considers a unique starting point and stops when all reachable vertices are visited. 
-        If the mesh is disconnected, the tree will be incomplete. In this case, use EdgeSpanningForest class instead.
+        """
         Parameters:
             mesh (Mesh): the input mesh (Polyline, Surface or Volume)
             starting_vertex (int, optional): Index of the root of the tree. If None is provided, root is chosen at random. Defaults to None.
@@ -129,7 +138,6 @@ class EdgeMinimalSpanningTree(EdgeSpanningTree):
         self.weights = weights
 
     def compute(self):
-        """Computes the tree using Kruskal's algorithm"""
         if self.weights=="one":
             edge_length = lambda _ : 1.
         elif self.weights== "length":
@@ -169,13 +177,15 @@ class EdgeMinimalSpanningTree(EdgeSpanningTree):
         super().compute() # sets the 'computed' flag
         
 class EdgeSpanningForest(SpanningForest):
+    """A spanning forest that runs on edges. 
+    Unlike a spanning tree, will create new roots and expand trees until all vertices of the mesh have been visited
+    """
 
     @forbidden_mesh_types(PointCloud)
     def __init__(self, mesh : Mesh):
         super().__init__(mesh)
 
-    def compute(self) -> None : 
-        """Compute the list of edges as well as the connectivity of the tree"""
+    def compute(self) -> None :
         visited = [False]*len(self.mesh.vertices)
         for v in self.mesh.id_vertices:
             if not visited[v]:

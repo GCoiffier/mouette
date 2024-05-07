@@ -8,7 +8,7 @@ We refer to [this course](https://www.cs.cmu.edu/~kmcrane/Projects/Other/SwissAr
 
 For the generalization to volumes, see [this pdf](https://www.cs.cmu.edu/~kmcrane/Projects/Other/nDCotanFormula.pdf)
 
-## An example of use
+#### Example
 
 ```python
 import mouette as M

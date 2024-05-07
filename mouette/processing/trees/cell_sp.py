@@ -8,7 +8,11 @@ from .base import SpanningTree, SpanningForest
 
 class CellSpanningTree(SpanningTree):
     """
-    A spanning tree defined over the connectivity of a volume mesh
+    A spanning tree defined over the connectivity of a volume mesh.
+
+    Warning:
+        This tree considers a unique starting point and stops when all reachable vertices are visited. 
+        If the mesh is disconnected, the tree will be incomplete. In this case, use `CellSpanningForest` class instead.
     """
 
     @allowed_mesh_types(VolumeMesh)
@@ -61,6 +65,11 @@ class CellSpanningTree(SpanningTree):
         super().compute() # sets the 'computed' flag
 
     def build_tree_as_polyline(self) -> PolyLine:
+        """Builds the tree as a new polyline object. Useful for debug and visualization purposes
+
+        Returns:
+            PolyLine: the tree
+        """
         output = PolyLine()
         if self.mesh.faces.has_attribute("barycenter"):
             bary = self.mesh.cells.attribute("barycenter")
@@ -73,13 +82,15 @@ class CellSpanningTree(SpanningTree):
         return output
 
 class CellSpanningForest(SpanningForest):
+    """A spanning forest that runs between cells. 
+    Unlike a spanning tree, will create new roots and expand trees until all cells of the mesh have been visited
+    """
 
     @allowed_mesh_types(VolumeMesh)
     def __init__(self, mesh : VolumeMesh):
         super().__init__(mesh)
 
     def compute(self) -> None : 
-        """Compute the list of edges as well as the connectivity of the tree"""
         visited = [False]*len(self.mesh.cells)
         for c in self.mesh.id_cells:
             if not visited[c]:

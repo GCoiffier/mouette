@@ -334,7 +334,7 @@ def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
         float: the aspect ratio of triangle ABC
 
     Note:
-        https://stackoverflow.com/a/10290011
+        [https://stackoverflow.com/a/10290011](https://stackoverflow.com/a/10290011)
     """
     ab = distance(A,B)
     bc = distance(B,C)

@@ -30,6 +30,7 @@ class LSCM(BaseParametrization):
         Args:
             mesh (SurfaceMesh): the supporting mesh. Should be a surface with disk topology.
             verbose (bool, optional): verbose mode. Defaults to True.
+            
         Keyword Args:
             eigen (bool, optional): whether to solve a linear system with two fixed points or use an eigen solver. Defaults to True
             save_on_corners (bool, optional): whether to store the results on face corners or vertices. Defaults to True

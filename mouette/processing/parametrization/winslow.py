@@ -33,7 +33,7 @@ def min_det(pts, tris, ref_jacs):
     return np.min(dets)
 
 @njit(cache=True, parallel=True)
-def energy_and_gradient(X, locked, tri, ref_jacs, areas, wf, wg, eps):
+def winslow_energy_and_gradient(X, locked, tri, ref_jacs, areas, wf, wg, eps):
     E = 0
     grad = np.zeros_like(X)
     n = tri.shape[0]
@@ -120,8 +120,11 @@ def untangle(
         if verbose:
             print("min det=", mindet)
             print("epsilon=", eps)
-        callback = lambda X : energy_and_gradient(X, locked, triangles, ref_jacs, areas, wf, wg, eps)
-        points = fmin_l_bfgs_b(callback, points, disp=10 if verbose else 0, maxiter=bfgs_iter_max)[0]
+        points = fmin_l_bfgs_b(
+            winslow_energy_and_gradient, points, 
+            args=(locked, triangles, ref_jacs, areas, wf, wg, eps),
+            disp=10 if verbose else 0, maxiter=bfgs_iter_max
+        )[0]
     
     if verbose: print("min det=", min_det(points, triangles, ref_jacs))
 
@@ -170,10 +173,12 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         Calls the solver.
 
         Raises:
-            Exception: fails if the mesh is not a topological disk
+            Exception: fails if the mesh is not a triangulation of a topological disk
         """
         if euler_characteristic(self.mesh)!=1:
             raise Exception("Mesh is not a topological disk")
+        if not self.mesh.is_triangular():
+            raise Exception("Mesh is not triangular.")
 
         ref_jacs = np.array([[[1.,0.], [0.,1.]] for _ in self.mesh.id_faces]) # reference element
         source_area = sum([geom.triangle_area_2D(self.uvs[A], self.uvs[B], self.uvs[C]) for (A,B,C) in self.mesh.faces])        

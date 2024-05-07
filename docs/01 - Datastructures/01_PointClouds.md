@@ -9,4 +9,4 @@ title: "Point Clouds"
 
 A Point Cloud is a simple collection of points in $\mathbb{R}^3$
 
-:::mouette.mesh.datatypes.pointcloud
+::: mouette.mesh.datatypes.pointcloud

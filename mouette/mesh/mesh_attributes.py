@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC
 from ..geometry import Vec
 from aenum import MultiValueEnum
 
-class BaseAttribute(ABC):
+class _BaseAttribute(ABC):
 
     ########################################
 
@@ -184,7 +184,7 @@ class BaseAttribute(ABC):
         pass
 
 
-class Attribute(BaseAttribute):
+class Attribute(_BaseAttribute):
     def __init__(self, elem_type, elem_size:int=1, default_value=None):
         """
         __init__ method and the whole Attribute class are not supposed to be manipulated outside of the DataContainer class
@@ -257,7 +257,7 @@ class Attribute(BaseAttribute):
         """
         self._data = dict()
 
-class ArrayAttribute(BaseAttribute):
+class ArrayAttribute(_BaseAttribute):
     def __init__(self, elem_type, n_elem:int, elem_size:int=1, default_value=None):
         """
         __init__ method and the whole Attribute class are not supposed to be manipulated outside of the DataContainer class.

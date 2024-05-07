@@ -2,7 +2,7 @@ from .. import geometry as geom
 from ..mesh.datatypes import *
 from ..utils import PriorityQueue
 from ..utils.argument_check import *
-from ..mesh.mesh_attributes import BaseAttribute
+from ..mesh.mesh_attributes import _BaseAttribute
 
 def build_path(mesh : Mesh, paths):
     path_mesh = PolyLine()
@@ -19,8 +19,8 @@ def build_path(mesh : Mesh, paths):
 def _check_weight_argument(weights):
     if isinstance(weights, str):
         check_argument("weights", weights, str, ["one", "length"])
-    elif not (isinstance(weights,dict) or isinstance(weights, BaseAttribute)):
-        raise InvalidArgumentTypeError("weights", type(weights), str, dict, BaseAttribute)
+    elif not (isinstance(weights,dict) or isinstance(weights, _BaseAttribute)):
+        raise InvalidArgumentTypeError("weights", type(weights), str, dict, _BaseAttribute)
 
 @forbidden_mesh_types(PointCloud)
 def shortest_path(mesh : Mesh, start : int, targets : list, weights = "length", export_path_mesh = False):

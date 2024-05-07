@@ -77,9 +77,11 @@ def SurfaceFrameField(
         FrameField: A framefield object with the correct specifications
 
     References: 
-        [1] An Approach to Quad Meshing Based on Harmonic Cross-Valued Maps and the Ginzburg-Landau Theory, Viertel and Osting (2018)
-        [2] Frame Fields for CAD models, Desobry et al. (2022)
-        [3] Trivial Connections on Discrete Surfaces, Crane et al. (2010)
+        - [1] _An Approach to Quad Meshing Based on Harmonic Cross-Valued Maps and the Ginzburg-Landau Theory_, Viertel and Osting (2018)
+        
+        - [2] _Frame Fields for CAD models_, Desobry et al. (2022)
+        
+        - [3] _Trivial Connections on Discrete Surfaces_, Crane et al. (2010)
     """
 
     ### Assert sanity of arguments
@@ -147,8 +149,9 @@ def PrincipalDirections(
         Framefield : a frame field object representing the curvature directions
 
     References:
-        [1] https://en.wikipedia.org/wiki/Principal_curvature
-        [2] Restricted Delaunay Triangulations and Normal Cycle, Cohen-Steiner and Morvan (2003)
+        - [1] [https://en.wikipedia.org/wiki/Principal_curvature](https://en.wikipedia.org/wiki/Principal_curvature)
+        
+        - [2] _Restricted Delaunay Triangulations and Normal Cycle_, Cohen-Steiner and Morvan (2003)
     """
     ### Assert sanity of arguments
     check_argument("elements", elements, str, ["vertices", "faces"])
@@ -195,7 +198,7 @@ def VolumeFrameField(
         Framefield: a frame field object with the correct settings
     
     References:
-        [1] Practical 3D frame field generation, Ray et al. (2016)
+        - [1] _Practical 3D frame field generation_, Ray et al. (2016)
     """
 
     check_argument("elements", elements, str, ["vertices", "cells"])

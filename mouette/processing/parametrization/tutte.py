@@ -19,9 +19,9 @@ class TutteEmbedding(BaseParametrization):
     The parametrization is locally injective (Floater, 1997) provided the boundary is convex.
 
     References:
-        [1] _How to draw a graph_, Tutte, 1963.
+        - [1] _How to draw a graph_, Tutte W.T., 1963
         
-        [2] _Parametrization and smooth approximation of surface triangulations_, Floater, 1996.
+        - [2] _Parametrization and smooth approximation of surface triangulations_, Floater M.S., 1997
     """
 
     class BoundaryMode(Enum):
@@ -52,7 +52,8 @@ class TutteEmbedding(BaseParametrization):
             use_cotan (bool, optional): whether to use Tutte's original barycentric embedding [1], or use cotangents as weights in the laplacian matrix ([2]). Defaults to False.
             verbose (bool, optional): verbose mode. Defaults to True.
             save_on_corners (bool, optional): whether to store the results on face corners or vertices. Defaults to True
-            custom_boundary (np.ndarray, optionnal): a Nx2 array containing custom coordinates for the boundary vertices. If provided, the boundary_mode argument is ignored. Defaults to None.
+            custom_boundary (np.ndarray, optionnal): a Nx2 array containing custom coordinates for the boundary vertices (N being the number of boundary vertices). 
+            If provided, the boundary_mode argument is ignored. Defaults to None.
         
         Raises:
             InvalidArgumentValueError : if 'boundary_mode' is not "square" or "circle".
@@ -74,7 +75,7 @@ class TutteEmbedding(BaseParametrization):
 
         lap = operators.laplacian(self.mesh, cotan=self._use_cotan)
         freeInds = self.mesh.interior_vertices
-        bndInds, _ = extract_border_cycle(self.mesh)
+        bndInds = self.mesh.boundary_vertices
 
         LI = lap[freeInds, :][:, freeInds]
         LB = lap[freeInds, :][:, bndInds]

@@ -10,9 +10,9 @@ from ..attributes.misc_faces import face_area
 @allowed_mesh_types(SurfaceMesh)
 def gradient(mesh: SurfaceMesh, conn: SurfaceConnectionFaces = None, as_complex: bool = True) -> sp.csc_matrix:
     """
-    Computes the gradient operator, i.e. a [F| x |V| matrix G such that for any scalar function f defined over vertices of a surface mesh, Gf is its gradient inside faces.
+    Computes the gradient operator, i.e. a |F| x |V| matrix G such that for any scalar function f defined over vertices of a surface mesh, Gf is its gradient inside faces.
 
-    Gf maps to each face of the mesh either a vector of R^2 or a complex number representing the gradient vector inside this face in local base.
+    Gf maps to each face of the mesh either a vector of $\mathbb{R}^2$ or a complex number representing the gradient vector inside this face in local base.
 
     Args:
         mesh (SurfaceMesh): The input mesh

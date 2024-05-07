@@ -15,7 +15,25 @@ def _instanciate_raw_mesh_data(mesh_data : RawMeshData, dim : int = None) -> Mes
 
 def load(filename : str, dim : int = None, raw : bool = False) -> Mesh:
     """
-    Loads a Mesh object from a file on the disk
+    Loads a Mesh object from a file on the disk.
+
+    Supported file formats are:
+    
+    - wavefront (.obj)
+    
+    - medit (.mesh)
+    
+    - geogram (.geogram_ascii)
+    
+    - .ply
+    
+    - .stl
+    
+    - .off
+    
+    - .tet
+    
+    - .xyz (point clouds only)
 
     Parameters:
         filename (str):  the path of the file
@@ -34,7 +52,25 @@ def load(filename : str, dim : int = None, raw : bool = False) -> Mesh:
     
 
 def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
-    """ Saves the mesh data into a file
+    """ Saves the mesh data into a file.
+
+    Supported file formats are:
+    
+    - wavefront (.obj)
+    
+    - medit (.mesh)
+    
+    - geogram (.geogram_ascii)
+    
+    - .ply
+    
+    - .stl
+    
+    - .off
+    
+    - .tet
+    
+    - .xyz (point clouds only)
 
     Parameters:
         filename (str): The output file path
@@ -90,6 +126,7 @@ def copy(mesh : Mesh, copy_attributes=False, copy_connectivity=False) -> Mesh:
     Parameters:
         mesh (Mesh): input mesh
         copy_attributes (bool, optional): whether to also copy attributes data. Defaults to False.
+        copy_connectivity (bool, optional): whether to also copy the connectivity data. Defaults to False.
     Returns:
         Mesh: a hard copy of the given mesh
     """
@@ -129,7 +166,7 @@ def merge(mesh_list : list) -> Mesh:
     """Merges a list of independents meshes as a unique mesh.
 
     Parameters:
-        mesh_list (list): the list of meshes. If empty, this function returns None
+        mesh_list (list): a list of meshes. If empty, this function returns None
 
     Returns:
         Mesh: the merged mesh. Takes the type of the mesh with the largest dimensionality in the list (ie merging a Polyline with a Volume mesh returns a Volume mesh)

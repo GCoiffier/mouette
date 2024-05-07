@@ -7,76 +7,58 @@ title: "Overview"
 mouette supports four types of geometries: point clouds (dim 0), polylines (dim 1), surface meshes (dim 2) and volume meshes (dim 3).
 
 
-#### From numpy arrays
-
 ```python
 import numpy as np
 import mouette as M
 
-vertices = np.array([
-    [0,0,0],
-    [1,2,3],
-    [1,-1,0],
-    [0,1,-2]
-])
+### From numpy arrays
+vertices = np.array([[0,0,0],[1,2,3],[1,-1,0],[0,1,-2]])
 faces = np.array([[0,1,2], [0,1,3]])
-surface = M.mesh.from_arrays(vertices,F=faces)
+surface1 = M.mesh.from_arrays(vertices,F=faces) # a simple quad
+
+### From files
+surface2 = M.mesh.load("path/to/my/mesh/mesh.obj")
+
+### From provided procedural functions
+surface3 = M.procedural.torus(50,20)
 ```
 
-#### From raw mesh data
-
-*/!\ Do not work directly append elements to containers of a SurfaceMesh, as this can create connectivity issues /!\\*
-
-```python
-data = M.mesh.RawMeshData()
-data.vertices += [[0,0,0],[1,2,3],[1,-1,0],[0,1,-2]] # use += to append several elements
-data.faces.append((0,1,2))
-data.faces.append((0,1,3))
-surface = M.mesh.SurfaceMesh(data) # create the object. This sanitizes the data under the hood and generates edges and face corners
-```
-
-#### Procedural Generation
-
-```python
-torus = M.procedural.torus(50,20)
-sphere = M.procedural.sphere_uv(40,30)
-```
-
-#### From a file
-
-```python
-import mouette as M
-
-mesh = M.mesh.load("path/to/my/mesh/mesh.obj")
-```
-
-Supported file formats are:
-- wavefront (.obj)
-- medit (.mesh)
-- ply
-- off
-- stl
-- geogram (.geogram_ascii)
-- xyz (for point clouds only)
+`mouette` supports a variety of file formats: wavefront (.obj), medit (.mesh), stl, ply, off, tet, geogram (.geogram_ascii) and xyz (for point clouds).
 
 ## Saving a mesh
+
+Data structures from `mouette` can be easily stored in various file formats using the `save` function:
 
 ```python
 M.mesh.save(my_mesh,"path/to/export/mesh.obj")
 ```
 
+the extension given in the path determines the file format.
+
 ## Mesh connectivity
 
-
-## Manipulate attributes
-
-It is possible to define any quantity on mesh elements
+Starting from the `Polyline` class, `mouette` implements various methods to query the adjacent elements of a given vertex, edge, face or cell:
 
 ```python
-my_v_attribute = mesh.vertices.create_attribute("my_attribute", float) # an attribute storing one floating-point number per vertex
+
+# list of vertices that are linked by an edge to vertex 42
+neighbors = my_mesh.connectivity.vertex_to_vertices(42) 
+
+# list of faces in which vertex 42 is a vertex
+face_ring = my_mesh.connectivity.vertex_to_faces(42) 
+```
+
+## Manipulating attributes
+
+It is possible to define any quantity on mesh elements:
+
+```python
+# an attribute storing one floating-point number per vertex
+my_v_attribute = mesh.vertices.create_attribute("my_attribute", float) 
 my_v_attribute[3] = 4.
 
-my_f_attribute = mesh.faces.create_attribute("my_attribute", 2, int) # an attribute storing two integers per face
+# an attribute storing two integers per face
+my_f_attribute = mesh.faces.create_attribute("my_attribute", 2, int) 
 m_f_attribute[2] = [1,3]
 ```
 
@@ -94,18 +76,21 @@ angles = M.attributes.corner_angles(mesh) # angle at each face corner
 
 ## Apply Geometry Processing Algorithms
 
+`mouette` implements some geometry processing algorithms to be applied to your data:
+
 ```python
-ff = M.processing.framefield.FrameField2DVertices(mesh) # define a frame field on the vertices of the surface mesh
+# define a frame field on the vertices of the surface mesh
+ff = M.processing.framefield.FrameField2DVertices(mesh) 
 ff.run()
 ffmesh = ff.export_as_mesh()
 M.mesh.save(ffmesh, "framefield.mesh")
 ```
 
-Definition of classical discrete operators on meshes, like the gradient or the cotan-Laplacian:
+Classical discrete operators on meshes, like the gradient or the cotan-Laplacian, are also defined:
 
 ```python
 G = M.operators.gradient(mesh)
-my_fun = mesh.vertices.get_attribute("f").as_array(len(mesh.vertices))
+my_fun = mesh.vertices.get_attribute("f").as_array()
 grad = G @ my_fun
 
 L = M.operators.laplacian(mesh, cotan=True)

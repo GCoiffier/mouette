@@ -14,12 +14,12 @@ class SurfaceMesh(Mesh):
         faces (DataContainer): the container for all faces
         face_corners (DataContainer): the container for all corner of faces
 
-        boundary_edges (list): list of all edges on the boundary
-        interior_edges (list): list of all interior edges (all edges \\ boundary_edges)
-        boundary_vertices (list): list of all vertices on the boundary
-        interior_vertices (list): list of all interior vertices (all vertices \\ boundary_vertices)
+        boundary_edges (list): list of all edge indices on the boundary
+        interior_edges (list): list of all interior edge indices (all edges \\ boundary_edges)
+        boundary_vertices (list): list of all vertex indices on the boundary
+        interior_vertices (list): list of all interior verticex indices (all vertices \\ boundary_vertices)
 
-        __str__: Representation of the object and its elements as a string.
+        connectivity (_SurfaceConnectivity): the connectivity utility class
     """
 
     def __init__(self, data : RawMeshData = None):
@@ -73,20 +73,20 @@ class SurfaceMesh(Mesh):
         """
         return range(len(self.face_corners))
 
-    def ith_vertex_of_face(self, fid:int, i:int) -> int:
+    def ith_vertex_of_face(self, fid: int, i: int) -> int:
         """
-        helper function to get the i-th vertex of a face, i.e. self.faces[fid][i]
+        helper function to get the i-th vertex of a face, i.e. `self.faces[fid][i]`
 
         Args:
             fid (int): face id
-            vid (int): vertex id in face. Should be 0 <= vid < len(face)
+            i (int): vertex id in face. Should be 0 <= vid < len(face)
 
         Returns:
             int: the id of the i-th vertex in face `fid` (`self.faces[fid][i]`)
         """
         return self.faces[fid][i]
 
-    def pt_of_face(self,fid:int):
+    def pt_of_face(self, fid:int):
         """
         point coordinates of vertices of face `fid`
 
@@ -94,7 +94,7 @@ class SurfaceMesh(Mesh):
             fid (int): face id
 
         Returns:
-            iterable: iterator of Vec objects representing point coordinates of vertices
+            Iterable: iterator of Vec objects representing point coordinates of vertices
         """
         return (self.vertices[_v] for _v in self.faces[fid])
 
@@ -122,18 +122,6 @@ class SurfaceMesh(Mesh):
         if self._is_quad is None:
             self._compute_mesh_type()
         return self._is_quad
-
-    def recompute_edges(self):
-        """Recomputes the set of edges according to the set of faces"""
-        self.edges.clear()
-        edge_set = set()
-        for f in self.faces:
-            nf = len(f)
-            for i in range(nf):
-                edge = utils.keyify(f[i], f[(i+1)%nf])
-                if edge not in edge_set:
-                    edge_set.add(edge)
-                    self.edges.append(edge)
 
     def clear_boundary_data(self):
         """
@@ -229,6 +217,11 @@ class SurfaceMesh(Mesh):
     ###### Connectivity ######
 
     class _Connectivity(PolyLine._Connectivity):
+        """Connectivity for surface meshes. Is accessed via the `.connectivity` attribute of the `SurfaceMesh` class.
+
+        Warning:
+            If your mesh is not manifold, there is no guarantee that the connectivity arrays will be correct.
+        """
 
         def __init__(self, master):
             super().__init__(master)
@@ -469,7 +462,7 @@ class SurfaceMesh(Mesh):
                 return_inds (bool, optional): Whether to return local indices of u and v in the face. Defaults to False.
 
             Returns:
-                int | None | tuple[int,int,int] | tuple[None,None,None]: index of a face or None. If return_inds is True, tuple made of index of face and local indices of u and v in face. 
+                Index of a face or None. If return_inds is True, tuple made of index of face and local indices of u and v in face or (None,None,None). 
             """
             if self._half_edges is None:
                 self._compute_connectivity()
@@ -508,7 +501,7 @@ class SurfaceMesh(Mesh):
                 iF2 (int): second face index
 
             Returns:
-                (u,v) pair of vertex indices, or (None,None)
+                (int,int): (u,v) pair of vertex indices, or (None,None)
             """
             F1 = self.mesh.faces[iF1]
             n = len(F1)

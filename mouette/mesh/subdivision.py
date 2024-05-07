@@ -35,7 +35,7 @@ class SurfaceSubdivision(Logger):
         self.mesh = _instanciate_raw_mesh_data(self.mesh, 2)
 
     @allowed_mesh_types(SurfaceMesh)
-    def triangulate_face(self, face_id:int) :
+    def triangulate_face(self, face_id: int) :
         """Triangulates the face "face_id"
 
         Parameters:
@@ -50,7 +50,7 @@ class SurfaceSubdivision(Logger):
         else:
             self.split_face_as_fan(face_id)
 
-    def split_face_as_fan(self,  face_id:int) :
+    def split_face_as_fan(self,  face_id: int) :
         """
         Adds a vertex at the barycenter of face 'face_id' and create a fan of triangles that replaces the face
 
@@ -77,7 +77,7 @@ class SurfaceSubdivision(Logger):
             if len(self.mesh.faces[f])!= 3 :
                 self.triangulate_face(f)
 
-    def subdivide_triangles(self, n:int = 1) -> SurfaceMesh:
+    def subdivide_triangles(self, n: int = 1) -> SurfaceMesh:
         """Subdivides triangles of a mesh in 4 triangles by splitting along middle of edges.
             If the mesh is not triangulated, will triangulate the mesh first.
 
@@ -115,7 +115,7 @@ class SurfaceSubdivision(Logger):
             self.mesh = newMeshData
 
     @allowed_mesh_types(SurfaceMesh)
-    def subdivide_triangles_6(self, repeat:int = 1) -> SurfaceMesh:
+    def subdivide_triangles_6(self, repeat: int = 1) -> SurfaceMesh:
         """Subdivides triangles of a mesh in 6 triangles by adding a point at the barycenter and three middles of edges.
             If the mesh is not triangulated, will triangulate the mesh first.
 
@@ -187,7 +187,7 @@ class VolumeSubdivision(Logger):
         self.mesh.prepare()
         self.mesh = _instanciate_raw_mesh_data(self.mesh, 3)
 
-    def split_tet_as_fan(self, cell_id:int):
+    def split_cell_as_fan(self, cell_id:int):
         """
         Adds a vertex at the barycenter of cell 'cell_id' and create a fan of tetrahedra that replaces the cell.
         If the cell 'cell_id' is not a tetrahedron, does nothing.
@@ -214,6 +214,12 @@ class VolumeSubdivision(Logger):
         ]
 
     def split_tet_from_face_center(self, face_id : int):
+        """Split the triangle `face_id` into three triangles by adding a point at its barycenter,
+        and split adjacent tetrahedra accordingly.
+
+        Args:
+            face_id (int): index of the face to split
+        """
         f = self.mesh.faces[face_id]
         if len(f) != 3 : return
         A,B,C = f

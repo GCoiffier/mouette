@@ -1,14 +1,18 @@
 site_name: Mouette
 
+
 theme:
   name: material
 
   features:
+    - navigation.instant
     - navigation.sections
     - navigation.indexes
+    - toc.follow
 
 plugins:
 - search
+- autorefs
 - mkdocstrings:
     default_handler: python
     handlers:
@@ -20,17 +24,31 @@ plugins:
           show_signature_annotations: false
           show_signature: true
           show_source: false
+          merge_init_into_class: true
           docstring_style: "google"
+          docstring_section_style: table
+          inherited_members: true
+- mkdocs-nav-weight:
+    section_renamed: false
+    index_weight: -10
+    warning: true
+    reverse: false
+    headless_included: false
+
 
 markdown_extensions:
   - attr_list
   - md_in_html
+  - admonition
+  - pymdownx.details
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
+  - toc:
+      toc_depth: 3
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences

@@ -28,7 +28,20 @@ class _BaseDataContainer(ABC):
     def attributes(self):
         return self._attr.keys()
 
-    def create_attribute(self, name, data_type, elem_size=1, dense=False, default_value=None, size=None) -> Attribute:
+    def create_attribute(self, name: str, data_type: type, elem_size: int=1, dense: bool=False, default_value=None, size:int=None) -> Attribute:
+        """Creates an attribute with name `name`
+
+        Args:
+            name (str): attribute's name. If 'name' already exists in the attribute dict, the corresponding attribute will be overridden. The override warning can be disabled in the config.
+            data_type (type): The type of data stored in the attribute.
+            elem_size (int, optional): The number of data per elements. Defaults to 1.
+            dense (bool, optional): Whether to create an `Attribute` object (dictionnary storage) or an `ArrayAttribute` object (numpy array storage). Defaults to False (dictionnary mode).
+            default_value (Any, optional): The default value to fill the attribute with. If not provided, will be taken as the default value of the type `data_type`. Defaults to None.
+            size (int, optional): Current size of the DataContainer to be passed. Defaults to None.
+
+        Returns:
+            Attribute:
+        """
         # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
         if name in self._attr and not config.disable_duplicate_attribute_warning:
             warnings.warn(f"Warning ! Attribute '{name}' already exists on {self.id}")
@@ -39,7 +52,14 @@ class _BaseDataContainer(ABC):
                 self._attr[name] = Attribute(data_type, elem_size=elem_size, default_value=default_value)
         return self._attr[name]
 
-    def register_array_as_attribute(self, name, data, default_value=None):
+    def register_array_as_attribute(self, name: str, data: np.ndarray, default_value=None):
+        """Converts a numpy array as an attribute.
+
+        Args:
+            name (str): attribute's name. If 'name' already exists in the attribute dict, the corresponding attribute will be overridden. The override warning can be disabled in the config.
+            data (np.ndarray): the data array. Type of the attribute will be extrapolated from `data.dtype`.
+            default_value (Any, optional): The default value to fill the attribute with. If not provided, will be taken as the default value of the type `data_type`. Defaults to None.
+        """
          # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
         if name in self._attr and not config.disable_duplicate_attribute_warning:
             warnings.warn(f"Warning ! Attribute '{name}' already exists on {self.id}")
@@ -56,14 +76,38 @@ class _BaseDataContainer(ABC):
             self._attr[name]._data = data
             return self._attr[name]
         
-    def delete_attribute(self, name):
+    def delete_attribute(self, name: str):
+        """Deletes the attribute associated with name `name` if it exists.
+
+        Args:
+            name (str): the attribute's name.
+        """
         if name in self._attr:
             del self._attr[name]
 
-    def has_attribute(self, name) -> bool:
+    def has_attribute(self, name: str) -> bool:
+        """Returns True is an attribute with name `name` is defined for this container.
+
+        Args:
+            name (str): the attribute's name
+
+        Returns:
+            bool:
+        """
         return name in self._attr
 
-    def get_attribute(self, name) -> Attribute :
+    def get_attribute(self, name: str) -> Attribute :
+        """Returns the attribute with name `name`. Fails if the attribute does not exist
+
+        Args:
+            name (str): the attribute's name
+
+        Raises:
+            Exception: no attribute has name `name` inside this data container.
+
+        Returns:
+            Attribute: the attribute
+        """
         if name not in self._attr:
             raise Exception("Attribute does not exist")
         return self._attr[name]
@@ -74,8 +118,8 @@ class _BaseDataContainer(ABC):
 
 class DataContainer(_BaseDataContainer):
     """
-    A DataContainer is a container class for all simplicial elements of the same type in an instance (for example, vertices, edges or faces).
-    It stores relevant information about the combinatorics (in the _data field) as well as various attributes onto the elements (in the _attr field)
+    A `DataContainer` is a container class for all elements of the same type in an instance (for example, vertices, edges or faces).
+    It stores relevant information about the combinatorics (in the `_data` field) as well as various attributes onto the elements (in the `_attr` field)
     """
 
     def __init__(self, data : list = None, attributes : dict = None, id : str = ""):
@@ -105,22 +149,48 @@ class DataContainer(_BaseDataContainer):
         return len(self._data)
 
     @property
-    def size(self):
+    def size(self) -> int:
+        """The container size. Alias for `len(container)`
+
+        Returns:
+            int: number of elements in the container
+        """
         return len(self._data)
 
-    def empty(self):
+    def empty(self) -> bool:
+        """
+        Returns:
+            bool: whether the container is empty
+        """
         return not self._data
 
     def clear(self):
+        """Empty the container"""
         self._data = []
         self._attr = dict()
 
-    def append(self,val):
+    def append(self, val):
+        """Adds the value 'val' at the end of the container. Also expands all attributes to be able to receive a value for 'val'
+
+        Args:
+            val (Any): value to append to the container
+        """
         self._data.append(val)
         for attr in self._attr.values():
             attr._expand(1)
 
     def __iadd__(self,other):
+        """Performs several appends for a list of elements
+
+        Args:
+            other (Iterable|DataContainer): a collection of elements to append to the container
+
+        Raises:
+            Exception: fails if `other` is not an iterable
+
+        Returns:
+            self: self
+        """
         if isinstance(other, list) or isinstance(other,tuple) or isinstance(other, set):
             self._data += list(other)
             for attr in self._attr.values():
@@ -135,7 +205,9 @@ class DataContainer(_BaseDataContainer):
 
 class CornerDataContainer(_BaseDataContainer):
     """
-    A CornerDataContainer is a variant of a DataContainer for corner elements, ie face corners, cell corners and cell faces. Unlike a regular data container that stores a list of simplicial elements, a corner container stores two pieces of information: the associated vertex/face of the corner and the face/cell it belongs to.
+    A `CornerDataContainer` is a variant of a DataContainer for corner elements. It is used for face corners, cell corners and cell faces. 
+    
+    Unlike a regular data container that stores a list of simplicial elements, a corner container stores two pieces of information: the associated vertex/face of the corner and the face/cell it belongs to.
     """
     def __init__(self, elem:list = None, adj:list = None, attributes : dict = None, id : str = ""):
         super().__init__(attributes, id)
@@ -189,15 +261,25 @@ class CornerDataContainer(_BaseDataContainer):
 
     @property
     def size(self):
+        """The container size. Alias for `len(container)`
+
+        Returns:
+            int: number of elements in the container
+        """
         return len(self._elem)
 
     def __len__(self):
         return len(self._elem)
 
     def empty(self):
+        """
+        Returns:
+            bool: whether the container is empty
+        """
         return not self._elem
 
     def clear(self):
+        """Empty the container"""
         self._elem = []
         self._adj = []
         self._attr = dict()

@@ -184,9 +184,7 @@ class ParamDistortion(Worker):
     @property
     def conformal(self) -> ArrayAttribute:
         """
-        Conformal distortion
-        
-        Defined as ||J²||/det(J)
+        Conformal distortion, defined as $\\frac{||J||^2}{\\det(J)}$
         """
         if self._conformal is None: self.run()
         return self._conformal
@@ -194,9 +192,7 @@ class ParamDistortion(Worker):
     @property
     def scale(self) -> ArrayAttribute:
         """
-        Scale distortion
-
-        Defined as 0.5*(det J + 1/ det J)
+        Scale distortion, defined as $\\frac12 (\\det(J) + 1/\\det(J))$
         """
         if self._scale is None: self.run()
         return self._scale
@@ -206,7 +202,7 @@ class ParamDistortion(Worker):
         """
         Stretch distortion
 
-        Defined as the ratio sigma_1 / sigma_2 of the two eigenvalues of J
+        Defined as the ratio $\\frac{\\sigma_1}{\\sigma_2}$ where $\\sigma_1$ and $\\sigma_2$ are the eigenvalues of J
         """
         if self._stretch is None: self.run()
         return self._stretch
@@ -216,7 +212,7 @@ class ParamDistortion(Worker):
         """
         Isometric distortion
 
-        Defined as the distance from (s1,s2) to (1,1) where s1,s2 are the eigenvalues of J
+        Defined as the distance from ($\\sigma_1$, $\\sigma_2$) to (1,1) where $\\sigma_1$ and $\\sigma_2$ are the eigenvalues of J
         """
         if self._iso is None: self.run()
         return self._iso
@@ -226,7 +222,7 @@ class ParamDistortion(Worker):
         """
         Shear distortion
 
-        Defined as dot(c1, c2) where c1 and c2 are the columns of J
+        Defined as $c1 \\cdot c2$ where $c1$ and $c2$ are the columns of J
         """
         if self._shear is None: self.run()
         return self._shear

@@ -6,21 +6,33 @@ from ..mesh.mesh import _instanciate_raw_mesh_data
 from ..mesh.mesh_data import RawMeshData
 
 def triangle(P0: Vec, P1: Vec, P2: Vec):
+    """Generates a triangle from three vertices
+
+    Args:
+        P0,P1,P2 (Vec): three points
+
+    Returns:
+        SurfaceMesh: a triangle
+    """
     out = RawMeshData()
     out.vertices += [P0, P1, P2]
     out.faces.append((0,1,2))
     return _instanciate_raw_mesh_data(out, 2)
 
 def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False):
-    """
+    """Generates a quad from three vertices
+
        P1-------
       /        /
      /        / 
     P0-------P2  
 
     Args:
-        P0,P1,P2 (Vec): coordinates of corners. The fourth point is deduced.
+        P0,P1,P2 (Vec): coordinates of corners. The fourth point is deduced as P2 + P1 - 2*P0
         triangulate (bool): whether to output two triangles instead of a quad. Defaults to False.
+    
+    Returns:
+        SurfaceMesh: a quad
     """
     P0, P1, P2 = Vec(P0), Vec(P1), Vec(P2)
     P3 = P2 + P1 - 2*P0
