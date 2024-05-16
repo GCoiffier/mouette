@@ -24,7 +24,11 @@ class BezierCurve:
         out = RawMeshData()
         uvs = out.vertices.create_attribute("t",float)
         for it,t in enumerate(points):
-            out.vertices.append(self.evaluate(t))
+            pt_t = self.evaluate(t)
+            if pt_t.size == 2:
+                out.vertices.append(Vec(pt_t[0], pt_t[1], 0.))
+            elif pt_t.size == 3:
+                out.vertices.append(pt_t)
             uvs[it] = t
         for i in range(n_pts-1):
             out.edges.append((i,i+1))

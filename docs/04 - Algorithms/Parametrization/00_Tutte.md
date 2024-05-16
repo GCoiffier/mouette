@@ -12,6 +12,6 @@ M.mesh.save(mesh, "tutte_model.obj")
 M.mesh.save(tutte.flat_mesh, "tutte_flat.obj")
 ```
 
-See [https://github.com/GCoiffier/mouette/blob/main/examples/tutte.py](https://github.com/GCoiffier/mouette/blob/main/examples/tutte.py)
+See [https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/tutte.py](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/tutte.py)
 
 :::mouette.processing.parametrization.tutte

@@ -151,8 +151,6 @@ class WinslowInjectiveEmbedding(BaseParametrization):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, mesh : SurfaceMesh, uv_init: ArrayAttribute, verbose : bool=True, **kwargs):
         """
-        Initializes the Winslow embedding.
-
         Args:
             mesh (SurfaceMesh): the supporting mesh. Should be a surface with disk topology.
             uv_init (ArrayAttribute): array of initial uv-coordinates per vertices. np.array of shape (V,2) or mouette.ArrayAttribute object.

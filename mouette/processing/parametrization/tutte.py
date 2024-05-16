@@ -44,13 +44,13 @@ class TutteEmbedding(BaseParametrization):
 
     def __init__(self, mesh:SurfaceMesh, boundary_mode:str = "circle", use_cotan:bool=False, verbose:bool=True, **kwargs):
         """
-        Initializer of the Tutte's embedding tool.
-
         Args:
             mesh (SurfaceMesh): the mesh to embed. Should be a surface with disk topology.
             boundary_mode (str, optional): Shape of the boundary. Possible choices are ["square", "circle"]. Defaults to "circle".
             use_cotan (bool, optional): whether to use Tutte's original barycentric embedding [1], or use cotangents as weights in the laplacian matrix ([2]). Defaults to False.
             verbose (bool, optional): verbose mode. Defaults to True.
+            
+        Keyword Args:
             save_on_corners (bool, optional): whether to store the results on face corners or vertices. Defaults to True
             custom_boundary (np.ndarray, optionnal): a Nx2 array containing custom coordinates for the boundary vertices (N being the number of boundary vertices). 
             If provided, the boundary_mode argument is ignored. Defaults to None.
@@ -70,12 +70,15 @@ class TutteEmbedding(BaseParametrization):
     def run(self) :
         if euler_characteristic(self.mesh)!=1:
             raise Exception("Mesh is not a topological disk. Cannot run parametrization.")
-
+        
         Ubnd,Vbnd = self._initialize_boundary(self._bnd_mode)
 
         lap = operators.laplacian(self.mesh, cotan=self._use_cotan)
         freeInds = self.mesh.interior_vertices
-        bndInds = self.mesh.boundary_vertices
+        if self._bnd_mode == TutteEmbedding.BoundaryMode.CUSTOM:
+            bndInds = self.mesh.boundary_vertices
+        else: # otherwise boundary should be sorted
+            bndInds, _ = extract_border_cycle(self.mesh)
 
         LI = lap[freeInds, :][:, freeInds]
         LB = lap[freeInds, :][:, bndInds]
@@ -102,7 +105,7 @@ class TutteEmbedding(BaseParametrization):
         n = len(self.mesh.boundary_vertices)
         U, V = np.zeros(n), np.zeros(n)
         if boundary_mode == TutteEmbedding.BoundaryMode.CUSTOM:
-            U,V = self._custom_bnd[:,0], self._custom_bnd[:,1]
+            return self._custom_bnd[:,0], self._custom_bnd[:,1]     
         elif boundary_mode == TutteEmbedding.BoundaryMode.CIRCLE:
             for i in range(n):
                 rt = cmath.rect(1., 2*pi*i/n)

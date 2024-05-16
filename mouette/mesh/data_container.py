@@ -257,7 +257,7 @@ class CornerDataContainer(_BaseDataContainer):
         return list(zip(self._elem, self._adj)).__repr__()
 
     def __str__(self):
-        return str(self._elem) + "\nAttributes: "+str(self._attr.keys())
+        return str([x for x in zip(self._elem, self._adj)]) + "\nAttributes: "+str(self._attr.keys())
 
     @property
     def size(self):

@@ -25,8 +25,6 @@ class LSCM(BaseParametrization):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, mesh : SurfaceMesh, verbose : bool=True, **kwargs):
         """
-        Initializes the LSCM parametrization tool.
-
         Args:
             mesh (SurfaceMesh): the supporting mesh. Should be a surface with disk topology.
             verbose (bool, optional): verbose mode. Defaults to True.

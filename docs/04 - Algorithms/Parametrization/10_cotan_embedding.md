@@ -21,7 +21,7 @@ emb = M.parametrization.CotanEmbedding(mesh, uv_attributes, mode="bfgs")
 emb.run()
 ```
 
-See [this script](https://github.com/GCoiffier/mouette/blob/main/examples/cotan_embedding.py) for a full example.
+See [this script](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/cotan_embedding.py) for a full example.
 
 ## Method
 

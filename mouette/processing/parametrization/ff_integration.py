@@ -25,8 +25,9 @@ class FrameFieldIntegration(BaseParametrization):
     Integration of a smooth vector field into a seamless parametrization
 
     References:
-        [1] Mixed-integer quadrangulation, Bommes D, Zimmer H. and Kobbelt L., ACM Transaction on Graphics, 2009
-        [2] QuadCover - Surface Parameterization using Branched Coverings, Kälberer F., Nieser M. and Polthier K., Computer Graphics Forum, 2007
+        - [1] _Mixed-integer quadrangulation_, Bommes D, Zimmer H. and Kobbelt L., ACM Transaction on Graphics, 2009
+        
+        - [2] _QuadCover - Surface Parameterization using Branched Coverings_, Kälberer F., Nieser M. and Polthier K., Computer Graphics Forum, 2007
     """
 
     def __init__(self, framefield: FrameField, verbose:bool=True, **kwargs):

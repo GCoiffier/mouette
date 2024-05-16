@@ -11,6 +11,6 @@ mesh = M.mesh.load("path/to/mesh")
 lscm = M.parametrization.LSCM(mesh, [options])
 lscm.run()
 ```
-See [https://github.com/GCoiffier/mouette/blob/main/examples/tutte.py](https://github.com/GCoiffier/mouette/blob/main/examples/lscm.py)
+See [https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/lscm.py](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/lscm.py)
 
 :::mouette.processing.parametrization.lscm

@@ -80,8 +80,6 @@ class CotanEmbedding(BaseParametrization):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, mesh : SurfaceMesh, uv_init: ArrayAttribute, mode: str = "bfgs", verbose:bool=True, **kwargs):
         """
-        Initializing the CotanEmbedding parametrization tool.
-
         Args:
             mesh (SurfaceMesh): the supporting mesh.
             uv_init (ArrayAttribute): array of initial uv-coordinates per vertices. np.array of shape (V,2) or mouette.ArrayAttribute object.
