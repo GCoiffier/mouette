@@ -45,23 +45,23 @@ def parse_off_data(data):
         vertex = [float(u) for u in data.popleft()]
         output.vertices.append(Vec(vertex))
 
+    i_f, i_c = 0, 0
     for _ in range(nf):
         simplex = data.popleft()
         nvi = int(simplex[0])
-        nf,nc = 0,0
         if nvi==3:
             face = [int(u) for u in simplex[1:nvi+1]]
             output.faces.append(face)
-            output.face_corners += [(x,nf) for x in face]
-            nf += 1
+            output.face_corners += [(x,i_f) for x in face]
+            i_f += 1
         elif nvi==2:
             a,b = simplex[1], simplex[2]
             output.edges.append((min(a,b), max(a,b)))
         elif nvi==4:
             cell = [int(u) for u in simplex[1:nvi+1]]
             output.cells.append(cell)
-            output.cell_corners += [(x,nc) for x in cell]
-            nc += 1
+            output.cell_corners += [(x,i_c) for x in cell]
+            i_c += 1
     return output
 
 def export_off(mesh, path):

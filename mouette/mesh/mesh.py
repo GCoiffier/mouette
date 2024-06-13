@@ -96,7 +96,7 @@ def from_arrays(V : np.ndarray, E : np.ndarray = None, F : np.ndarray = None, C 
     """Creates a mesh object from numpy arrays.
 
     Args:
-        V (np.ndarray): vertex coordinates (shape |V|*3)
+        V (np.ndarray): vertex coordinates. SHould have shape |V|*3 or |V|*2. If shape |V|*2, the array is padded so that z=0.
         E (np.ndarray, optional): Edge indices (shape |E|*2). Defaults to None.
         F (np.ndarray, optional): Face indices (shape |F|*n for n-regular faces). Defaults to None.
         C (np.ndarray, optional): Cell indices (shape |C|*n for n-regular cells). Defaults to None.
@@ -105,7 +105,11 @@ def from_arrays(V : np.ndarray, E : np.ndarray = None, F : np.ndarray = None, C 
         Mesh: a mesh object (PointCloud to VolumeMesh depending on the data provided)
     """
     m = RawMeshData()
-    if V.shape[1]!=3: raise Exception("Vertex array should have shape (n,3)")
+    if V.shape[1]==2:
+        V = np.pad(V, ((0,0),(0,1)))
+    elif V.shape[1]!=3: 
+        raise Exception("Vertex array should have shape (n,3)")
+    
     n_vert = V.shape[0]
     m.vertices += list(V)
     if E is not None:

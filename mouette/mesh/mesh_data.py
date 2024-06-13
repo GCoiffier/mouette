@@ -178,7 +178,7 @@ class RawMeshData:
     def _generate_face_corners(self):
         nc = len(self.face_corners)
         nf = sum([len(f) for f in self.faces])
-        if nc == 0 or nc!= nf : 
+        if nc == 0 or nc!= nf :
             # corners were not or badly generated
             self.face_corners._elem = []
             self.face_corners._adj = []
