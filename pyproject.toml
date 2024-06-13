@@ -5,6 +5,7 @@ requires = [
   "tqdm",
   "numpy",
   "scipy",
+  "numba",
   "osqp"
 ]
 build-backend = "setuptools.build_meta"
@@ -31,6 +32,7 @@ dependencies = [
   "numpy",
   "scipy",
   "osqp",
+  "numba",
   "mkdocstrings[python]>=0.18",
   "stl-reader",
   "plyfile"

@@ -5,7 +5,7 @@ with open("README.md", "r") as file_handle:
 
 setuptools.setup(
     name="mouette",
-    version='1.2.0',
+    version='1.2.1',
     author="GCoiffier",
     description="Mesh, Tools and Geometry Processing",
     long_description=long_description,
@@ -18,6 +18,7 @@ setuptools.setup(
         'numpy',
         'scipy',
         'osqp',
+        'numba',
         'tqdm',
         'stl-reader',
         "plyfile",
