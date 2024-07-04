@@ -35,7 +35,7 @@ def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False):
         SurfaceMesh: a quad
     """
     P0, P1, P2 = Vec(P0), Vec(P1), Vec(P2)
-    P3 = P2 + P1 - 2*P0
+    P3 = P2 + P1 - P0
 
     out = RawMeshData()
     out.vertices += [P0, P1, P3, P2]

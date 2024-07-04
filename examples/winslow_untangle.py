@@ -19,7 +19,7 @@ if __name__ == "__main__":
     uv_init = mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
     for v in mesh.id_vertices:
         # uv_init[v] = [mesh.vertices[v][0], mesh.vertices[v][2]] # flatten y coordinate
-        uv_init[v] = [mesh.vertices[v][0], -mesh.vertices[v][2] - mesh.vertices[v][1]] # even more broken initialization
+        uv_init[v] = [mesh.vertices[v][0], mesh.vertices[v][2] + mesh.vertices[v][1]] # even more broken initialization
 
     uv_init_corners = mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
     M.attributes.scatter_vertices_to_corners(mesh, uv_init, uv_init_corners)
