@@ -200,8 +200,10 @@ def sample_points_from_surface(
 
     for i,f in enumerate(sampled_faces):
         pA,pB,pC = (mesh.vertices[_v] for _v in mesh.faces[f])
-        rA,rB,rC = random(3)
-        sampled_pts[i,:] = (rA*pA+rB*pB+rC*pC)/(rA+rB+rC)
+        u1,u2 = random(2)
+        r1 = 1 - np.sqrt(u1)
+        r2 = u2*(1-r1)
+        sampled_pts[i,:] = pA+ r1*(pB-pA) + r2*(pC-pA)
     
     if return_point_cloud:
         pointcloud = PointCloud()
