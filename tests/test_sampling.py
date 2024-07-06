@@ -1,38 +1,40 @@
 import pytest
-from mouette import geometry as geom
 import numpy as np
+import mouette as M
+from mouette import geometry as geom
 from mouette import sampling
 from data import *
 
 @pytest.mark.parametrize("bb",[
-    geom.BB2D(0.,0.,1.,1.),
-    geom.BB2D(-1,-1,1.,1.),
-    geom.BB2D(2.,0.,3.,3.)
+    geom.AABB((0.,0.), (1.,1.)),
+    geom.AABB((-1, 0.5), (0., 1.3)),
+    geom.AABB.unit_cube(3),
+    geom.AABB((-1,-1,-1),(1.,1.,1.)),
+    geom.AABB((2.,0.,0.),(3.,3.,1.)),
+    geom.AABB((0.,1.,0.,1.,0.,1.), (2.,2.,2.,2.,2.,2.))
 ])
-def test_sample_BB2D(bb):
-    pts = sampling.sample_bounding_box_2D(bb, 100)
-    assert pts.shape == (100,2)
-    pmin = np.min(pts,axis=0)
-    pmax = np.max(pts,axis=0)
-    assert bb.left <= pmin[0] <= pmax[0] <= bb.right
-    assert bb.bottom <= pmin[1] <= pmax[1] <= bb.top
-    pc = sampling.sample_bounding_box_2D(bb,20,return_point_cloud=True)
-    assert len(pc.vertices)==20
-
+def test_sample_AABB(bb):
+    pts = sampling.sample_AABB(bb, 100)
+    assert pts.shape == (100,bb.dim)
+    assert np.all( bb.mini <= np.min(pts, axis=0))
+    assert np.all( bb.maxi >= np.max(pts, axis=0))
 
 @pytest.mark.parametrize("bb",[
-    geom.BB3D(0.,0.,0.,1.,1.,1.),
-    geom.BB3D(-1,-1,-1,1.,1.,1.),
-    geom.BB3D(2.,0.,0.,3.,3.,1.)
+    geom.AABB((0.,0.), (1.,1.)),
+    geom.AABB((2.,0.,0.),(3.,3.,1.)),
 ])
-def test_sample_BB3D(bb):
-    pts = sampling.sample_bounding_box_3D(bb, 100)
-    assert pts.shape == (100,3)
-    assert np.all( bb.min_coords <= np.min(pts, axis=0))
-    assert np.all( bb.max_coords >= np.max(pts, axis=0))
-    pc = sampling.sample_bounding_box_3D(bb,20,return_point_cloud=True)
+def test_sample_AABB_pointcloud(bb):
+    pc = sampling.sample_AABB(bb,20,return_point_cloud=True)
+    assert isinstance(pc, M.mesh.PointCloud)
     assert len(pc.vertices)==20
 
+def test_sample_AABB_pointcloud_fail():
+    bb = geom.AABB.unit_cube(7)
+    try:
+        _ = sampling.sample_AABB(bb,20,return_point_cloud=True)
+        assert False
+    except ValueError:
+        assert True
 
 def test_sample_ball():
     center = M.Vec.random(3)

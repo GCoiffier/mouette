@@ -1,4 +1,5 @@
 from .vector import Vec
+from ..utils import check_argument
 import numpy as np
 import math
 from typing import Union
@@ -37,16 +38,29 @@ def sign(x: float):
     elif x<0 : return -1
     return 0
 
-def norm(x: np.ndarray) -> float:
-    """Euclidean norm of vector x, defined as $\\sqrt{x^Tx}$
+def norm(x: np.ndarray, which="l2") -> float:
+    """Vector norm. Three norms are implemented, the Euclidean l2 norm, the l1 norm or the l-infinite norm:
+
+    l2: $ \\sqrt{ \\sum_i v[i]^2 } $
+
+    l1: $ \\sum_i |v[i]| $
+
+    linf: $ \\max_i |v[i]| $
 
     Args:
-        x (np.ndarray): vector
+        x (np.ndarray): vector from which we compute the norm. Will be flattened if it has more than one dimension.
+        which (str, optional): which norm to compute. Choices are "l2", "l1" and "linf". Defaults to "l2".
 
     Returns:
-        float: Euclidean norm
+        float: the vector's norm
     """
-    return np.sqrt(np.dot(x.flatten(), x.flatten()))
+    check_argument("which", which, str, ["l2", "l1", "linf"])
+    if which=="l2":
+        return np.sqrt(np.dot(x.flatten(), x.flatten()))
+    elif which=="l1":
+        return np.sum(np.abs(x))
+    elif which=="linf":
+        return np.max(np.abs(x))
 
 def dot(A: np.ndarray, B: np.ndarray) -> float:
     """dot product $A^TB$ between two vectors
@@ -60,17 +74,24 @@ def dot(A: np.ndarray, B: np.ndarray) -> float:
     """
     return np.dot(A,B)
 
-def distance(A: Vec, B: Vec) -> float:
-    """Euclidean distance between A and B, defined as $||B-A|| = \\sqrt{(B-A)^T(B-A)}$
+def distance(A: Vec, B: Vec, which="l2") -> float:
+    """Distance between A and B. Three distances are implemented, the Euclidean distance l2, the Manhattan l1 distance of the l-infinity distance:
+     
+    l2: $\\sqrt{(B-A)^T(B-A)} = \\sqrt{\\sum_i (A_i - B_i)^2}$
+
+    l1: $\\sum_i |A_i - B_i|$
+
+    linf: $\\max_i |A_i - B_i|$
 
     Args:
-        a (Vec): first point
-        b (Vec): second point
-
+        A (Vec): first point
+        B (Vec): second point
+        which (str, optional): which norm to compute. Choices are "l2", "l1" and "linf". Defaults to "l2".
+        
     Returns:
         float: distance
     """
-    return norm(B-A)
+    return norm(B-A, which)
 
 def cross(A: Vec, B: Vec) -> Vec:
     """Cross product of vectors A and B

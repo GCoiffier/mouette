@@ -1,1 +1,0 @@
-from .quadtree import QuadTree

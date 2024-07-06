@@ -5,7 +5,7 @@ from time import time
 input_mesh = M.mesh.load(sys.argv[1])
 
 t0 = time()
-domain = M.geometry.BB2D.of_mesh(input_mesh, padding=0.1)
+domain = M.geometry.AABB.of_mesh(input_mesh, padding=0.1)
 qt = M.processing.QuadTree(domain)
 
 # for v in input_mesh.vertices:

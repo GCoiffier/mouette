@@ -1,6 +1,6 @@
 from ..mesh.datatypes import *
 from ..mesh.mesh_data import DataContainer, RawMeshData
-from ..geometry import Vec, BB2D
+from ..geometry import Vec, AABB
 import numpy as np
 
 from dataclasses import dataclass
@@ -73,7 +73,7 @@ class QuadTree:
         children : list = None # id of children nodes
         points: set = None # id of contained points
 
-    def __init__(self, domain : BB2D):
+    def __init__(self, domain : AABB):
         self.points = DataContainer(id="vertices")
         self._where = self.points.create_attribute("id", int)
 
@@ -103,7 +103,7 @@ class QuadTree:
         new_node.points = []
         new_node.children = []
         vmin,vmax = self.vertex(verts[0]), self.vertex(verts[2])
-        self._bb.append(BB2D(vmin.x, vmin.y, vmax.x, vmax.y))
+        self._bb.append(AABB((vmin.x, vmin.y), (vmax.x, vmax.y)))
         self._nodes.append(new_node)
         return new_id
 
@@ -158,7 +158,7 @@ class QuadTree:
             for child in node.children:
                 self._insert_point(pt, pt_id, child)
         else:
-            BB : BB2D = self._bb[node_id]
+            BB : AABB = self._bb[node_id]
             if BB.contains_point(pt):
                 self._where[pt_id] = node_id
                 node.points.append(pt_id)
@@ -169,7 +169,7 @@ class QuadTree:
     def query(self, pt:Vec):
         return
     
-    def find_all_points_in(self, box:BB2D) -> list:
+    def find_all_points_in(self, box:AABB) -> list:
         return
     
     def export_as_polyline(self) -> PolyLine:

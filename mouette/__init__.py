@@ -14,7 +14,7 @@ from . import geometry
 from . import processing
 from . import optimize
 from . import sampling
-from . import space_partition
+from . import spatial
 from . import splines
 
 from .processing import framefield

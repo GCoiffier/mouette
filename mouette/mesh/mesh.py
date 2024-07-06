@@ -105,8 +105,8 @@ def from_arrays(V : np.ndarray, E : np.ndarray = None, F : np.ndarray = None, C 
         Mesh: a mesh object (PointCloud to VolumeMesh depending on the data provided)
     """
     m = RawMeshData()
-    if V.shape[1]==2:
-        V = np.pad(V, ((0,0),(0,1)))
+    if V.shape[1]<3:
+        V = np.pad(V, ((0,0),(0,3-V.shape[1])))
     elif V.shape[1]!=3: 
         raise Exception("Vertex array should have shape (n,3)")
     

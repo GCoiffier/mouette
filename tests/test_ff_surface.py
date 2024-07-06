@@ -1,3 +1,4 @@
+import pytest
 from mouette import framefield as ff
 from mouette.processing import SurfaceConnectionFaces, SurfaceConnectionVertices, FeatureEdgeDetector
 from mouette.mesh.datatypes.type_checks import BadMeshTypeException

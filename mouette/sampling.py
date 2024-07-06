@@ -1,8 +1,9 @@
 from .mesh.datatypes import *
+from .mesh import from_arrays
 from .attributes import face_normals, face_area, edge_length
 import numpy as np
 from numpy.random import random, choice
-from .geometry import Vec, BB2D, BB3D
+from .geometry import Vec, AABB
 from .utils import check_argument
 
 def sample_sphere(center : Vec, radius : float, n_pts : int, return_point_cloud : bool = False):
@@ -59,75 +60,40 @@ def sample_ball(center : Vec, radius : float, n_pts : int, return_point_cloud : 
     else:
         return pts
 
-def sample_bounding_box_2D(
-        box : BB2D, 
+def sample_AABB(
+        box : AABB, 
         n_pts : int,
         mode : str = "uniform",
         return_point_cloud : bool = False
     ):
-    """Sample a point cloud uniformly at random inside an axis-aligned 2D rectangle. Works by sampling the unit square and applying an affine transformation.
+    """Sample a point cloud uniformly at random inside an axis-aligned bounding box. Works by sampling the unit cube and applying an affine transformation.
 
     Args:
-        box (BB2D): the domain of sampling
-        n_pts (int): number of points to sample. If mode is 'grid', the function may return a different number of points.
+        box (AABB): the domain of sampling
+        n_pts (int): number of points to sample. If mode is 'grid', the function may return a slightly smaller number of points (nearest perfect n-th root).
         mode (str): sampling mode. 'uniform' or 'grid'. Uniform takes points at random, while 'grid' generates a grid of regularly spaced points.
-        return_point_cloud (bool, optional): whether to compile the points in a PointCloud object or return the raw numpy array. Defaults to False.
+        return_point_cloud (bool, optional): whether to compile the points in a PointCloud object or return the raw numpy array. Is ignored if the bounding box has dimension >3. Defaults to False.
+
+    Raises:
+        Exception: fails if the bounding box is empty.
+        ValueError: fails if the dimension of the box is > 3 and return_point_cloud is set to True, so that no PointCloud object with dim > 3 is created.
 
     Returns:
         PointCloud | np.ndarray: a sampled point cloud of `n_pts` points
     """
     check_argument("mode", mode, str, ["uniform", "grid"])
-    if mode == "uniform":
-        points = np.random.random((n_pts,2))
-    elif mode == "grid":
-        resX = round(np.sqrt(n_pts * box.width / box.height))
-        resY = round(np.sqrt(n_pts * box.height / box.width))
-        X = np.linspace(0,1,resX)
-        Y = np.linspace(0,1,resY)
-        points = np.vstack(list(map(np.ravel, np.meshgrid(X,Y)))).T
-    
-    ### apply affine transform
-    points[:,0] = box.left   + box.width  * points[:,0]
-    points[:,1] = box.bottom + box.height * points[:,1]
-
-    if return_point_cloud:
-        points = np.pad(points, ((0,0), (0,1))) ### adds a z=0 to all points
-        pointcloud = PointCloud()
-        pointcloud.vertices += list(points)
-        return pointcloud
-    else:
-        return points
-
-def sample_bounding_box_3D(
-        box : BB3D, 
-        n_pts : int,
-        mode : str = "uniform",
-        return_point_cloud : bool = False
-    ):
-    """Sample a point cloud uniformly at random inside an axis-aligned 3D box. Works by sampling the unit cube and applying an affine transformation.
-
-    Args:
-        box (BB3D): the domain of sampling
-        n_pts (int): number of points to sample. If mode is 'grid', the function may return a slightly smaller number of points.
-        mode (str): sampling mode. 'uniform' or 'grid'. Uniform takes points at random, while 'grid' generates a grid of regularly spaced points.
-        return_point_cloud (bool, optional): whether to compile the points in a PointCloud object or return the raw numpy array. Defaults to False.
-
-    Returns:
-        PointCloud | np.ndarray: a sampled point cloud of `n_pts` points
-    """
-    check_argument("mode", mode, str, ["uniform", "grid"])
+    if box.is_empty():
+        raise Exception(f"Received AABB {box}, is empty. Cannot sample valid points.")
+    if box.dim>3 and return_point_cloud:
+        raise ValueError(f"No PointCloud can be generated for a bounding box of dimension {box.dim}>3.")
     if mode=="uniform":
-        points = box.min_coords + box.span * random((n_pts,3))
+        points = box.mini + box.span * random((n_pts,box.dim))
     elif mode=="grid":
-        res = round(np.cbrt(n_pts))
-        X = np.linspace(0,1,res)
-        Y = np.linspace(0,1,res)
-        Z = np.linspace(0,1,res)
-        points = np.vstack(list(map(np.ravel, np.meshgrid(X,Y,Z)))).T
+        res = round(np.power(n_pts, 1/box.dim))
+        Xdims = (np.linspace(0,1,res) for _ in range(box.dim))
+        points = np.vstack(list(map(np.ravel, np.meshgrid(*Xdims)))).T
     if return_point_cloud:
-        pointcloud = PointCloud()
-        pointcloud.vertices += list(points)
-        return pointcloud
+        return from_arrays(points)
     else:
         return points
 

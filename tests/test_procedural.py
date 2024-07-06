@@ -27,7 +27,7 @@ def test_quad():
     P1 = M.Vec(2,0,0)
     P2 = M.Vec(0,1,1)
     quad = M.procedural.quad(P0,P1,P2)
-    assert np.all(quad.vertices[2] ==  P1 + P2 - 2*P0)
+    assert np.all(quad.vertices[2] ==  P1 + P2 - P0)
     assert len(quad.faces) == 1
     quadtri = M.procedural.quad(P0, P1, P2, triangulate=True)
     assert len(quadtri.faces) == 2

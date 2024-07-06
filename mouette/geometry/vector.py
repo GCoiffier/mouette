@@ -126,7 +126,7 @@ class Vec(np.ndarray):
 
     ###### Methods ######
     def norm(self, which="l2") -> float :
-        """Vector norm. Three norms are implements, the Euclidean l2 norm, the l1 norm or the l-infinite norm:
+        """Vector norm. Three norms are implemented: the Euclidean l2 norm, the l1 norm or the l-infinite norm:
 
         l2 : $ \\sqrt{ \\sum_i v[i]^2 } $
 

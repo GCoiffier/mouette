@@ -1,137 +1,21 @@
+import mouette as M
 from mouette import geometry as geom
 import numpy as np
 
-###### BB2D ######
-
 def test_init():
-    bb = geom.BB2D(0.,0.,1.,1.)
-    assert bb.left == 0.
-    assert bb.right == 1.
-    assert bb.bottom == 0.
-    assert bb.top == 1.
+    bb = geom.AABB((0.,0.,0.), (1.,1.,1.))
+    assert np.all(bb.mini == np.array((0.,0.,0.)))
+    assert np.all(bb.maxi == np.array((1.,1.,1.)))
+
+def test_init2():
+    bb1 = geom.AABB((0.,0., 0., 0.), (1.,1.,1., 1.))
+    bb2 = geom.AABB.unit_cube(4)
+    assert np.all(bb1.mini == bb2.mini)
+    assert np.all(bb1.maxi == bb2.maxi)
+
 
 def test_dim():
-    bb = geom.BB2D(-1.,-1., 1., 1.)
-    assert bb.width == 2.
-    assert bb.height == 2.
-    assert bb.center.x == 0.
-    assert bb.center.y == 0.
-
-def test_set_left():
-    bb = geom.BB2D(0.,0.,1.,1.)
-    bb.left = -1
-    assert bb.left == -1
-    bb.left -= 1
-    assert bb.left == -2
-    bb.left = 6
-    assert bb.left == 1.
-
-def test_set_bottom():
-    bb = geom.BB2D(0.,0.,1.,1.)
-    bb.bottom = -1
-    assert bb.bottom == -1
-    bb.bottom -= 1
-    assert bb.bottom == -2
-    bb.bottom = 6
-    assert bb.bottom == 1.
-
-def test_set_right():
-    bb = geom.BB2D(0.,0.,1.,1.)
-    bb.right = 2
-    assert bb.right == 2.
-    bb.right -= 1
-    assert bb.right == 1.
-    bb.right = -12
-    assert bb.right == 0.
-
-def test_set_top():
-    bb = geom.BB2D(0.,0.,1.,1.)
-    bb.right = 2
-    assert bb.right == 2.
-    bb.right -= 1
-    assert bb.right == 1.
-    bb.right = -12
-    assert bb.right == 0.
-
-def test_pad():
-    bb = geom.BB2D(0.,0.,1.,1.)
-    bb.pad(-1,-1) # should do nothing
-    assert bb.left   == 0.
-    assert bb.right  == 1.
-    assert bb.bottom == 0.
-    assert bb.top    == 1.
-
-    bb.pad(1.,1.)
-    assert bb.left   == -1.
-    assert bb.right  == 2.
-    assert bb.bottom == -1.
-    assert bb.top    == 2.
-
-def test_contains():
-    for _ in range(10):
-        pt_max = 1.001 + geom.Vec.random(2)
-        bb = geom.BB2D(-0.01, -0.01, pt_max[0], pt_max[1])
-        query_pt = geom.Vec.random(2)
-        assert bb.contains_point(query_pt)
-        assert not bb.contains_point(query_pt + np.array((2.,0.)))
-
-
-def test_do_intersect():
-    b1 = geom.BB2D(0.,0.,1.,1.)
-    b2 = geom.BB2D(0.9,0.9,1.,1.2)
-    b3 = geom.BB2D(1.1,1.1,2.2,2.2)
-    
-    assert geom.BB2D.do_intersect(b1,b2)
-    assert not geom.BB2D.do_intersect(b1,b3)
-
-def test_intersection1():
-    b1 = geom.BB2D(0., 0.,100.,100.)
-    b2 = geom.BB2D(-10., -10., 1.,1.)
-
-    bb_int = b1 & b2
-    assert bb_int.left == 0.
-    assert bb_int.right == 1.
-    assert bb_int.bottom == 0.
-    assert bb_int.top == 1. 
-
-def test_intersection2():
-    b1 = geom.BB2D(0., 0., 1., 1.)
-    b2 = geom.BB2D(2., 2., 3., 3.)
-
-    bb_int = b1 & b2
-    assert bb_int is None
-
-def test_union1():
-    # b1 and b2 disjoint
-    b1 = geom.BB2D(0., 0., 8.,1.)
-    b2 = geom.BB2D(10., 10., 10., 80.)
-
-    bb_un = b1 | b2
-    assert bb_un.left == 0.
-    assert bb_un.right == 10.
-    assert bb_un.bottom == 0.
-    assert bb_un.top == 80. 
-
-def test_union2():
-    # b2 inside b1
-    b1 = geom.BB2D(0., 0., 10.,10.)
-    b2 = geom.BB2D(1., 1., 2., 2.) 
-
-    bb_un = b1 | b2
-    assert bb_un.left == 0.
-    assert bb_un.right == 10.
-    assert bb_un.bottom == 0.
-    assert bb_un.top == 10. 
-
-###### BB3D ######
-
-def test_init():
-    bb = geom.BB3D(0.,0.,0., 1.,1.,1.)
-    assert np.all(bb.min_coords == np.array((0.,0.,0.)))
-    assert np.all(bb.max_coords == np.array((1.,1.,1.)))
-
-def test_dim():
-    bb = geom.BB3D(-1.,-1.,-1, 1.,1.,1.)
+    bb = geom.AABB((-1.,-1.,-1), (1.,1.,1.))
     assert np.all(bb.span == np.array((2.,2.,2.)))
     assert bb.center.x == 0.
     assert bb.center.y == 0.
@@ -140,48 +24,67 @@ def test_dim():
 def test_contains():
     for _ in range(10):
         pt_max = 1.001 + geom.Vec.random(3)
-        bb = geom.BB3D(geom.Vec(-.01, -.01, -.01), pt_max)
+        bb = geom.AABB(geom.Vec(-.01, -.01, -.01), pt_max)
         query_pt = geom.Vec.random(3)
         assert bb.contains_point(query_pt)
         assert not bb.contains_point(query_pt +geom.Vec(2.,0.,0.))
 
 def test_do_intersect():
-    b1 = geom.BB3D(0.,0.,0., 1.,1.,1.)
-    b2 = geom.BB3D(0.9,0.9,0.9, 1., 1.2, 1.)
-    b3 = geom.BB3D(1.1, 1.1, 1.1, 2.2, 2.2, 2.2)
+    b1 = geom.AABB((0.,0.,0.), (1.,1.,1.))
+    b2 = geom.AABB((0.9,0.9,0.9), (1., 1.2, 1.))
+    b3 = geom.AABB((1.1, 1.1, 1.1), (2.2, 2.2, 2.2))
     
-    assert geom.BB3D.do_intersect(b1,b2)
-    assert not geom.BB3D.do_intersect(b1,b3)
+    assert geom.AABB.do_intersect(b1,b2)
+    assert not geom.AABB.do_intersect(b1,b3)
 
 def test_intersection1():
-    b1 = geom.BB3D(0., 0., 0., 100., 100., 100.)
-    b2 = geom.BB3D(-10., -10., -10, 1., 1., 1.)
+    b1 = geom.AABB((0., 0., 0.), (100., 100., 100.))
+    b2 = geom.AABB((-10., -10., -10), (1., 1., 1.))
 
     bb_int = b1 & b2
-    assert np.all(bb_int.min_coords == geom.Vec(0.,0.,0.))
-    assert np.all(bb_int.max_coords == geom.Vec(1.,1.,1.))
+    assert np.all(bb_int.mini == geom.Vec(0.,0.,0.))
+    assert np.all(bb_int.maxi == geom.Vec(1.,1.,1.))
 
 def test_intersection2():
-    b1 = geom.BB3D(0., 0., 0., 1., 1., 1.)
-    b2 = geom.BB3D(2., 2., 2., 3., 3., 3.)
+    b1 = geom.AABB((0., 0., 0.), (1., 1., 1.))
+    b2 = geom.AABB((2., 2., 2.), (3., 3., 3.))
     bb_int = b1 & b2
-    assert bb_int is None
+    assert bb_int.is_empty()
 
 def test_union1():
     # b1 and b2 disjoint
-    b1 = geom.BB3D(0., 0., 0., 8., 1., 1.)
-    b2 = geom.BB3D(10., 10., 10., 10., 80., 10.)
+    b1 = geom.AABB((0., 0., 0.), (8., 1., 1.))
+    b2 = geom.AABB((10., 10., 10.), (10., 80., 10.))
 
     bb_un = b1 | b2
-    assert np.all(bb_un.min_coords == geom.Vec(0.,0.,0.))
-    assert np.all(bb_un.max_coords == geom.Vec(10.,80.,10.))
+    assert np.all(bb_un.mini == geom.Vec(0.,0.,0.))
+    assert np.all(bb_un.maxi == geom.Vec(10.,80.,10.))
     
-
 def test_union2():
     # b2 inside b1
-    b1 = geom.BB3D(0., 0., 0.,  10., 10., 10.)
-    b2 = geom.BB3D(1., 1., 1, 2., 2., 2.) 
+    b1 = geom.AABB((0., 0., 0.),  (10., 10., 10.))
+    b2 = geom.AABB((1., 1., 1), (2., 2., 2.)) 
 
     bb_un = b1 | b2
-    assert np.all(bb_un.min_coords == b1.min_coords)
-    assert np.all(bb_un.max_coords == b1.max_coords)
+    assert np.all(bb_un.mini == b1.mini)
+    assert np.all(bb_un.maxi == b1.maxi)
+
+def test_invalid_dim():
+    bb = geom.AABB.unit_cube(5,centered=True)
+    assert bb.dim == 5
+    pt = M.Vec.random(4)
+    try:
+        _ = bb.project(pt)
+        assert False
+    except geom.AABB.IncompatibleDimensionError as e:
+        assert True
+
+def test_projection():
+    box = geom.AABB.unit_cube(8)
+    samples = M.sampling.sample_AABB(box, 10_000, "uniform")
+    for _ in range(10):
+        pos = M.Vec.random(8)*10
+        proj = box.project(pos)
+        d_proj = geom.distance(pos,proj)
+        dist = [geom.distance(pos, sample) for sample in samples]
+        assert all([d >= d_proj for d in dist])
