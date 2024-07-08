@@ -209,10 +209,13 @@ class AABB:
         """Enlarges the bounding box by adding `pad` on each dimension on each side. Does nothing if the padding values are negative.
 
         Args:
-            pad (iterable): Additional dimensions to be added. Should be >=0.
+            pad (float | iterable): Additional dimensions to be added. If a float is provided, will assume that padding is the same for each dimensions. If an array is provided, its size should match the dimension of the box. Values are clamped to be >=0.
         """
-        pad = Vec(pad)
-        if pad.size != self.dim: raise 
+        if isinstance(pad,float):
+            pad = np.full(self.dim, pad)
+        else:
+            pad = Vec(pad)
+            if pad.size != self.dim: raise AABB.IncompatibleDimensionError(f"Padding vector has a different dimension ({pad.size}) than bounding box ({self.dim})") 
         pad = np.maximum(pad, 0)
         self._p1 -= pad
         self._p2 += pad
@@ -232,7 +235,7 @@ class AABB:
         """
         pt = Vec(pt)
         if pt.size != self.dim:
-            raise AABB.IncompatibleDimensionError(f"Point has a different dimension({pt.dim}) than bounding box ({self.dim})")
+            raise AABB.IncompatibleDimensionError(f"Point has a different dimension({pt.size}) than bounding box ({self.dim})")
         return (self._p1 <= pt).all() and (pt < self._p2).all()
     
     def project(self, pt:Vec) -> Vec:
