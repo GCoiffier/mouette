@@ -64,7 +64,7 @@ def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False) -> sp.csc_matri
 @allowed_mesh_types(SurfaceMesh)
 def laplacian(
     mesh : SurfaceMesh, 
-    cotan : bool=True, 
+    cotan : bool=True,
     connection : "SurfaceConnectionVertices" = None, 
     order : int=4) -> sp.lil_matrix:
     """Cotan laplacian on vertices.

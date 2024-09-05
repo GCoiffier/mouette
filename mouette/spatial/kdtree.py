@@ -75,10 +75,8 @@ class KDTree:
                 # split the points according to the current axis
                 split_value, pts_less, pts_more = self._split_points(leaf.points, leaf.split_axis)
                 
-                # we create a new node to replace it and append two leaves that will be its children
+                # we create a new node to replace the original leaf and append two leaves that will be its children
                 node = KDTree.Node(leaf.id, leaf.split_axis, parent=leaf.parent, bb=leaf.bb, split_value=split_value)
-
-                # create and link the leaves
                 leaf_less = self._new_leaf((leaf.split_axis + 1)%self.dim, leaf.id, pts_less)
                 leaf_more = self._new_leaf((leaf.split_axis + 1)%self.dim, leaf.id, pts_more)
                 node.left, node.right = leaf_less.id, leaf_more.id

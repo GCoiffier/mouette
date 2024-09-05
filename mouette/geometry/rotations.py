@@ -15,8 +15,8 @@ def rotate_2d(v : Vec, angle : float) -> Vec:
     """
     ca,sa = math.cos(angle), math.sin(angle)
     v2 = Vec(0.,0.)
-    v2.x = v.x * ca - v.y * sa
-    v2.y = v.x * sa + v.y * ca
+    v2.x = v[0] * ca - v[1] * sa
+    v2.y = v[0] * sa + v[1] * ca
     return v2
 
 def rotate_around_axis(inp : Vec, _axis : Vec, angle : float) ->  Vec:
