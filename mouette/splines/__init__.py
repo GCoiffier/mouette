@@ -1,2 +1,2 @@
-from .bezier_curve import BezierCurve
-from .bezier_surface import BezierPatch
+from .bezier import BezierCurve, BezierPatch
+from .pn_surface import P2Triangulation, P3Triangulation
