@@ -14,7 +14,7 @@ untangler.run()
 
 See [this script](https://github.com/GCoiffier/mouette/blob/main/examples/winslow_untangle.py) for a full example.
 
-## Method
+# Method
 
 Given a triangulation $M=(V,T)$ of a disk-topology object and some initial $uv$-coordinates on the vertices of $M$, this method optimizes the $uv$-coordinates under fixed boundary so that no triangle is inverted in the final $uv$-mapping. This is done through the optimization of an energy function that acts on jacobian matrices $J \in \mathbb{R}^2$ of each triangle elements:
 

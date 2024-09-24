@@ -41,32 +41,34 @@ def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
 
 
 @allowed_mesh_types(SurfaceMesh)
-def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False) -> sp.csc_matrix:
+def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = False, format:str="csc") -> sp.csc_matrix:
     """
-    Returns the diagonal matrix A of area weights on vertices
+    Returns the diagonal matrix A of area weights on vertices.
     
-    Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix
-
     Args:
         mesh (SurfaceMesh): input mesh
         inverse (bool, optional): whether to return A or A^-1. Defaults to False.
+        sqrt (bool, optional): whether to return A or A^{1/2}. Can be combined with `inverse` to return A^{-1/2}. Defaults to False.
+        format (str, optional): one of the sparse matrix format of scipy (csc, csr, coo, lil, ...). Defaults to csc.
 
     Returns:
-        sp.csc_matrix: diagonal matrix of vertices area
+        sp.csc_matrix: diagonal matrix of vertex areas
     """
     A = np.zeros(len(mesh.vertices))
     area = face_area(mesh)
     for iT,T in enumerate(mesh.faces):
         for u in T:
-            A[u] += area[iT] if not inverse else 1/area[iT]
-    return sp.diags(A, format="csc")
+            A[u] += area[iT]
+    if sqrt: A = np.sqrt(A)
+    if inverse : A = 1/A # /!\ perform inverse after sqrt
+    return sp.diags(A, format=format)
 
 @allowed_mesh_types(SurfaceMesh)
 def laplacian(
     mesh : SurfaceMesh, 
     cotan : bool=True,
     connection : "SurfaceConnectionVertices" = None, 
-    order : int=4) -> sp.lil_matrix:
+    order : int=4) -> sp.csc_matrix:
     """Cotan laplacian on vertices.
 
     Parameters:
@@ -76,7 +78,7 @@ def laplacian(
         order (int, optional): Order of the parallel transport (useful when computing frame fields). Does nothing if parallel_transport is set to None. Defaults to 4.
 
     Returns:
-        scipy.sparse.lil_matrix : the Laplacian operator as a sparse matrix
+        scipy.sparse.csc_matrix : the Laplacian operator as a sparse matrix
     """
     n_coeffs = 12*len(mesh.faces)
     if cotan:
@@ -218,12 +220,14 @@ def laplacian_triangles(
 ##### For Volumes #####
 
 @allowed_mesh_types(VolumeMesh)
-def volume_weight_matrix(mesh : VolumeMesh, inverse:bool = False) -> sp.csc_matrix:
+def volume_weight_matrix(mesh: VolumeMesh, inverse: bool = False, sqrt: bool = False, format: str = "csc") -> sp.dia_matrix:
     """
     Mass diagonal matrix for volume Laplacian.
     Args:
         mesh (VolumeMesh): input mesh
         inverse (bool, optional): whether to return A or A^-1. Defaults to False.
+        sqrt (bool, optional): whether to return A or A^{1/2}. Can be combined with `inverse` to return A^{-1/2}. Defaults to False.
+        format (str, optional): one of the sparse matrix format of scipy (csc, csr, coo, lil, ...). Defaults to csc.
 
     Returns:
         sp.csc_matrix: diagonal matrix of vertices area
@@ -232,8 +236,10 @@ def volume_weight_matrix(mesh : VolumeMesh, inverse:bool = False) -> sp.csc_matr
     volume = cell_volume(mesh, persistent=False)
     for iC,C in enumerate(mesh.cells):
         for u in C:
-            A[u] += volume[iC] if not inverse else 1/volume[iC]
-    return sp.diags(A, format="csc")
+            A[u] += volume[iC] 
+    if sqrt: A = np.sqrt(A)
+    if inverse: A = 1/A
+    return sp.diags(A, format=format)
 
 @allowed_mesh_types(VolumeMesh)
 def volume_laplacian(mesh : VolumeMesh) -> sp.lil_matrix:

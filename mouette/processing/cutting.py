@@ -8,6 +8,7 @@ from ..utils import keyify, UnionFind, PriorityQueue
 from .paths import shortest_path, shortest_path_to_border, shortest_path_to_vertex_set
 from .trees import FaceSpanningForest
 from .. import attributes
+from ..utils import consecutive_pairs
 from collections import deque
 
 class SingularityCutter(Worker):
@@ -72,7 +73,7 @@ class SingularityCutter(Worker):
         self.log("Cutting to link singularities and retrieve disk topology")
         self.log("# Singularities :", len(self.singularities))
         if self.has_features:
-            self.log(f"{len(self.feat_detector.feature_edges)} feature edges and {len(self.feat_detector.feature_vertices)} provided")
+            self.log(f"{len(self.feat_detector.feature_edges)} feature edges and {len(self.feat_detector.feature_vertices)} feature vertices provided")
             self._run_with_features()
         else:
             self._run_no_features()
@@ -108,23 +109,17 @@ class SingularityCutter(Worker):
             Attribute: the spanning tree given as a boolean attribute on edges
         """
         mesh_has_border = len(self.input_mesh.boundary_vertices)>0
+
         BORDER = -1 # the index of border (>0 are vertices)
         singul = self.singularities + [BORDER] if mesh_has_border else self.singularities
 
-        #edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) 
+        # edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) 
         edge_flags = Attribute(bool) # edge selected for spanning tree
         
         if not self.singularities:
             # no singularities => no spanning tree and no constraints on edges
             return edge_flags
-
-        def path_length(path):
-            l = 0
-            for i in range(1, len(path)):
-                A,B = path[i-1], path[i]
-                l += self.edge_lengths[self.input_mesh.connectivity.edge_id(A,B)]
-            return l
-            
+    
         # Compute all edge paths between singularities (and border)
         path_btw_singus = dict()
         for i,a in enumerate(self.singularities):
@@ -132,12 +127,19 @@ class SingularityCutter(Worker):
             for b in paths_a:
                 path_btw_singus[keyify(a,b)] = paths_a[b]
             if mesh_has_border:
-                path_btw_singus[(BORDER,a)] = shortest_path_to_border(self.input_mesh, a, weights=self.edge_lengths)
-                
+                path_btw_singus[(BORDER,a)] = shortest_path_to_border(self.input_mesh, a, weights=self.edge_lengths)[0]
+
         # Compute path lengths
+        def compute_path_length(path): # utility function for readability
+            l = 0
+            for i in range(1, len(path)):
+                A,B = path[i-1], path[i]
+                l += self.edge_lengths[self.input_mesh.connectivity.edge_id(A,B)]
+            return l
+        
         path_lengths = []
         for k in path_btw_singus:
-            path_lengths.append((path_length(path_btw_singus[k]), k))
+            path_lengths.append((compute_path_length(path_btw_singus[k]), k))
         path_lengths.sort()
 
         # Build Minimum Spanning Tree using Kruskal's algorithm
@@ -167,7 +169,6 @@ class SingularityCutter(Worker):
         if len(self.singularities)==0:
             # no singularities => no spanning tree and no constraints on edges
             return edge_flags
-
 
         # First compute the closest point from singularities to feature graph
         closest_v = set()
@@ -199,7 +200,6 @@ class SingularityCutter(Worker):
                     nv = self.input_mesh.connectivity.other_edge_end(e,v)
                     if not visited[nv]:
                         queue.append((nv,v))
-
         return edge_flags
 
     def _build_feature_regions(self, forbidden_edges):

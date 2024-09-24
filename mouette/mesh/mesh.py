@@ -13,7 +13,7 @@ def _instanciate_raw_mesh_data(mesh_data : RawMeshData, dim : int = None) -> Mes
     if dim==2: return SurfaceMesh(mesh_data)
     if dim==3: return VolumeMesh(mesh_data)
 
-def load(filename : str, dim : int = None, raw : bool = False) -> Mesh:
+def load(filename: str, dim: int = None, raw: bool = False) -> Mesh:
     """
     Loads a Mesh object from a file on the disk.
 
@@ -92,7 +92,13 @@ def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
             raw_mesh.cell_faces.clear()
     write_by_extension(raw_mesh, filename)
 
-def from_arrays(V : np.ndarray, E : np.ndarray = None, F : np.ndarray = None, C : np.ndarray = None) -> Mesh:
+def from_arrays(
+        V: np.ndarray, 
+        E: np.ndarray = None, 
+        F: np.ndarray = None, 
+        C: np.ndarray = None, 
+        raw: bool = False
+    ) -> Mesh:
     """Creates a mesh object from numpy arrays.
 
     Args:
@@ -100,6 +106,7 @@ def from_arrays(V : np.ndarray, E : np.ndarray = None, F : np.ndarray = None, C 
         E (np.ndarray, optional): Edge indices (shape |E|*2). Defaults to None.
         F (np.ndarray, optional): Face indices (shape |F|*n for n-regular faces). Defaults to None.
         C (np.ndarray, optional): Cell indices (shape |C|*n for n-regular cells). Defaults to None.
+        raw (bool, optional): Returns the RawMeshData object instead of a fully prepared Mesh object. Defaults to False
 
     Returns:
         Mesh: a mesh object (PointCloud to VolumeMesh depending on the data provided)
@@ -122,6 +129,7 @@ def from_arrays(V : np.ndarray, E : np.ndarray = None, F : np.ndarray = None, C 
     if C is not None:
         if np.any(C>=n_vert): raise Exception("Cell indices should be between 0 and n_vertices")
         m.cells += list(C)
+    if raw: return m
     return _instanciate_raw_mesh_data(m)
 
 def copy(mesh : Mesh, copy_attributes=False, copy_connectivity=False) -> Mesh:
