@@ -23,11 +23,11 @@ class LSCM(BaseParametrization):
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, verbose : bool=True, **kwargs):
+    def __init__(self, mesh : SurfaceMesh, verbose : bool=False, **kwargs):
         """
         Args:
             mesh (SurfaceMesh): the supporting mesh. Should be a surface with disk topology.
-            verbose (bool, optional): verbose mode. Defaults to True.
+            verbose (bool, optional): verbose mode. Defaults to False.
             
         Keyword Args:
             eigen (bool, optional): whether to solve a linear system with two fixed points or use an eigen solver. Defaults to True

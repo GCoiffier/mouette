@@ -13,7 +13,7 @@ class BaseParametrization(Worker):
     def __init__(self, 
         name : str, 
         mesh : SurfaceMesh, 
-        verbose : bool = True, 
+        verbose : bool = False, 
         **kwargs
     ):
         super().__init__(name, verbose)

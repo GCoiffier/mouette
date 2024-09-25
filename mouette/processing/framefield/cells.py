@@ -4,6 +4,7 @@ import scipy.sparse as sp
 from scipy.spatial.transform import Rotation
 from osqp import OSQP
 import math
+import warnings
 
 from .base import FrameField
 
@@ -75,7 +76,7 @@ class FrameField3DCells(FrameField):
             FrameField3DCells.FileParsingError: if the file is not of the correct format
         """
         if self.initialized:
-            self.log("Warning: reading frame field from file has erased current frames.")
+            warnings.warn("reading frame field from file has erased current frames.")
             self.var = np.zeros(9*len(self.mesh.cells))
         self.frames = []
         with open(file_path, "r") as f:

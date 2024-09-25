@@ -2,6 +2,7 @@ import stl_reader
 import struct
 from ..mesh_data import RawMeshData
 from collections import deque
+import warnings
 
 def is_stl_ascii(path : str):
     try:
@@ -59,7 +60,7 @@ def _import_stl_ascii(path : str):
 
 def export_stl(mesh, path :str):
     if not hasattr(mesh, "faces"):
-        print("[Warning] no faces detected in the object. Nothing to write. Returning.")
+        warnings.warn("No faces detected in the object. Nothing to write. Returning.")
         return
     with open(path, 'wb') as fp:
         writer = Binary_STL_Writer(fp)

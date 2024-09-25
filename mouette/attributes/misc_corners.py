@@ -35,7 +35,9 @@ def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, den
 @allowed_mesh_types(SurfaceMesh)
 def cotangent(mesh : SurfaceMesh, name = "cotan", persistent=True, dense=True) -> Attribute:
     """Attribute storing the cotangents of each face at each vertex.
-    WARNING: only works if the mesh is triangulated (ie every faces are triangles)
+    
+    Warning: 
+        Only works if the mesh is triangulated (ie every faces are triangles)
 
     Parameters:
         mesh (SurfaceMesh): the input mesh

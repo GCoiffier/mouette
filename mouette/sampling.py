@@ -98,7 +98,7 @@ def sample_AABB(
         return points
 
 @allowed_mesh_types(PolyLine)
-def sample_points_from_polyline(
+def sample_polyline(
     mesh : PolyLine, 
     n_pts : int,
     return_point_cloud : bool = False
@@ -134,7 +134,7 @@ def sample_points_from_polyline(
         return sampled_pts
 
 @allowed_mesh_types(SurfaceMesh)
-def sample_points_from_surface(
+def sample_surface(
     mesh : SurfaceMesh, 
     n_pts : int, 
     return_point_cloud : bool = False, 

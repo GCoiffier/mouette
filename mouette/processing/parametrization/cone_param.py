@@ -34,7 +34,7 @@ class ConformalConeParametrization(BaseParametrization):
         Args:
             mesh (SurfaceMesh): Input mesh
             singularities (Attribute): float Attribute on vertices. Gives the target angle defects of vertices
-            use_cotan (bool, optional): whether to use adjacency weights or cotangents in the laplacian matrix. Defaults to True. 
+            use_cotan (bool, optional): If True, uses cotangents in the laplacian matrix. Defaults to True. 
             verbose (bool, optional): verbose mode. Defaults to False.
             debug (bool, optional) : debug mode. Generates additional output. Defaults to False.
         """

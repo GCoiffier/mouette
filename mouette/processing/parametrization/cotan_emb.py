@@ -78,16 +78,16 @@ class CotanEmbedding(BaseParametrization):
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, uv_init: ArrayAttribute, mode: str = "bfgs", verbose:bool=True, **kwargs):
+    def __init__(self, mesh : SurfaceMesh, uv_init: ArrayAttribute, mode: str = "bfgs", verbose:bool=False, **kwargs):
         """
         Args:
             mesh (SurfaceMesh): the supporting mesh.
             uv_init (ArrayAttribute): array of initial uv-coordinates per vertices. np.array of shape (V,2) or mouette.ArrayAttribute object.
-            verbose (bool, optional): verbose mode. Defaults to True.
+            verbose (bool, optional): verbose mode. Defaults to False.
             mode (str): optimization mode. Either "bfgs" or "alternate". Defaults to "bfgs".
         
         Keyword Args:
-            tutte_if_convex (bool): if the boundary of the shape is convex and mode=="alternate", whether to simply run Tutte's embedding. Defaults to True
+            tutte_if_convex (bool): if True and if the boundary of the shape is convex and mode=="alternate", will simply runs Tutte's embedding. Defaults to True
             solver_verbose (bool): solver verbose mode. Defaults to False.
         """
         kwargs["uv_attr"] = uv_init

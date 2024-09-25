@@ -30,20 +30,20 @@ class BoundaryFirstFlattening(BaseParametrization):
         mesh: SurfaceMesh,
         bnd_scale_fctr : Attribute = None,
         bnd_curvature : Attribute = None,
-        verbose:bool=True, 
+        verbose:bool=False, 
         **kwargs):
         """
         Args:
             mesh (SurfaceMesh): the input surface. Should be a triangulation of a topological disk.
             bnd_scale_fctr (Attribute, optional): Scale factor on the boundary. Ignores values for interior vertices. Defaults to None. If provided, will automatically compute boundary curvature and ignore the `bnd_curvature`a argument.
             bnd_curvature (Attribute, optional): Geodesic curvature on the boundary. Ignores values for interior vertices. Defaults to None. If provided (and no `bnd_scale_fctr` is provided), will automatically compute boundary scale factors.
-            verbose (bool, optional): verbose mode. Defaults to True.
+            verbose (bool, optional): verbose mode. Defaults to False.
         
         Keyword Args:
-            save_on_corners (bool, optional): whether to store the results on face corners or vertices. Defaults to True
-            use_cotan (bool, optional): whether to use cotan Laplacian or connectivity Laplacian. Defaults to True.
-            hilbert_transform (bool, optional): whether to extend the boundary values with the Hilbert transform 
-            (favors conformality instead of boundary preservation) or using harmonic extensions 
+            save_on_corners (bool, optional): if True, stores the results on face corners instead of vertices. Defaults to True
+            use_cotan (bool, optional): if True, uses the cotan Laplacian instead of the connectivity Laplacian. Defaults to True.
+            hilbert_transform (bool, optional): if True, extends the boundary values with the Hilbert transform 
+            (favors conformality instead of boundary preservation) instead of using harmonic extensions 
             (exact boundary but further from truly conformal). Defaults to True.
 
         Raises:

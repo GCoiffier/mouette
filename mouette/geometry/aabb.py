@@ -29,11 +29,11 @@ class AABB:
         return f"AABB | {self._p1} -> {self._p2}"
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         """Dimension of the axis-aligned bounding box
 
         Returns:
-            _type_: _description_
+            int: dimension
         """
         return self._p1.size
 

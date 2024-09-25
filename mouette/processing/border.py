@@ -64,7 +64,7 @@ def extract_border_cycle_all(mesh : SurfaceMesh) -> list:
     return borders
 
 @allowed_mesh_types(SurfaceMesh)
-def extract_curve_boundary(mesh : SurfaceMesh) -> PolyLine :
+def extract_boundary_of_surface(mesh : SurfaceMesh) -> PolyLine :
     """Returns the boundary of a surface mesh as a polyline
 
     Args:
@@ -72,6 +72,7 @@ def extract_curve_boundary(mesh : SurfaceMesh) -> PolyLine :
 
     Returns:
         PolyLine: boundary curves of the mesh
+        dict: maps a vertex id in the boundary to its corresponding id in the original mesh.
     """
     bound = PolyLine()
     visited = Attribute(bool)
@@ -98,7 +99,17 @@ def extract_curve_boundary(mesh : SurfaceMesh) -> PolyLine :
     return bound, map_v2v
 
 @allowed_mesh_types(VolumeMesh)
-def extract_surface_boundary(mesh : VolumeMesh) -> SurfaceMesh :
+def extract_boundary_of_volume(mesh : VolumeMesh) -> SurfaceMesh :
+    """_summary_
+
+    Args:
+        mesh (VolumeMesh): _description_
+
+    Returns:
+        SurfaceMesh: the boundary as a SurfaceMesh
+        dict: maps a vertex id in the boundary to its corresponding id in the original mesh.
+        dict: maps a vertex id from the original mesh to its corresponding id in the boundary mesh.
+    """
     bound = RawMeshData()
     map_m2b = dict() # vertices have a new and different index in the boundary mesh (so that indices are [0, n-1])
     map_b2m = dict() # boundary to mesh

@@ -1,5 +1,5 @@
 ---
-title: "Translation, Rotation, Scale"
+title: "Rigid Transformations"
 ---
 
 ::: mouette.geometry.transform

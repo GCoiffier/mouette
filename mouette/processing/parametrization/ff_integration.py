@@ -30,15 +30,17 @@ class FrameFieldIntegration(BaseParametrization):
         - [2] _QuadCover - Surface Parameterization using Branched Coverings_, Kälberer F., Nieser M. and Polthier K., Computer Graphics Forum, 2007
     """
 
-    def __init__(self, framefield: FrameField, verbose:bool=True, **kwargs):
+    def __init__(self, framefield: FrameField, verbose:bool=False, **kwargs):
         """
         Initializer.
 
         Args:
             framefield (FrameField): the frame field object to integrate.
             singularities (Attribute): float Attribute on vertices. Gives the target angle defects of vertices
-            use_cotan (bool, optional): whether to use adjacency or cotangents as weights in the laplacian matrix. Defaults to True. 
-            verbose (bool, optional): verbose mode. Defaults to True.
+            use_cotan (bool, optional): if True, uses cotangents as weights in the laplacian matrix. Defaults to True. 
+            verbose (bool, optional): verbose mode. Defaults to False.
+
+        Keyword Args:    
             debug (bool, optional) : debug mode. Generates additionnal output. Defaults to False.
         """
         super().__init__("Frame Field Integration", framefield.mesh, verbose, **kwargs)

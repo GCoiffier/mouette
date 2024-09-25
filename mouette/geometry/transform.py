@@ -57,8 +57,6 @@ def scale(mesh : Mesh, factor : float, orig : Vec = None) -> Mesh:
     Returns:
         Mesh: the scaled input mesh.
     """
-    # if abs(factor)<1e-8:
-    #     print("Warning: mesh will be scaled with a very small factor ({})".format(factor))
     if orig is None:
         orig = Vec.zeros(3)
     for i in mesh.id_vertices:
@@ -79,9 +77,6 @@ def scale_xyz(mesh : Mesh, fx : float = 1., fy : float = 1., fz : float = 1., or
     Returns:
         Mesh: the scaled mesh.
     """
-    # for f in (fx,fy,fx):
-    #     if abs(f)<1e-8:
-    #         print(f"[mouette.scale] Mesh will be scaled with a very small factor ({f})")
     if orig is None:
         orig = mesh.vertices[0]
     for i in mesh.id_vertices:
@@ -121,6 +116,7 @@ def flatten(mesh : Mesh, dim : int = None) -> Mesh:
     Parameters:
         mesh (Mesh): input mesh
         dim (int, optional): The dimension to flatten. If None, the function chooses the dimension which has the smallest variance.
+        
     Returns:
         (Mesh): the modified input mesh
     """

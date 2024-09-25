@@ -37,7 +37,9 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
 
     Angle defect is an discrete approximation of the gaussian curvature.
     This function relies on the computation of cotangents on the mesh.
-    WARNING: only works for triangulated meshes
+    
+    Warning: 
+        Only works for triangulated meshes.
 
     Parameters:
         mesh (SurfaceMesh): the mesh

@@ -54,19 +54,19 @@ def test_sample_sphere():
 
 @pytest.mark.parametrize("m", [surf_circle(), surf_pointy()])
 def test_sample_polyline(m):
-    bnd = M.processing.extract_curve_boundary(m)[0]
-    pts = sampling.sample_points_from_polyline(bnd, 100)
+    bnd = M.processing.extract_boundary_of_surface(m)[0]
+    pts = sampling.sample_polyline(bnd, 100)
     assert pts.shape == (100,3)
-    pc = sampling.sample_points_from_polyline(bnd, 100, return_point_cloud=True)
+    pc = sampling.sample_polyline(bnd, 100, return_point_cloud=True)
     assert isinstance(pc, M.mesh.PointCloud)
     assert len(pc.vertices)==100
 
     
 @pytest.mark.parametrize("m", [surf_spline(), surf_half_sphere()])
 def test_sample_surface(m):
-    pts = sampling.sample_points_from_surface(m, 100)
+    pts = sampling.sample_surface(m, 100)
     assert pts.shape == (100,3)
-    pc = sampling.sample_points_from_surface(m, 100, return_point_cloud=True, return_normals=True)
+    pc = sampling.sample_surface(m, 100, return_point_cloud=True, return_normals=True)
     assert isinstance(pc, M.mesh.PointCloud)
     assert len(pc.vertices)==100
     assert pc.vertices.has_attribute("normals")

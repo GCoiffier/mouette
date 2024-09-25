@@ -26,7 +26,7 @@ class ParamDistortion(Worker):
         Args:
             mesh (SurfaceMesh): the supporting mesh
             uv_attr (str, optional): the attribute name that stores the uv-coordinates on face corners. Defaults to "uv_coords".
-            save_on_mesh (bool, optional): whether to store distortion values on the mesh. Defaults to True.
+            save_on_mesh (bool, optional): If True, distortion values will be stored as attributes on the mesh. Defaults to True.
             verbose (bool, optional): verbose mode. Defaults to False.
 
         Raises:

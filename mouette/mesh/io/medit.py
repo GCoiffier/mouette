@@ -1,6 +1,7 @@
 from ..datatypes import *
 from ..mesh_data import RawMeshData
 from collections import deque
+import warnings
 
 def parse_field(data : deque, container, nlines, nelem):
     for _ in range(nlines):
@@ -99,7 +100,7 @@ def export_medit(mesh : RawMeshData, path):
         if hasattr(mesh, "faces") and not mesh.faces.empty():
             nquad, ntri, nother = count_faces(mesh)
             if nother>0:
-                print("[Warning] faces that are not triangle or quad detected.\nExporting as .mesh will result in a loss of data.")
+                warnings.warn("faces that are not triangle or quad detected.\nExporting as .mesh will result in a loss of data.")
 
             # export triangles
             if ntri>0:
@@ -120,7 +121,7 @@ def export_medit(mesh : RawMeshData, path):
         if hasattr(mesh, "cells") and not mesh.cells.empty():
             nhex,ntet, nother = count_cells(mesh)
             if nother>0:
-                print("[Warning] Cells that are not tetrahedron or hexahedron detected.\nExporting as .mesh will result in a loss of data.")
+                warnings.warn("[Cells that are not tetrahedron or hexahedron detected.\nExporting as .mesh will result in a loss of data.")
             
             # export hexahedra
             if nhex>0:

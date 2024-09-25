@@ -44,7 +44,7 @@ class _BaseDataContainer(ABC):
         """
         # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
         if name in self._attr and not config.disable_duplicate_attribute_warning:
-            warnings.warn(f"Warning ! Attribute '{name}' already exists on {self.id}")
+            warnings.warn(f"Attribute '{name}' already exists on {self.id}")
         else:
             if dense:
                 self._attr[name] = ArrayAttribute(data_type, len(self) if size is None else int(size), elem_size=elem_size, default_value=default_value)
@@ -62,7 +62,7 @@ class _BaseDataContainer(ABC):
         """
          # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
         if name in self._attr and not config.disable_duplicate_attribute_warning:
-            warnings.warn(f"Warning ! Attribute '{name}' already exists on {self.id}")
+            warnings.warn(f"Attribute '{name}' already exists on {self.id}")
         else:
             if len(data.shape)==1: 
                 data = data[:,np.newaxis] # change array of size (n,) to size (n,1)

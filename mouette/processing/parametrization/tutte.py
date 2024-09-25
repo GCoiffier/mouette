@@ -42,16 +42,16 @@ class TutteEmbedding(BaseParametrization):
                 return TutteEmbedding.BoundaryMode.CUSTOM
             raise Exception(f"'{s}' does correspond to any boundary mode. Choices are : 'circle', 'square', 'custom'")
 
-    def __init__(self, mesh:SurfaceMesh, boundary_mode:str = "circle", use_cotan:bool=False, verbose:bool=True, **kwargs):
+    def __init__(self, mesh:SurfaceMesh, boundary_mode:str = "circle", use_cotan:bool=False, verbose:bool=False, **kwargs):
         """
         Args:
             mesh (SurfaceMesh): the mesh to embed. Should be a surface with disk topology.
             boundary_mode (str, optional): Shape of the boundary. Possible choices are ["square", "circle"]. Defaults to "circle".
-            use_cotan (bool, optional): whether to use Tutte's original barycentric embedding [1], or use cotangents as weights in the laplacian matrix ([2]). Defaults to False.
-            verbose (bool, optional): verbose mode. Defaults to True.
+            use_cotan (bool, optional): If True, uses cotangents as weights in the Laplacian matrix [2]. Otherwise, use Tutte's original barycentric embedding [1]. Defaults to False.
+            verbose (bool, optional): verbose mode. Defaults to False.
             
         Keyword Args:
-            save_on_corners (bool, optional): whether to store the results on face corners or vertices. Defaults to True
+            save_on_corners (bool, optional): if True, the resulting uv-coordinates will be stored in an attribute on face corners. Otherwise, they are stored in an attribute on vertices. Defaults to True
             custom_boundary (np.ndarray, optionnal): a Nx2 array containing custom coordinates for the boundary vertices (N being the number of boundary vertices). 
             If provided, the boundary_mode argument is ignored. Defaults to None.
         
