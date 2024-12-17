@@ -92,7 +92,7 @@ class EdgeSpanningTree(SpanningTree):
             if p is not None:
                 self.children[p].append(v)
                 self.edges.append( keyify(p,v))
-        super().compute() # sets the 'computed' flag
+        self._computed = True # sets the 'computed' flag
 
     def build_tree_as_polyline(self) -> PolyLine:
         """Builds the tree as a new polyline object. Useful for debug and visualization purposes
@@ -174,7 +174,7 @@ class EdgeMinimalSpanningTree(EdgeSpanningTree):
             self.children[v] = [x for x in neighbours[v] if x != prev]
             for child in self.children[v]:
                 queue.append((child,v))
-        super().compute() # sets the 'computed' flag
+        self._computed = True # sets the 'computed' flag
         
 class EdgeSpanningForest(SpanningForest):
     """A spanning forest that runs on edges. 

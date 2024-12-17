@@ -1,3 +1,5 @@
+from functools import wraps
+
 from .base import Mesh
 from .pointcloud import PointCloud
 from .linear import PolyLine
@@ -18,6 +20,7 @@ def type_to_str(typ):
 
 def allowed_mesh_types(*allowed_types : list):
     def decorator(function):
+        @wraps(function)
         def wrapper(*args, **kwargs):
             for arg in args:
                 if isinstance(arg, Mesh) and type(arg) not in filter(lambda t : issubclass(t,Mesh), allowed_types):
@@ -29,6 +32,7 @@ def allowed_mesh_types(*allowed_types : list):
 
 def forbidden_mesh_types(*forbidden_types : list):
     def decorator(function):
+        @wraps(function)
         def wrapper(*args, **kwargs):
             for arg in args:
                 if isinstance(arg, Mesh) and type(arg) in filter(lambda t : issubclass(t,Mesh), forbidden_types):

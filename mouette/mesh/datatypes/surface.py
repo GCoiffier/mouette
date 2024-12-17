@@ -107,6 +107,8 @@ class SurfaceMesh(Mesh):
 
     def is_triangular(self) -> bool:
         """
+        Checks if the mesh is a triangulation
+
         Returns:
             bool: True if the mesh is triangular (all faces are triangles)
         """
@@ -116,6 +118,8 @@ class SurfaceMesh(Mesh):
 
     def is_quad(self) -> bool:
         """
+        Checks if the mesh is a quadrangulation
+
         Returns:
             bool: True if the mesh is quadrangular (all faces are quad)
         """
@@ -252,7 +256,8 @@ class SurfaceMesh(Mesh):
                 self._face_id[utils.keyify(F)] = iF
 
         def face_id(self, *args) -> int:
-            """ The id of a face
+            """ The identifier of a face.
+            
             Args:
                 int*: integers representing indices of vertices of the face (not necessarily in the correct order)
 
@@ -474,23 +479,36 @@ class SurfaceMesh(Mesh):
                 return None
 
         def edge_to_faces(self, u: int, v: int):
+            """For an edge `(u,v)`, returns the indices of faces that are direct and indirect from `(u,v)`(see `direct_face` method). If one of the faces does not exist, returns a `None` instead of its index.
+
+            Args:
+                u (int): index of first vertex
+                v (int): index of second vertex
+            """
             return self.direct_face(u,v), self.direct_face(v,u)
 
-        def opposite_face(self, u : int, v : int, T : int, return_inds: bool = False):
-            """Given a pair of vertices (u,v) and a face T, returns the face (and local indexes of u and v) on the other side of edge (u,v)
+        def opposite_face(self, u : int, v : int, F : int, return_inds: bool = False):
+            """Returns the index of the face adjacent to edge `(u,v)` that is at the opposite of face `F`. Returns `None` if such a face does not exist, or if `F` is not adjacent to edge `(u,v)`
 
-            if (u,v) are not two vertices of the face T, returns None
+            Args:
+                u (int): index of edge's first vertex
+                v (int): index of edge's second vertex
+                F (int): index of face
+                return_inds (bool, optional): If True, also returns local indices of `u` and `v` in opposite face. If input is invalid, will return `None,None,None` instead of `None`. Defaults to False.
+
+            Returns:
+                int: index of a face
             """
             if return_inds:
-                T1, u1, v1 = self.direct_face(u,v, True)
-                T2, v2, u2 = self.direct_face(v,u, True)
-                if T1==T: return T2,u2,v2
-                if T2==T: return T1,u1,v1
+                F1, u1, v1 = self.direct_face(u,v, True)
+                F2, v2, u2 = self.direct_face(v,u, True)
+                if F1==F: return F2,u2,v2
+                if F2==F: return F1,u1,v1
                 return None,None,None
             else:
-                T1, T2 = self.direct_face(u,v), self.direct_face(v,u)
-                if T==T1: return T2
-                if T==T2: return T1
+                F1, F2 = self.direct_face(u,v), self.direct_face(v,u)
+                if F==F1: return F2
+                if F==F2: return F1
                 return None
 
         def common_edge(self, iF1: int, iF2: int):
@@ -586,7 +604,7 @@ class SurfaceMesh(Mesh):
 
         def face_to_faces(self, F:int) -> list:
             """
-            List of faces that are adjacent to face `F
+            List of faces that are adjacent to face `F`
 
             Args:
                 F (int): face id

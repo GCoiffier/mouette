@@ -16,6 +16,7 @@ def import_xyz(filepath : str) -> RawMeshData:
     with open(filepath, 'r') as f:
         for v in f.readlines():
             data = [float(x) for x in v.strip().split()]
+            if len(data)==1: continue
             obj.vertices.append(data[:3])
             if len(data)>=6:
                 nrmls.append(data[3:6])

@@ -127,7 +127,7 @@ class SingularityCutter(Worker):
             for b in paths_a:
                 path_btw_singus[keyify(a,b)] = paths_a[b]
             if mesh_has_border:
-                path_btw_singus[(BORDER,a)] = shortest_path_to_border(self.input_mesh, a, weights=self.edge_lengths)[0]
+                path_btw_singus[(BORDER,a)] = shortest_path_to_border(self.input_mesh, a, weights=self.edge_lengths)
 
         # Compute path lengths
         def compute_path_length(path): # utility function for readability

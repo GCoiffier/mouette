@@ -319,7 +319,7 @@ def intersect_2lines2D(p1 : Vec, d1 : Vec, p2: Vec, d2 : Vec) -> Vec:
     return p1+t*d1
 
 def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
-    """Circumcenter of the triangle formed by three points in space
+    """Circumcenter of the triangle formed by three points in the plane
 
     Parameters:
         v1 (Vec): first point
@@ -336,8 +336,8 @@ def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
     p2 = (v1+v3)/2
     d1 = v2-v1
     d2 = v3-v1
-    d1 = Vec(d1.y, -d1.x)
-    d2 = Vec(d2.y, -d2.x)
+    d1 = Vec(d1[1], -d1[0])
+    d2 = Vec(d2[1], -d2[0])
     S = intersect_2lines2D(p1, d1, p2, d2)
     return Vec(S.x, S.y, 0.)
 

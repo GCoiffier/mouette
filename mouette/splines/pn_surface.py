@@ -1,15 +1,72 @@
 import numpy as np
 from ..mesh.datatypes import *
-from ..mesh import RawMeshData
+from ..mesh.mesh import from_arrays, merge
+from ..mesh.mesh_data import RawMeshData, DataContainer
 from ..attributes.misc_vertices import vertex_normals
+from ..geometry import Vec
+from .. import utils
+from .bezier import BezierCurve
+
+from abc import ABC, abstractmethod
+
+class _PnTriangulation(ABC):
+    def __init__(self, nodes : np.ndarray, faces : np.ndarray, order: int):
+        self.nodes = DataContainer(nodes, id="nodes")
+        self.faces = DataContainer(faces, id="faces")
+        self._order : int = order
+
+    @classmethod
+    def from_P1_mesh(cls, mesh: SurfaceMesh):
+        return
+    
+    @abstractmethod
+    def rasterize(self, res: int = 10):
+        return
+    
+    @property
+    def id_nodes(self):
+        return range(len(self.nodes))
+    
+    @property
+    def id_faces(self):
+        return range(len(self.nodes))
+
+    @property
+    def dim(self) -> int:
+        return self.nodes.shape[1]
+    
+    @property
+    def order(self) -> int:
+        return self._order
+
+    @property
+    def control_points(self) -> PointCloud:
+        pc_nodes = from_arrays(np.array(self.nodes))
+        for attr_name in self.nodes.attributes:
+            pc_nodes.vertices._attr[attr_name] = self.nodes.get_attribute(attr_name)
+        return pc_nodes
+
+def rasterize_pn_as_polylines(nodes, faces, pattern, res: int = 10):
+    polylines = []
+    visited = set()
+    for F in faces:
+        for E in pattern:
+            EF = [F[e] for e in E]
+            if (k := utils.keyify(EF)) in visited: continue
+            line = BezierCurve([nodes[_i] for _i in EF]).as_polyline(res)
+            polylines.append(line)
+            visited.add(k)
+    return merge(polylines)
+
+###### ORDER 2 ######
 
 def evaluate_P2(A,B,C,AB,BC,CA, u,v):
     l1,l2,l3 = 1-u-v, u, v
     return l1*l1*A + l2*l2*B + l3*l3*C + 2*l1*l2*AB + 2*l2*l3*BC + 2*l1*l3*CA
 
-class P2Triangulation:
+class P2Triangulation(_PnTriangulation):
 
-    def __init__(self, nodes : np.ndarray, faces : np.ndarray):
+    def __init__(self, nodes: np.ndarray, faces: np.ndarray):
         """
         v
         ^
@@ -27,11 +84,35 @@ class P2Triangulation:
             nodes (np.ndarray): array of size V*3 storing nodes' coordinates.
             faces (np.ndarray): array of size F*6 storing face indices of the mesh. Faces are indexes using gmsh convention (see diagram above)
         """
-        self.nodes = nodes
-        self.faces = faces
+        super().__init__(nodes, faces, 2)
+        self.connectivity = P2Triangulation._Connectivity(self)
+
+    @property
+    def node_order(self):
+        if not self.nodes.has_attribute("order"):
+            # Compute node order
+            node_order = self.nodes.create_attribute("order",int, dense=True)
+            for A0,A1,A2,A3,A4,A5 in self.faces:
+                node_order[A0] = 1
+                node_order[A1] = 1
+                node_order[A2] = 1
+                node_order[A3] = 2
+                node_order[A4] = 2
+                node_order[A5] = 2
+        return self.nodes.get_attribute("order")
 
     @classmethod
     def from_P1_mesh(cls, mesh: SurfaceMesh):
+        """Generates an order 2 mesh from a simple (first order) triangular mesh.
+
+        Splits all edges into two and creates flat 2nd order Bezier triangles for each face.
+
+        Args:
+            mesh (SurfaceMesh): input triangle mesh
+
+        Returns:
+            P2Triangulation: a flat order 2 Bezier mesh.
+        """
         nV = len(mesh.vertices)
         V = list(mesh.vertices)
         F = []
@@ -46,16 +127,26 @@ class P2Triangulation:
             F.append((A,B,C, nV+eAB, nV+eBC, nV+eCA))
         return cls(np.array(V),np.array(F))
 
-    def rasterize(self, res:int = 10):
+    def rasterize(self, res:int = 10, only_curves: bool = False):
         """
+        Rasterize a P2 mesh as a P1 mesh for lazy rendering 
+            
         Args:
             V (np.ndarray): Array of vertex positions (size Nx3)
             F (np.ndarray): Array of face indices (size Mx6). Faces are indexed in order (A,B,C,AB,BC,CA)
             res (int, optional): Resolution of each P2 element. Defaults to 10.
+            only_curves (bool, optional): if set to True, will only rasterize edges as Bezier curve and not draw the surface. Defaults to False.
 
         Returns:
-            SurfaceMesh: a surface mesh approximating the P2 mesh
+            SurfaceMesh | Polyline: a mesh approximating the P2 mesh
         """
+        if only_curves:
+            return rasterize_pn_as_polylines(self.nodes, self.faces, [(0,3,1), (1,4,2), (2,5,0)], res)
+        else:
+            return self._rasterize_as_surface(res)
+        
+    
+    def _rasterize_as_surface(self, res=10):
         out = RawMeshData()
 
         def ij_to_p(i,j):
@@ -70,7 +161,10 @@ class P2Triangulation:
             # evaluate vertices
             for i in range(res):
                 for j in range(res-i):
-                    out.vertices.append(evaluate_P2(pA,pB,pC,pAB,pBC,pCA, paramU[i], paramV[j]))
+                    pt = Vec(evaluate_P2(pA,pB,pC,pAB,pBC,pCA, paramU[i], paramV[j]))
+                    if pt.size==2:
+                        pt = Vec(pt.x, pt.y, 0.)
+                    out.vertices.append(pt)
                     
             # add faces
             for i in range(res-1):
@@ -79,7 +173,50 @@ class P2Triangulation:
                     if j<res-2-i:
                         out.faces.append([f_ind+x for x in (ij_to_p(i+1,j), ij_to_p(i+1,j+1), ij_to_p(i,j+1))])
         return SurfaceMesh(out)
-    
+ 
+    class _Connectivity:
+
+        def __init__(self, mesh):
+            self.master = mesh
+            self._connP1 : dict = None
+            self._connP2 : dict = None
+            self._middle : dict = None
+        
+        def _build(self):
+            self._connP1 = dict()
+            self._connP2 = dict()
+            self._middle = dict()
+
+            for A0,A1,A2,A3,A4,A5 in self.master.faces:
+                self._connP1[A0] = self._connP1.get(A0,set()).union({A1,A2})
+                self._connP1[A1] = self._connP1.get(A1,set()).union({A0,A2})
+                self._connP1[A2] = self._connP1.get(A2,set()).union({A0,A1})
+
+                self._middle[utils.keyify(A0,A1)] = A3
+                self._middle[utils.keyify(A1,A2)] = A4
+                self._middle[utils.keyify(A2,A0)] = A5
+                
+                self._connP2[A0] = self._connP2.get(A0, set()).union({A3,A5})
+                self._connP2[A1] = self._connP2.get(A1, set()).union({A3,A4})
+                self._connP2[A2] = self._connP2.get(A2, set()).union({A4,A5})
+                self._connP2[A3] = [A0,A1]
+                self._connP2[A4] = [A1,A2]
+                self._connP2[A5] = [A0,A2]
+
+        def vertex_to_vP1(self,v):
+            if self._connP1 is None: self._build()
+            return self._connP1.get(v, [])
+        
+        def vertex_to_vP2(self,v):
+            if self._connP2 is None: self._build()
+            return self._connP2.get(v,[])
+        
+        def middle_of_edge(self,a,b):
+            if self._middle is None: self._build()
+            return self._middle.get(utils.keyify(a,b),None)
+        
+
+###### ORDER 3 ######
 
 def evaluate_P3(A,B,C,AAB, ABB, BBC, BCC, CCA, CAA, ABC, u,v):
     l1,l2,l3 = 1-u-v, u, v
@@ -89,9 +226,9 @@ def evaluate_P3(A,B,C,AAB, ABB, BBC, BCC, CCA, CAA, ABC, u,v):
     res += 6*l1*l2*l3*ABC
     return res
 
-class P3Triangulation:
+class P3Triangulation(_PnTriangulation):
 
-    def __init__(self, nodes : np.ndarray, faces : np.ndarray):
+    def __init__(self, nodes: np.ndarray, faces: np.ndarray):
         """
         v
         ^
@@ -109,16 +246,22 @@ class P3Triangulation:
             nodes (np.ndarray): array of size V*3 storing nodes' coordinates.
             faces (np.ndarray): array of size F*10 storing face indices of the mesh. Faces are indexes using gmsh convention (see diagram above)
         """
-        self.nodes = nodes
-        self.faces = faces
+        super().__init__(nodes, faces, 3)
 
     
     @classmethod
     def from_P1_mesh(cls, mesh: SurfaceMesh, curve: bool = True):
-        """_summary_
-        
+        """Generates an order 3 mesh from a simple (first order) triangular mesh.
+
+        Args:
+            mesh (SurfaceMesh): input triangular mesh (order 1)
+            curve (bool, optional): if True, will apply algorithm from [1] to smooth the surface. Otherwise, will simply keep faces flat. Defaults to True.
+
         References:
             [1] Curved PN triangles, Vlachos et al. (2001)
+
+        Returns:
+            P3Triangulation: An order 3 Bezier triangulation
         """
                 
         V = [p for p in mesh.vertices]
@@ -169,16 +312,23 @@ class P3Triangulation:
             V[iABC] = e + (e-b)/2 
         return cls(V,F)
 
-    def rasterize(self, res:int = 10):
+    def rasterize(self, res: int = 10, only_curves: bool = False):
         """
         Args:
             V (np.ndarray): Array of vertex positions (size Nx3)
             F (np.ndarray): Array of face indices (size Mx10)
             res (int, optional): Resolution of each P3 element. Defaults to 10.
-
+            only_curves (bool, optional): if set to True, will only rasterize edges as Bezier curve and not draw the surface. Defaults to False.
+            
         Returns:
-            SurfaceMesh: a surface mesh approximating the P3 mesh
+            SurfaceMesh | Polyline: a mesh approximating the P3 mesh
         """
+        if only_curves:
+            return rasterize_pn_as_polylines(self.nodes, self.faces, [(0,3,4,1), (1,5,6,2), (2,7,8,0)], res)
+        else:
+            return self._rasterize_as_surface(res)
+
+    def _rasterize_as_surface(self, res: int = 10):
         out = RawMeshData()
 
         def ij_to_p(i,j):

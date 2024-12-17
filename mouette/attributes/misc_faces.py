@@ -109,6 +109,7 @@ def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=T
         if len(F)!=3:
             raise Exception("circumcenters can be computed only for triangular faces. Received face n°{} containing {}!=3 vertices".format(iF,len(F)))
         circum[iF] = geom.circumcenter(*(mesh.vertices[u] for u in F))
+    return circum
 
 @allowed_mesh_types(SurfaceMesh)
 def faces_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", persistent:bool = True, dense:bool = False) -> Attribute:

@@ -76,7 +76,8 @@ class PolyLine(Mesh):
 
         def edge_id(self, V1:int, V2:int)->int:
             """
-            id of an edge. If `self.edges[i]` contains edges `(A,B)`, then `edge_id(A,B)=edge_id(B,A)=i`
+            Identifier of an edge. If `self.edges[i]` contains edges `(A,B)`, then `edge_id(A,B)=edge_id(B,A)=i`
+            
             If (A,B) is not a valid edge of the mesh, returns `None`
 
             Args:
@@ -94,6 +95,7 @@ class PolyLine(Mesh):
         def other_edge_end(self, E:int, V:int) -> int:
             """
             Vertex at the opposite end of edge `E` from vertex `V`.
+            
             Returns `None` if `V` is not adjacent to edge `E`
 
             Args:
@@ -144,6 +146,9 @@ class PolyLine(Mesh):
 
             Args:
                 E (int): edge index
+
+            Note:
+                Equivalent to `mesh.edges[E]`
 
             Returns:
                 list: two vertex indices

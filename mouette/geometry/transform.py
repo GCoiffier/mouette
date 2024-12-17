@@ -24,7 +24,7 @@ def rotate(mesh : Mesh, rot : Rotation, orig : Vec = None) -> Mesh:
 
     Parameters:
         mesh (Mesh): the input mesh. Can be any mesh data structure
-        rot (scipy.spatial.transform.Rotation): The rotation
+        rot (scipy.spatial.transform.Rotation|list): The rotation, given as an object or 3 Euler angles
         orig (Vec, optional): The origin of the rotation. If not provided, the function rotates around (0,0,0). Defaults to None.
 
     Returns:
