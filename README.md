@@ -40,7 +40,7 @@ Attributes can store booleans, integers, floating-point numbers, complex numbers
 
 ```python
 
-ff = M.processing.framefield.FrameField2DVertices(mesh)
+ff = framefield.SurfaceFrameField(mesh, "vertices", order=4, verbose=True)
 ff.run()
 ffmesh = ff.export_as_mesh()
 M.mesh.save(ffmesh, "framefield.mesh")
