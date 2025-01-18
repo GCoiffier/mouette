@@ -7,7 +7,7 @@ weight: 2
 
 :::mouette.operators.adjacency
     options:
-        heading_level: 2
+        heading_level: 3
         filters:
             - "!PointCloud"
             - "!PolyLine"
@@ -30,7 +30,7 @@ weight: 2
             - gradient
 
 
-## Laplacian operator
+## Laplacian operators
 [https://en.wikipedia.org/wiki/Discrete_Laplace_operator#Mesh_Laplacians](https://en.wikipedia.org/wiki/Discrete_Laplace_operator#Mesh_Laplacians)
 
 We refer to [this course](https://www.cs.cmu.edu/~kmcrane/Projects/Other/SwissArmyLaplacian.pdf) for a great overview of the Laplacian operator and its use in geometry processing.
@@ -55,9 +55,13 @@ for _ in range(10):
 :::mouette.operators.laplacian_op
     options:
         heading_level: 3
-        filters:
-            - "!PointCloud"
-            - "!PolyLine"
-            - "!SurfaceMesh"
-            - "!VolumeMesh"
-            - "!check_argument"
+        members:
+            - graph_laplacian
+            - laplacian
+            - laplacian_triangles
+            - volume_laplacian
+            - laplacian_tetrahedra
+            - area_weight_matrix
+            - cotan_edge_diagonal
+            - area_weight_matrix_faces
+            - volume_weight_matrix
