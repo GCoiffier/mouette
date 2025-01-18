@@ -20,3 +20,7 @@ M.mesh.save(surface, "path/to/my/new/mesh.obj")
 ```
 
 ::: mouette.mesh.subdivision
+    options:
+        members:
+            - split_edge
+            - SurfaceSubdivision

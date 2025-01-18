@@ -27,13 +27,25 @@ class TutteEmbedding(BaseParametrization):
     class BoundaryMode(Enum):
         """
         Enum that represents the shape of the boundary curve.
+
+        Attributes:
+            CIRCLE (int): 0
+            SQUARE (int): 1
+            CUSTOM (int): 2
         """
+        
         CIRCLE = 0
         SQUARE = 1
         CUSTOM = 2
 
         @staticmethod
         def from_string(s :str):
+            """
+            Initializes the value of the enum from the corresponding string
+            
+            Raises:
+                Exception: fails if the string does not correspond to a valid mode
+            """
             if "circle" in s.lower():
                 return TutteEmbedding.BoundaryMode.CIRCLE
             if "square" in s.lower():
@@ -54,7 +66,11 @@ class TutteEmbedding(BaseParametrization):
             save_on_corners (bool, optional): if True, the resulting uv-coordinates will be stored in an attribute on face corners. Otherwise, they are stored in an attribute on vertices. Defaults to True
             custom_boundary (np.ndarray, optionnal): a Nx2 array containing custom coordinates for the boundary vertices (N being the number of boundary vertices). 
             If provided, the boundary_mode argument is ignored. Defaults to None.
-        
+
+        Attributes:
+            uvs (Attribute): an attribute containing the uv-coordinates of the parametrization
+            save_on_corners (bool): whether the coordinates are saved as a vertex attribute or a face_corner attribute
+
         Raises:
             InvalidArgumentValueError : if 'boundary_mode' is not "square" or "circle".
         """
@@ -68,6 +84,11 @@ class TutteEmbedding(BaseParametrization):
             self._bnd_mode = TutteEmbedding.BoundaryMode.CUSTOM
 
     def run(self) :
+        """Computes the parametrization. Result is stored in the `uvs` attribute
+
+        Raises:
+            Exception: fails if the mesh is not a topological disk
+        """
         if euler_characteristic(self.mesh)!=1:
             raise Exception("Mesh is not a topological disk. Cannot run parametrization.")
         

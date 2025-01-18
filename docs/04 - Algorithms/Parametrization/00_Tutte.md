@@ -14,4 +14,15 @@ M.mesh.save(tutte.flat_mesh, "tutte_flat.obj")
 
 See [https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/tutte.py](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/tutte.py)
 
-:::mouette.processing.parametrization.tutte
+## TutteEmbedding
+
+:::mouette.processing.parametrization.tutte.TutteEmbedding
+    options:
+        heading_level: 3
+        filters:
+        - "!PointCloud"
+        - "!PolyLine"
+        - "!SurfaceMesh"
+        - "!VolumeMesh"
+        - "!check_argument"
+        - "!BoundaryMode"

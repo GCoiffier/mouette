@@ -249,6 +249,11 @@ class QuadQuality(Worker):
         self._det : ArrayAttribute = None
 
     def run(self):
+        """Runs the distortion computation
+
+        Raises:
+            Exception: fails if the mesh is not a quadmesh
+        """
         if not ({len(f) for f in self.mesh.faces} == {4}) :
             raise Exception("Mesh is not quad")
 

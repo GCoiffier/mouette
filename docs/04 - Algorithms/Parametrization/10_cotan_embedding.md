@@ -4,27 +4,6 @@ title: "Cotan Embedding"
 
 Given a triangulation $M=(V,T)$ of a disk-topology object and some initial $uv$-coordinates on the vertices of $M$, this method optimizes the $uv$-coordinates under fixed boundary so that no triangle is inverted in the final $uv$-mapping.
 
-#### References
-- [1] _Embedding a triangular graph within a given boundary_, Yin Xu, Renjie Chen, Craig Gotsman and Ligang Liu, Computer Aided Geometric Design (2011)
-- [2] [_Global Parametrization Algorithms for Quadmeshing_](https://hal.univ-lorraine.fr/tel-04346473v1), Guillaume Coiffier, PhD Manuscript (Chapter 3)
-
-#### Usage
-
-```python
-import mouette as M
-
-emb = M.parametrization.CotanEmbedding(mesh, uv_attributes, mode="bfgs")()
-```
-or, alternatively:
-```
-emb = M.parametrization.CotanEmbedding(mesh, uv_attributes, mode="bfgs")
-emb.run()
-```
-
-See [this script](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/cotan_embedding.py) for a full example.
-
-## Method
-
 <figure markdown>
   ![Triangle $T=(i,j,k)$ with angles $\alpha$ notations](../../_img/cotan_notations.jpeg){ width="300" }
   <figcaption>Notations for triangle $T=(i,j,k)$</figcaption>
@@ -83,5 +62,33 @@ This approach is more stable and provides good results in more cases, but the fi
   <figcaption>Final result with iterative Tutte approach</figcaption>
 </figure>
 
+#### References
+- [1] _Embedding a triangular graph within a given boundary_, Yin Xu, Renjie Chen, Craig Gotsman and Ligang Liu, Computer Aided Geometric Design (2011)
+- [2] _[Global Parametrization Algorithms for Quadmeshing](https://hal.univ-lorraine.fr/tel-04346473v1)_, Guillaume Coiffier, PhD Manuscript (Chapter 3)
+
+#### Usage
+
+```python
+import mouette as M
+
+emb = M.parametrization.CotanEmbedding(mesh, uv_attributes, mode="bfgs")()
+```
+or, alternatively:
+
+```python
+emb = M.parametrization.CotanEmbedding(mesh, uv_attributes, mode="bfgs")
+emb.run()
+```
+
+See [this script](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/cotan_embedding.py) for a full example.
+
 
 :::mouette.processing.parametrization.cotan_emb
+    options:
+        heading_level: 2
+        filters:
+            - "!PointCloud"
+            - "!PolyLine"
+            - "!SurfaceMesh"
+            - "!VolumeMesh"
+            - "!check_argument"

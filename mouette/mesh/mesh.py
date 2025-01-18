@@ -120,14 +120,14 @@ def from_arrays(
     n_vert = V.shape[0]
     m.vertices += list(V)
     if E is not None:
-        if np.any(E>=n_vert): raise Exception("Edges indices should be between 0 and n_vertices")
+        if np.any(np.asarray(E)>=n_vert): raise Exception("Edges indices should be between 0 and n_vertices")
         if E.shape[1]!=2: raise Exception("Edge array should have shape (n,2)")
         m.edges += list(E)
     if F is not None:
-        if np.any(F>=n_vert): raise Exception("Face indices should be between 0 and n_vertices")
+        if np.any(np.asarray(F)>=n_vert): raise Exception("Face indices should be between 0 and n_vertices")
         m.faces += list(F)
     if C is not None:
-        if np.any(C>=n_vert): raise Exception("Cell indices should be between 0 and n_vertices")
+        if np.any(np.asarray(C)>=n_vert): raise Exception("Cell indices should be between 0 and n_vertices")
         m.cells += list(C)
     if raw: return m
     return _instanciate_raw_mesh_data(m)

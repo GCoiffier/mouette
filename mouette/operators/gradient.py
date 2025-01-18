@@ -14,6 +14,9 @@ def gradient(mesh: SurfaceMesh, conn: SurfaceConnectionFaces = None, as_complex:
 
     Gf maps to each face of the mesh either a vector of $\mathbb{R}^2$ or a complex number representing the gradient vector inside this face in local base.
 
+
+    See [https://github.com/GCoiffier/mouette/blob/main/examples/gradient.py](https://github.com/GCoiffier/mouette/blob/main/examples/gradient.py)
+
     Args:
         mesh (SurfaceMesh): The input mesh
         conn (SurfaceConnectionFaces, optional): Connection objects specifying local bases of faces. Will be computed if not provided. Defaults to None.

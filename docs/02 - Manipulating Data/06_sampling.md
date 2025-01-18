@@ -1,10 +1,10 @@
 ---
-title: "Attribute Interpolation"
+title: "Point Sampling"
 ---
 
-:::mouette.attributes.interpolate
+::: mouette.sampling
     options:
-        filters:
+      filters:
         - "!PointCloud"
         - "!PolyLine"
         - "!SurfaceMesh"

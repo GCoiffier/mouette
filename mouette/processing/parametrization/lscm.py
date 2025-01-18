@@ -33,6 +33,11 @@ class LSCM(BaseParametrization):
             eigen (bool, optional): whether to solve a linear system with two fixed points or use an eigen solver. Defaults to True
             save_on_corners (bool, optional): whether to store the results on face corners or vertices. Defaults to True
             solver_verbose (bool, optional): verbose level. Defaults to False.
+
+        Attributes:
+            uvs (Attribute): an attribute containing the uv-coordinates of the parametrization
+            save_on_corners (bool): whether the coordinates are saved as a vertex attribute or a face_corner attribute
+            residual (float): the least-square residual
         """
         super().__init__("LSCM", mesh, verbose=verbose, **kwargs)
         self.residual : float = None # Final value of LSCM energy (residual of least square)

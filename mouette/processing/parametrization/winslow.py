@@ -159,12 +159,16 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         Keyword Args:
             stop_if_positive (bool, optional): whether to stop the optimization as soon as all determinants are positive. Defaults to False.
             solver_verbose (bool, optional): Verbose tag for the L-BFGS solver. Defaults to False.
+
+        Attributes:
+            uvs (Attribute): an attribute containing the uv-coordinates of the parametrization
         """
         super().__init__("Winslow", mesh, verbose=verbose, uv_attr=uv_init, **kwargs)
         self._save_on_corners = False
         self._solver_verbose = kwargs.get("solver_verbose", False)
         self.lmbd = kwargs.get("lmbd", 1.)
         self.stop_if_pos = kwargs.get("stop_if_positive", False)
+        self.ref_jacs = kwargs.get("ref_jacs", None)
         
     def run(self):
         """
@@ -178,7 +182,10 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         if not self.mesh.is_triangular():
             raise Exception("Mesh is not triangular.")
 
-        ref_jacs = np.array([[[1.,0.], [0.,1.]] for _ in self.mesh.id_faces]) # reference element
+        if self.ref_jacs is not None:
+            ref_jacs = np.asarray(self.ref_jacs)
+        else:
+            ref_jacs = np.array([[[1.,0.], [0.,1.]] for _ in self.mesh.id_faces]) # reference element
         source_area = sum([geom.triangle_area_2D(self.uvs[A], self.uvs[B], self.uvs[C]) for (A,B,C) in self.mesh.faces])        
         scale = np.sqrt(len(self.mesh.faces)/source_area)
 

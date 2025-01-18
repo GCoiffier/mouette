@@ -46,6 +46,9 @@ class BoundaryFirstFlattening(BaseParametrization):
             (favors conformality instead of boundary preservation) instead of using harmonic extensions 
             (exact boundary but further from truly conformal). Defaults to True.
 
+        Attributes:
+            uvs (Attribute): an attribute containing the uv-coordinates of the parametrization
+
         Raises:
             Exception: if the mesh is not the triangulation of a topological disk
 

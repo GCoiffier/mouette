@@ -1,10 +1,10 @@
 ---
-title: "Attribute Interpolation"
+title: "Rigid Transformations"
 ---
 
-:::mouette.attributes.interpolate
+::: mouette.geometry.transform
     options:
-        filters:
+      filters:
         - "!PointCloud"
         - "!PolyLine"
         - "!SurfaceMesh"
