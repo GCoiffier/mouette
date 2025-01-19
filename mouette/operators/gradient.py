@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.sparse as sp
-import cmath
 
 from ..geometry import *
 from ..processing.connection import SurfaceConnectionFaces

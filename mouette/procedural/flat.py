@@ -5,7 +5,7 @@ from ..mesh.datatypes import *
 from ..mesh.mesh import _instanciate_raw_mesh_data
 from ..mesh.mesh_data import RawMeshData
 
-def triangle(P0: Vec, P1: Vec, P2: Vec):
+def triangle(P0: Vec, P1: Vec, P2: Vec) -> SurfaceMesh:
     """Generates a triangle from three vertices
 
     Args:
@@ -19,13 +19,15 @@ def triangle(P0: Vec, P1: Vec, P2: Vec):
     out.faces.append((0,1,2))
     return _instanciate_raw_mesh_data(out, 2)
 
-def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False):
+def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False) -> SurfaceMesh:
     """Generates a quad from three vertices
-
+    
+    ```
        P1-------
       /        /
      /        / 
     P0-------P2  
+    ```
 
     Args:
         P0,P1,P2 (Vec): coordinates of corners. The fourth point is deduced as P2 + P1 - 2*P0
@@ -45,7 +47,18 @@ def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False):
         out.faces += [(0,1,2,3)]
     return _instanciate_raw_mesh_data(out,2)
 
-def unit_grid(nu: int, nv: int, triangulate: bool = False, generate_uvs: bool=False):
+def unit_grid(nu: int, nv: int, triangulate: bool = False, generate_uvs: bool=False) -> SurfaceMesh:
+    """Generates a subdivided regular unit grid
+
+    Args:
+        nu (int): number of subdivisions on the horizontal axis
+        nv (int): number of subdivisions on the vertical axis
+        triangulate (bool, optional): whether to split quads into two triangles. Defaults to False.
+        generate_uvs (bool, optional): whether to generate uv-coordinates. Defaults to False.
+
+    Returns:
+        SurfaceMesh: a subdivided unit grid of size nu*nv
+    """
     out = RawMeshData()
     U = np.linspace(0,1,nu)
     V = np.linspace(0,1,nv)
@@ -66,7 +79,17 @@ def unit_grid(nu: int, nv: int, triangulate: bool = False, generate_uvs: bool=Fa
     return _instanciate_raw_mesh_data(out, 2)
 
 
-def unit_triangle(nu,nv, generate_uvs=False):
+def unit_triangle(nu:int, nv:int, generate_uvs:bool=False) -> SurfaceMesh:
+    """Generate a subdivided unit right triangle (half of a unit grid)
+
+    Args:
+        nu (int): number of subdivisions on the horizontal axis
+        nv (int): number of subdivisions on the vertical axis
+        generate_uvs (bool, optional): whether to generate uv-coordinates. Defaults to False.
+
+    Returns
+        SurfaceMesh: a subdivided unit triangle
+    """
     out = RawMeshData()
     U = np.linspace(0,1,nu)
     V = np.linspace(1,0,nv)

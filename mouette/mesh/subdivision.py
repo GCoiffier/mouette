@@ -7,14 +7,29 @@ from ..utils import keyify, Logger
 ### Polyline Subdivision ###
 
 @allowed_mesh_types(PolyLine)
-def split_edge(mesh : PolyLine, n : int) -> PolyLine:
-    A,B = mesh.edges[n]
-    C = len(mesh.vertices)
-    pC = (mesh.vertices[A]+mesh.vertices[B])/2
-    mesh.vertices.append(pC)
-    mesh.edges[n] += keyify(A,C)
-    mesh.edges.append(keyify(B,C))
-    return mesh
+def split_edge(polyline : PolyLine, edge_ind: int) -> PolyLine:
+    """Split an edge of a polyline in half by adding a new vertex
+
+    Note:
+        Polylines do not need a specific subdivision class to be used in a `with` block since their connectivity is simpler. 
+        Connectivity is cleared after processing.
+
+    Args:
+        mesh (PolyLine): the input polyline
+        edge_ind (int): index of the edge to split
+
+    Returns:
+        PolyLine: the processed Polyline
+    """
+    A,B = polyline.edges[edge_ind]
+    C = len(polyline.vertices)
+    pC = (polyline.vertices[A]+polyline.vertices[B])/2
+    polyline.vertices.append(pC)
+    polyline.edges[edge_ind] += keyify(A,C)
+    polyline.edges.append(keyify(B,C))
+    polyline.connectivity.clear()
+    return polyline
+
 
 ### Surface Subdivision ###
 
@@ -77,10 +92,13 @@ class SurfaceSubdivision(Logger):
             if len(self.mesh.faces[f])!= 3 :
                 self.triangulate_face(f)
 
-    def subdivide_triangles(self, n: int = 1) -> SurfaceMesh:
+    def loop_subdivision(self, n: int = 1):
         """Subdivides triangles of a mesh in 4 triangles by splitting along middle of edges.
             If the mesh is not triangulated, will triangulate the mesh first.
 
+        References:
+            [https://en.wikipedia.org/wiki/Loop_subdivision_surface](https://en.wikipedia.org/wiki/Loop_subdivision_surface)
+        
         Parameters:
             n (int, optional): Number of times the subdivision is applied. Defaults to 1.
         """
@@ -96,6 +114,7 @@ class SurfaceSubdivision(Logger):
                 pC = (self.mesh.vertices[A] + self.mesh.vertices[B])/2
                 newMeshData.vertices.append(pC)
                 half[keyify(A,B)]=C
+            new_edges = set()
             for f in self.mesh.id_faces:
                 A,B,C = self.mesh.faces[f]
                 mAB = half[keyify(A,B)]
@@ -111,20 +130,24 @@ class SurfaceSubdivision(Logger):
                 for new_edge in [
                     (A,mAB),(mAB,B),(B,mBC),(mBC,C),(C,mCA),(mCA,A), (mAB,mBC),(mBC,mCA),(mCA,mAB)
                 ]:
-                    newMeshData.edges.append(keyify(new_edge))
+                    new_edges.add(keyify(new_edge))
+            
+            newMeshData.edges += list(new_edges)
             self.mesh = newMeshData
 
     @allowed_mesh_types(SurfaceMesh)
     def subdivide_triangles_6(self, repeat: int = 1) -> SurfaceMesh:
         """Subdivides triangles of a mesh in 6 triangles by adding a point at the barycenter and three middles of edges.
             If the mesh is not triangulated, will triangulate the mesh first.
+            
+            Same operation as subdividing into 3 quads and then splitting the quads along the corner-barycenter diagonal.
 
         Parameters:
             repeat (int, optional): number of successive subdivisions. Eventual first triangulation does not count. Defaults to 1.
         """
         for _ in range(repeat):
             self.subdivide_triangles_3quads()
-        self.triangulate()
+            self.triangulate()
 
     @allowed_mesh_types(SurfaceMesh)
     def subdivide_triangles_3quads(self) -> SurfaceMesh:
@@ -163,6 +186,49 @@ class SurfaceSubdivision(Logger):
             ]:
                 newMeshData.faces.append(new_face)
         self.mesh = newMeshData
+
+@allowed_mesh_types(SurfaceMesh)
+def split_double_boundary_edges_triangles(mesh : SurfaceMesh) -> SurfaceMesh:
+    """
+    A triangle with double edge on the boundary can occur on the border in a case like :
+
+    ```
+        /\\ 
+    ___/__\\___
+    ```
+
+    This function detects every occurrences of such a configuration and split the problematic
+    triangle in three by adding a new vertex in the middle. Uses the SurfaceSubdivision class.
+
+    Parameters:
+        mesh (Mesh): the mesh (modified in place)
+
+    Raises:
+        Exception: Isolated vertex
+        Raised when a vertex of the mesh has degree < 2, which mean that the mesh is not manifold
+
+    Returns:
+        SurfaceMesh: the modified input mesh
+    """
+        
+    deg = [0]*len(mesh.vertices)
+    for (a,b) in mesh.edges:
+        deg[a] += 1
+        deg[b] += 1
+
+    pb_faces = []
+    for i,f in enumerate(mesh.faces):
+        for v in f:
+            if deg[v]<2: 
+                raise Exception("Isolated vertex")
+            if deg[v]==2:
+                pb_faces.append(i)
+                break
+    if pb_faces:
+        with SurfaceSubdivision(mesh) as subdv:
+            for f in pb_faces: # Triangulate face with a vertex in the middle
+                subdv.split_face_as_fan(f)
+    return mesh
 
 ### Volume Subdivision ###
 

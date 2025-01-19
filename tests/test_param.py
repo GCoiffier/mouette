@@ -1,3 +1,4 @@
+import mouette as M
 from mouette.processing import parametrization as PARAM
 from utils import *
 from data import *
@@ -95,3 +96,10 @@ def test_quad_quality(m):
     # check summary
     for key in ("conformal", "det", "scale", "stretch"):
         assert key in disto.summary
+
+
+@pytest.mark.parametrize("m", [M.procedural.icosphere(3), M.procedural.torus(triangulate=True)])
+def test_ff_integration(m):
+    ff = M.framefield.SurfaceFrameField(m, "faces")
+    ff_param = M.parametrization.FrameFieldIntegration(ff, verbose=False)
+    ff_param.run()

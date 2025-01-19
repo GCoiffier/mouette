@@ -19,7 +19,6 @@ import scipy.sparse as sp
 
 class ConformalConeParametrization(BaseParametrization):
     """
-    Conformal cone parametrization. 
     Given a user-defined cone distribution on the surface, this algorithm cuts an input surface mesh into 
     a disk topology and parametrize it using conformal mapping
 
@@ -29,7 +28,7 @@ class ConformalConeParametrization(BaseParametrization):
         - [2] _Boundary first flattening_, Sawhney R. and Crane K., ACM Transaction on Graphics, 2018
     """
 
-    def __init__(self, mesh:SurfaceMesh, singularities: Attribute, verbose:bool=False, **kwargs):
+    def __init__(self, mesh:SurfaceMesh, cones: Attribute, verbose:bool=False, **kwargs):
         """
         Args:
             mesh (SurfaceMesh): Input mesh
@@ -42,9 +41,9 @@ class ConformalConeParametrization(BaseParametrization):
         self._use_cotan = kwargs.get("use_cotan", True)
         self._debug = kwargs.get("debug", False)
         self.save_on_corners = True
-        assert singularities.elemsize == 1
-        assert singularities.type == Attribute.Type.Float
-        self._singus : Attribute = singularities
+        assert cones.elemsize == 1
+        assert cones.type == Attribute.Type.Float
+        self._singus : Attribute = cones
 
         self._scale_factor : np.ndarray = None
         self._frames : np.ndarray = None
@@ -56,6 +55,10 @@ class ConformalConeParametrization(BaseParametrization):
         return
 
     def run(self) :
+        """
+        Computes the parametrization
+        """
+
         self.log("Perform cuts between cones")
         ## Define a cut mesh along the shortest path towards the boundary
         self._cutter = SingularityCutter(self.mesh, self._singus)
@@ -157,6 +160,7 @@ class ConformalConeParametrization(BaseParametrization):
 
     @property
     def frame_field(self) -> PolyLine:
+        """Local frames of reference rendered as a polyline"""
         FFmesh = PolyLine()
         L = attributes.mean_edge_length(self.mesh)/3
         for id_face, face in enumerate(self.mesh.faces):
@@ -173,10 +177,20 @@ class ConformalConeParametrization(BaseParametrization):
 
     @property
     def cut_mesh(self) -> SurfaceMesh:
+        """The mesh where seams have been disconnected and are now boundary edges
+
+        Returns:
+            SurfaceMesh: the mesh where seams have been disconnected
+        """
         return self._cutter.output_mesh
 
     @property
     def cut_graph(self) -> PolyLine:
+        """The seams returned as a polyline
+
+        Returns:
+            PolyLine: seams
+        """
         return self._cutter.cut_graph
 
     @property

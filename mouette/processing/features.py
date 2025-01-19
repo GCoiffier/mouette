@@ -3,30 +3,22 @@ from .worker import Worker
 from ..mesh.mesh_attributes import Attribute
 from ..mesh.datatypes import *
 from ..mesh.mesh_data import RawMeshData
-from .border import extract_border_cycle_all
 from .. import geometry
-from ..utils import maths
 from ..attributes.misc_faces import face_normals
 from ..attributes.misc_corners import corner_angles
 from math import pi
 
 class FeatureEdgeDetector(Worker):
     """
-    Worker used to detect features on a surface mesh.
+    Worker used to detect features on a surface mesh. Feature edges are of three types:
+    
+    - Marked edges from the input file (reading the "hard_edges" attribute on edges)
+    
+    - Boundary edges
+    
+    - Edges such that their dihedral angle is large (crease edges)
 
-    Usage :
-    ```
-    fed = FeatureEdgeDetector([options])
-    fed.run(mesh)
-    ```
-
-    or
-
-    ```
-    fed = FeatureEdgeDetector([options])(mesh) # directly calls detect
-    ```
-
-    This fills the various containers
+    The `FeatureEdgeDetector` object ican be given as a parameter in parametrization or frame field algorithms that need feature edge alignment.
     """
 
     def __init__(self, only_border : bool = False, flag_corners=True, corner_order:int = 4, compute_feature_graph=True, verbose=True):
@@ -34,10 +26,18 @@ class FeatureEdgeDetector(Worker):
         Parameters:
             only_border (bool, optional): If set to True, will only consider border edges as features. Defaults to False.
             flag_corners (bool, optional): If set to True, will also compute a goal angle defect (multiple of pi/2) of each detected vertices. Defaults to True.
+            corner_order (int, optional): For corner detection, considers corners of angle defect 2pi/corner_order. Defaults to 4 (corners of pi/2).
             compute_feature_graph (bool, optional): whether to compute a Polyline object representing the feature graph. For debug and visualization purposes. Defaults to True.
             verbose (bool, optional): Verbose mode. Defaults to True.
+        
+        Attributes:
+            feature_vertices (set): indices of the vertices that are adjacent to at least one feature edge
+            feature_edges (set): indices of feature edges
+            feature_degree (Attribute): number of feature edges each vertex is adjacent to
+            local_feat_edges (dict): features edges in the neighborhood of each vertex (in the order of `mesh.connectivity.vertex_to_edges`)
+            corners (Attribute): the order of each detected vertex corners
         """
-        self.feature_graph : PolyLine = None
+        self._feature_graph : PolyLine = None
         self.only_border: bool = only_border # whether to ignore every feature edge that is not a boundary
         self.flag_corners: bool = flag_corners # whether to also flag the angle value of each feature vertex
         self.corner_order: int = corner_order
@@ -57,27 +57,36 @@ class FeatureEdgeDetector(Worker):
         super().__init__("FeatureDetector", verbose)
 
     def clear(self):
-        # Following data structures will be filled
+        """Clears the data structures"""
         self.feature_vertices = set()
         self.feature_edges = set()
         self.feature_degrees = Attribute(int)
         self.local_feat_edges = dict() # vertex -> list of local indices of edges that are feature edges
 
+
+
 ##### Feature Graph #####
+
+    @property
+    def feature_graph(self) -> PolyLine:
+        """the feature edges as a polyline object"""
+        if self._feature_graph is None:
+            self._compute_feature_graph()
+        return self._feature_graph
 
     def _compute_feature_graph(self, mesh: SurfaceMesh):
         """Computes self._feature_mesh"""
-        self.feature_graph = RawMeshData()
+        self._feature_graph = RawMeshData()
         fvert = list(self.feature_vertices)
         fvert = dict([(fvert[i],i) for i in range(len(self.feature_vertices))])
-        degree_attr = self.feature_graph.vertices.create_attribute("degree", int)
-        self.feature_graph.vertices += [mesh.vertices[k] for k in fvert.keys()]
+        degree_attr = self._feature_graph.vertices.create_attribute("degree", int)
+        self._feature_graph.vertices += [mesh.vertices[k] for k in fvert.keys()]
         for v in self.feature_vertices:
             degree_attr[fvert[v]] = self.feature_degrees[v]
         for e in self.feature_edges:
             A, B = mesh.edges[e]
-            self.feature_graph.edges.append((fvert[A],fvert[B]))
-        self.feature_graph = PolyLine(self.feature_graph)
+            self._feature_graph.edges.append((fvert[A],fvert[B]))
+        self._feature_graph = PolyLine(self._feature_graph)
  
 ##### Feature detection subfunctions #####
 
@@ -197,7 +206,7 @@ class FeatureEdgeDetector(Worker):
             self.log("Flag corners")
             self._flag_corners(mesh)
 
-        if self._compute_feature_graph:
+        if self.compute_feature_graph:
             self.log("Compute feature graph")
             self._compute_feature_graph(mesh)
 
@@ -205,3 +214,12 @@ class FeatureEdgeDetector(Worker):
 
         for v in self.feature_vertices: feat_v[v] = True
         self.log(f" # Feature vertices: {len(self.feature_vertices)}")
+
+
+    def detect(self, mesh : SurfaceMesh):
+        """Runs the detection on a provided mesh.
+
+        Args:
+            mesh (SurfaceMesh): the input mesh
+        """
+        self.run(mesh)

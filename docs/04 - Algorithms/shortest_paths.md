@@ -1,5 +1,6 @@
 ---
 title: "Shortest Paths"
+weight: -99
 ---
 
 :::mouette.processing.paths

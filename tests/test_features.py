@@ -7,7 +7,7 @@ def test_feature_detect(m):
     feat = M.processing.FeatureEdgeDetector(only_border= False, flag_corners=True)
     feat.run(m)
     assert isinstance(feat.feature_vertices, set)
-    assert isinstance(feat.feature_graph, M.mesh.PolyLine)
+    assert isinstance(feat._feature_graph, M.mesh.PolyLine)
 
 @pytest.mark.parametrize("m", [surf_spline(), surf_half_sphere()])
 def test_feature_detect_only_border(m):

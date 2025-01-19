@@ -35,6 +35,7 @@ def hexahedron(
     ) -> SurfaceMesh:
     """Generate an hexahedron in arbitrary configuration given 8 points. Order and connectivity of points is:
 
+    ```
        7--------6
       /|       /|
      / |      / |
@@ -44,6 +45,7 @@ def hexahedron(
     | /      | /
     |/       |/
     0--------1
+    ```
 
     Parameters:
         P1 to P8 (Vec): coordinates of eight vertices
@@ -101,6 +103,7 @@ def hexahedron(
 def axis_aligned_cube(colored: bool = False, triangulate: bool = False) -> SurfaceMesh:
     """generated an axis aligned cube as 6 quad faces.
 
+    ```
        7--------6
       /|       /|
      / |      / |
@@ -110,6 +113,7 @@ def axis_aligned_cube(colored: bool = False, triangulate: bool = False) -> Surfa
     | /      | /
     |/       |/
     0--------1
+    ```
 
     Parameters:
         colored (bool, optional): if set to true, will add a colo rattribute on faces to determine. Defaults to False.
@@ -132,12 +136,14 @@ def axis_aligned_cube(colored: bool = False, triangulate: bool = False) -> Surfa
 def hexahedron_4pts(P1: Vec, P2: Vec, P3: Vec, P4: Vec, colored=False, volume=False) -> SurfaceMesh:
     """Generate an hexahedron given by an absolute position and three points building a basis.
 
+    ```
     4
     |
     |  3
     | /
     |/
     1--------2
+    ```
 
     Parameters:
         P1 to P4 (Vec): coordinates of vertices
@@ -257,21 +263,22 @@ def cylinder(P1 : Vec, P2 : Vec, radius: float = 1., N=50, fill_caps=True) -> Su
     return SurfaceMesh(cy)
 
 def torus(
-    major_segments: int,
-    minor_segments: int,
-    major_radius: float,
-    minor_radius: float,
+    major_segments: int = 50,
+    minor_segments: int = 30,
+    major_radius: float = 1.,
+    minor_radius: float = 0.3,
     triangulate: bool = False
 ) -> SurfaceMesh:
     """Generates a torus
-    From https://danielsieger.com/blog/2021/05/03/generating-primitive-shapes.html
-
     Args:
-        major_segments (int): number of major segments
-        minor_segments (int): number of minor segments
-        major_radius (float): global radius of the torus
-        minor_radius (float): thickness of the torus
+        major_segments (int): number of major segments. Defaults to 50.
+        minor_segments (int): number of minor segments. Defaults to 30.
+        major_radius (float): global radius of the torus. Defaults to 1.
+        minor_radius (float): thickness of the torus. Defaults to 0.3
         triangulate (bool, optional): whether to output a triangular or quadmesh. Defaults to False.
+
+    References:
+        https://danielsieger.com/blog/2021/05/03/generating-primitive-shapes.html
 
     Returns:
         SurfaceMesh: a torus
@@ -301,43 +308,60 @@ def torus(
                 out.faces.append((v0,v1,v2,v3))
     return _instanciate_raw_mesh_data(out, 2)
 
-def sphere_uv( n_lat : int, n_long : int, center : Vec = Vec(0.,0.,0.), radius : float = 1.) -> SurfaceMesh:
+def sphere_uv( n_lat : int = 30, n_long : int= 50, center : Vec = Vec(0.,0.,0.), radius : float = 1.) -> SurfaceMesh:
     """Generates a sphere using classical spherical uv-coordinates 
 
     Parameters:
-        n_lat (int): number of different latitudes for points
-        n_long (int): number of different longitudes for points
+        n_lat (int): number of different latitudes for points. Defaults to 30.
+        n_long (int): number of different longitudes for points. Defaults to 50.
         center (Vec, optional): Center position of the sphere. Defaults to Vec(0.,0.,0.).
         radius (float, optional): Radius of the sphere. Defaults to 1.
+
+    References:
+        https://danielsieger.com/blog/2021/03/27/generating-spheres.html
 
     Returns:
         SurfaceMesh: the sphere
     """
     sp = RawMeshData()
-    # add two points at poles
+
+    # add north pole
     sp.vertices.append(center + radius*Vec(0.,0.,1.))
-    sp.vertices.append(center + radius*Vec(0.,0.,-1.))
 
     # add other points
-    theta = np.linspace(-pi/2,pi/2, n_long+2)[1:-1]
-    phi = np.linspace(-pi, pi,n_lat+1)[:-1]
-    for t in theta:
-        for p in phi:
-            sp.vertices.append(Vec(radius*cos(t)*cos(p), radius*cos(t)*sin(p), radius*sin(t)))
+    for i in range(n_lat):
+        phi = np.pi * (i+1)/n_lat
+        for j in range(n_long):
+            theta = 2*np.pi * j/n_long
+            x = np.sin(phi)*np.cos(theta)
+            y = np.sin(phi)*np.sin(theta)
+            z = np.cos(phi)
+            sp.vertices.append(center + radius*Vec(x,y,z))
 
-    # build surface as convex hull
-    ch = ConvexHull(sp.vertices._data, qhull_options="QJ")
-    
-    # correct normals
-    for face in ch.simplices:
-        pA,pB,pC = (sp.vertices[_u] for _u in face)
-        ray = (pA+pB+pC)/3 - center
-        nrml = cross(pB-pA,pC-pA)
-        if dot(ray,nrml)<0:
-            sp.faces.append([face[0], face[2], face[1]])
-        else:
-            sp.faces.append(face)
+    # add south pole
+    sp.vertices.append(center + radius*Vec(0.,0.,-1.))
+
+    # add rings of triangles at poles
+    for i in range(n_long):
+        i0, i1 = i+1, (i+1)%n_long+1
+        sp.faces.append((i0, 0, i1))
+
+        i0 = i + n_long * (n_lat - 2) + 1
+        i1 = (i + 1) % n_long + n_long * (n_lat - 2) + 1
+        sp.faces.append((len(sp.vertices)-1, i0, i1))
+
+    # add rows of quads
+    for j in range(n_lat-2):
+        j0 = j*n_long + 1
+        j1 = (j+1)* n_long + 1
+        for i in range(n_long):
+            i0 = j0 + i
+            i1 = j0 + (i + 1) % n_long
+            i2 = j1 + (i + 1) % n_long
+            i3 = j1 + i
+            sp.faces.append((i0,i1,i2,i3))
     return _instanciate_raw_mesh_data(sp,2)
+
 
 def icosphere(n_refine : int= 3, center: Vec = Vec(0.,0.,0.), radius: float = 1.) -> SurfaceMesh:
     """Generates an icosphere, that is a subdivision of the icosahedron
@@ -348,13 +372,13 @@ def icosphere(n_refine : int= 3, center: Vec = Vec(0.,0.,0.), radius: float = 1.
         radius (float, optional): radius of the sphere. Defaults to 1..
 
     Returns:
-        SurfaceMesh: _description_
+        SurfaceMesh: the sphere
     """
     ico = icosahedron(center, radius)
     # Subdivide
     with SurfaceSubdivision(ico,False) as subdiv:
         for _ in range(n_refine):
-            subdiv.subdivide_triangles()
+            subdiv.loop_subdivision(1)
             for iv in subdiv.mesh.id_vertices:
                 subdiv.mesh.vertices[iv] = center + radius*Vec.normalized(subdiv.mesh.vertices[iv]-center)
     return subdiv.mesh

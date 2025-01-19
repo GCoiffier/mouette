@@ -64,7 +64,7 @@ class UnionFind(object):
             raised.
 
     References:
-        [1] [http://algs4.cs.princeton.edu/lectures/](http://algs4.cs.princeton.edu/lectures/)
+        [1] http://algs4.cs.princeton.edu/lectures/
 
     """
 

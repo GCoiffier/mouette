@@ -99,7 +99,7 @@ def test_sphere_uv():
 
 def test_sphere_ico():
     sph = M.procedural.icosphere(3, M.Vec.random(3),1.2)
-    assert len(sph.vertices) == 942
+    assert len(sph.vertices) == 642
 
 def test_sphere_fibonacci():
     sph = M.procedural.sphere_fibonacci(300, build_surface=True)

@@ -74,7 +74,7 @@ class CotanEmbedding(BaseParametrization):
         [1] _Embedding a triangular graph within a given boundary_, Xu et al. (2011)
 
     Example:
-        See [https://github.com/GCoiffier/mouette/blob/main/examples/cotan_embedding.py](https://github.com/GCoiffier/mouette/blob/main/examples/cotan_embedding.py)
+        [https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/cotan_embedding.py](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/cotan_embedding.py)
     """
 
     @allowed_mesh_types(SurfaceMesh)

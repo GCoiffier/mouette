@@ -81,7 +81,7 @@ angles = M.attributes.corner_angles(mesh) # angle at each face corner
 
 ```python
 # define a frame field on the vertices of the surface mesh
-ff = M.processing.framefield.FrameField2DVertices(mesh) 
+ff = M.processing.framefield.SurfaceFrameField(mesh, "vertices")
 ff.run()
 ffmesh = ff.export_as_mesh()
 M.mesh.save(ffmesh, "framefield.mesh")

@@ -32,8 +32,6 @@ class FrameFieldIntegration(BaseParametrization):
 
     def __init__(self, framefield: FrameField, verbose:bool=False, **kwargs):
         """
-        Initializer.
-
         Args:
             framefield (FrameField): the frame field object to integrate.
             singularities (Attribute): float Attribute on vertices. Gives the target angle defects of vertices
@@ -42,6 +40,15 @@ class FrameFieldIntegration(BaseParametrization):
 
         Keyword Args:    
             debug (bool, optional) : debug mode. Generates additionnal output. Defaults to False.
+
+        Note:
+            It is not necessary to provide the input mesh, as it is accessed via the `framefield` argument
+
+        Example:
+            [https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/ff_integrate.py](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/ff_integrate.py)
+        
+        Raises:
+            AssertionError : the frame field should be defined on faces and be of order 4
         """
         super().__init__("Frame Field Integration", framefield.mesh, verbose, **kwargs)
         self._use_cotan = kwargs.get("use_cotan", True)
@@ -68,7 +75,7 @@ class FrameFieldIntegration(BaseParametrization):
         # Shortcut getter
         return self.frame_field.feat
 
-    def get_ff_dir(self, T:int) -> complex:
+    def _get_ff_dir(self, T:int) -> complex:
         """
         First frame field direction after the matching was computed
 
@@ -86,7 +93,7 @@ class FrameFieldIntegration(BaseParametrization):
         self._matching = np.zeros(len(self.mesh.faces),dtype=np.int32)
         for face, parent in self._tree.traverse():
             if parent is None: continue # brushing of root is 0 by convention
-            rp = self.get_ff_dir(parent)
+            rp = self._get_ff_dir(parent)
             angles = [utils.maths.angle_diff( cmath.phase(rp), cmath.phase(rf) - self._conn.transport(face,parent)) for rf in utils.maths.roots(self.frame_field[face], 4)]
             abs_angles = [abs(_a) for _a in angles]
             self._matching[face] = np.argmin(abs_angles)
@@ -96,7 +103,7 @@ class FrameFieldIntegration(BaseParametrization):
         for e in self._cutter.cut_edges:
             T1,T2 = self.mesh.connectivity.edge_to_faces(*self.mesh.edges[e])
             if T1 is None or T2 is None : continue # boundary edge -> no jump
-            ff1, ff2 = self.get_ff_dir(T1), self.get_ff_dir(T2)
+            ff1, ff2 = self._get_ff_dir(T1), self._get_ff_dir(T2)
             jump = utils.maths.angle_diff( cmath.phase(ff1), cmath.phase(ff2) - self._conn.transport(T2,T1))
             self.jumps[e] = round(2*jump/np.pi)%4 # integer multiple of pi/2
 
@@ -108,7 +115,7 @@ class FrameFieldIntegration(BaseParametrization):
         for T in self.mesh.id_faces:
             # We want the jacobian ( a  b ) to match the rotation matrix of the frame ( Re(zT)  Im(zT) )
             #                      ( c  d )                                           ( -Im(zT) Re(zT) )
-            zT = self.get_ff_dir(T)
+            zT = self._get_ff_dir(T)
             q[4*T:4*T+4] = [zT.real, zT.imag, -zT.imag, zT.real]
         
         ## Compute constraints
@@ -152,7 +159,7 @@ class FrameFieldIntegration(BaseParametrization):
             for T in self.mesh.connectivity.edge_to_faces(A,B):
                 if T is None: continue
                 ET = Vec.normalized(self._conn.project(E,T))
-                zT = self.get_ff_dir(T)
+                zT = self._get_ff_dir(T)
                 zT = Vec(zT.real, zT.imag)
                 # determine the orientation of the feature (horizontal or vertical) in parameter space depending on the matching
                 dtp = round(abs(ET.dot(zT)))
@@ -238,7 +245,9 @@ class FrameFieldIntegration(BaseParametrization):
             for (j,q) in [(jA,qA), (jB,qB), (jC,qC)]:
                 self.uvs[3*T+j] = q
 
-    def run(self) :
+    def run(self):
+        """Computes the integration"""
+
         self.log("Smooth frame field if needed")
         self.frame_field.run()
         self.frame_field.flag_singularities() # computes singularities
@@ -278,6 +287,9 @@ class FrameFieldIntegration(BaseParametrization):
             self.uvs[c] = self.uvs[c]/scale
 
     def export_frame_field_as_mesh(self) -> PolyLine:
+        """
+        Exports the frame field as a PolyLine for visualization
+        """
         if self._matching is None:
             return self.frame_field.export_as_mesh()
 
@@ -288,7 +300,7 @@ class FrameFieldIntegration(BaseParametrization):
             basis,Y = self._conn.base(id_face)
             normal = geom.cross(basis,Y)
             pA,pB,pC = (self.mesh.vertices[_v] for _v in face)
-            angle = cmath.phase(self.get_ff_dir(id_face))
+            angle = cmath.phase(self._get_ff_dir(id_face))
             bary = (pA+pB+pC)/3 # reference point for display
             r1,r2 = (geom.rotate_around_axis(basis, normal, angle + k*np.pi/2) for k in range(2))
             p1,p2= (bary + L*r for r in (r1,r2))
@@ -300,10 +312,12 @@ class FrameFieldIntegration(BaseParametrization):
 
     @property
     def cut_mesh(self) -> SurfaceMesh:
+        """Disk-topology mesh where cuts have been performed on seams"""
         return self._cutter.output_mesh
 
     @property
     def cut_graph(self) -> PolyLine:
+        """Seam edges as a PolyLine"""
         return self._cutter.cut_graph
 
     @property

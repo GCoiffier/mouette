@@ -1,9 +1,7 @@
 from ..mesh.mesh_attributes import Attribute, Attribute, ArrayAttribute
 from ..mesh.datatypes import *
 from .. import geometry as geom
-from ..geometry import Vec
 import numpy as np
-import math
 
 @allowed_mesh_types(SurfaceMesh)
 def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, dense:bool = True) -> Attribute:

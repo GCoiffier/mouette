@@ -1,5 +1,6 @@
 ---
 title: "Traversals"
+weight: -100
 ---
 
 #### Usage

@@ -11,22 +11,11 @@ from math import pi
 
 class DiscreteExponentialMap(Worker):
     """
-    Implementation of Discrete Exponential map
-
     References:
         - [1] Interactive decal compositing with discrete exponential maps, Schmidt et al., 2006
 
-    Usage:
-    ```
-    conn = SurfaceConnectionVertices(mesh)
-    expm = DiscreteExponentialMap(mesh, conn, rad)
-    expm.run({0, 2, 42}) # computes map for vertices 0, 2 and 42
-
-    expm.run() # computes map for all vertices
-
-    u,v = expm.map(0, 3) # coordinates of vertex 3 in exp map of vertex 0
-    u,v = expm.map(3, 0) # coordinates of vertex 0 in exp map of vertex 3. Exp map of 3 is computed on the go if necessary
-    ```
+    Example:
+        [https://github.com/GCoiffier/mouette/blob/main/examples/expmap.py](https://github.com/GCoiffier/mouette/blob/main/examples/expmap.py)
     """
     def __init__(self, 
         mesh : SurfaceMesh, 

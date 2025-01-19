@@ -31,7 +31,7 @@ def SurfaceFrameField(
     custom_features : FeatureEdgeDetector = None
 ) -> FrameField :
     """
-    Framefield implementation selector.
+    Computes a smooth frame field on a surface mesh.
 
     Args:
         mesh (SurfaceMesh): the supporting mesh onto which the framefield is based
@@ -82,6 +82,9 @@ def SurfaceFrameField(
         - [2] _Frame Fields for CAD models_, Desobry et al. (2022)
         
         - [3] _Trivial Connections on Discrete Surfaces_, Crane et al. (2010)
+    
+    Example:
+        [https://github.com/GCoiffier/mouette/blob/main/examples/framefield2D.py](https://github.com/GCoiffier/mouette/blob/main/examples/framefield2D.py)
     """
 
     ### Assert sanity of arguments
@@ -119,8 +122,6 @@ def PrincipalDirections(
     complete_ff : bool = True,
     custom_features : FeatureEdgeDetector = None) -> FrameField:
     """
-    Principal curvature directions as a frame field.
-
     Args:
         mesh (SurfaceMesh): the supporting mesh onto which the framefield is based
 
@@ -149,9 +150,12 @@ def PrincipalDirections(
         Framefield : a frame field object representing the curvature directions
 
     References:
-        - [1] [https://en.wikipedia.org/wiki/Principal_curvature](https://en.wikipedia.org/wiki/Principal_curvature)
+        - [1] https://en.wikipedia.org/wiki/Principal_curvature
         
         - [2] _Restricted Delaunay Triangulations and Normal Cycle_, Cohen-Steiner and Morvan (2003)
+
+    Example:
+        [https://github.com/GCoiffier/mouette/blob/main/examples/framefield2D.py](https://github.com/GCoiffier/mouette/blob/main/examples/framefield2D.py)
     """
     ### Assert sanity of arguments
     check_argument("elements", elements, str, ["vertices", "faces"])
@@ -175,8 +179,6 @@ def VolumeFrameField(
     verbose : bool = False,
     custom_boundary_features : FeatureEdgeDetector = None) -> FrameField:
     """
-    3D version of frame fields, implemented as L4 Spherical Harmonics.
-
     Args:
         mesh (VolumeMesh): the supporting mesh
 
@@ -199,6 +201,9 @@ def VolumeFrameField(
     
     References:
         - [1] _Practical 3D frame field generation_, Ray et al. (2016)
+
+    Example:
+        [https://github.com/GCoiffier/mouette/blob/main/examples/framefield3D.py](https://github.com/GCoiffier/mouette/blob/main/examples/framefield3D.py)
     """
 
     check_argument("elements", elements, str, ["vertices", "cells"])

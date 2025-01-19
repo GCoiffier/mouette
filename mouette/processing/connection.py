@@ -28,9 +28,29 @@ class SurfaceConnection(ABC):
         pass
 
     def transport(self, iA : int, iB : int) -> float:
+        """_summary_
+
+        Args:
+            iA (int): first vertex index
+            iB (int): second vertex index
+
+        Returns:
+            float: angle needed to change from basis of iA to basis of iB
+        """
         return self._transport[(iA,iB)]
 
     def base(self, i:int):
+        """Local basis of element i
+
+        Args:
+            i (int): index
+
+        Returns:
+            (Vec,Vec): the X vector and Y vector of the tangent basis.
+
+        Note:
+            `cross(X,Y)` is the normal of element i
+        """
         return self._baseX[i], self._baseY[i]
 
     def project(self, V:Vec, i:int):
@@ -42,12 +62,13 @@ class SurfaceConnectionVertices(SurfaceConnection):
     Local bases and parallel transport defined between tangent planes of the mesh at the vertices
 
     Reference:
-        Globally Optimal Direction Fields by Knöppel et al. (2013)
+        _Globally Optimal Direction Fields_, Knöppel et al. (2013)
     
     Args:
         mesh (SurfaceMesh): the supporting mesh
         feat (FeatureEdgeDetector, optional): feature edges of the mesh. If not provided, will be initialized with a FeatureEdgeDetector object that flags only the boundary. Defaults to None.
-    Additionnal args:
+    
+    Keyword Args:
         vnormals (Attribute): An attribute representing the vertex normals. If not provided, will be computed at initialization
         angles (Attribute) : An attribute representing angles at corners of faces. If not provided, will be computed at initialization
 
@@ -148,7 +169,7 @@ class SurfaceConnectionFaces(SurfaceConnection):
     Local bases and parallel transport defined between tangent planes of the mesh at the vertices
 
     Reference:
-        Globally Optimal Direction Fields by Knöppel et al. (2013)
+        _Globally Optimal Direction Fields_, Knöppel et al. (2013)
 
     Args:
         mesh (SurfaceMesh): the supporting mesh

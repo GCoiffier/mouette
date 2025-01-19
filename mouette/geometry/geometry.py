@@ -111,7 +111,8 @@ def cross(A: Vec, B: Vec) -> Vec:
 
 def cotan(A: Vec, B: Vec, C: Vec) -> float:
     """cotangent of the angle $\\hat{ABC}$
-    Parameters:
+    
+    Args:
         A (Vec): point A
         B (Vec): point B
         C (Vec): point C
@@ -129,7 +130,7 @@ def cotan(A: Vec, B: Vec, C: Vec) -> float:
 def angle_3pts(A: Vec, B: Vec, C: Vec) -> float:
     """Angle ABC between three points
 
-    Parameters:
+    Args:
         A (Vec): first point
         B (Vec): central point
         C (Vec): second point
@@ -147,7 +148,7 @@ def angle_3pts(A: Vec, B: Vec, C: Vec) -> float:
 def signed_angle_2vec3D(V1: Vec, V2: Vec, N: Vec) -> float:
     """Signed angle between two vectors with orientation given by normal N
 
-    Parameters:
+    Args:
         V1 (Vec): First vector
         V2 (Vec): Second vector
         N (Vec): reference normal direction
@@ -163,7 +164,7 @@ def signed_angle_2vec3D(V1: Vec, V2: Vec, N: Vec) -> float:
 def signed_angle_3pts(A:Vec, B:Vec, C:Vec, N:Vec) -> float:
     """Signed angle between three points ABC with orientation givne by normal N
 
-    Parameters:
+    Args:
         A (Vec): first point
         B (Vec): central point
         C (Vec): second point

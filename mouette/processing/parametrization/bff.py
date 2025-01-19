@@ -1,13 +1,13 @@
 from .base import BaseParametrization
 from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import *
+from ...mesh.mesh import reorder_vertices
+
 from ... import attributes
 from ... import geometry as geom
 from ...operators import laplacian
 from ..border import extract_border_cycle
 from ...attributes.glob import euler_characteristic
-
-from ..misc import reorder_vertices
 from ..border import extract_border_cycle
 
 import numpy as np
@@ -24,6 +24,9 @@ class BoundaryFirstFlattening(BaseParametrization):
 
     Warning:
         This algorithm reorders the vertices so that boundary vertices are labeled [0, N-1] in order. Therefore, the uvs coordinates are not computed on the original mesh but on a reordered copy. Access the final result with `self.mesh`
+    
+    Example:
+        [https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/bff.py](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/bff.py)
     """
 
     def __init__(self, 

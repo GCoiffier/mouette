@@ -22,6 +22,9 @@ class TutteEmbedding(BaseParametrization):
         - [1] _How to draw a graph_, Tutte W.T., 1963
         
         - [2] _Parametrization and smooth approximation of surface triangulations_, Floater M.S., 1997
+
+    Example:
+        [https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/tutte.py](https://github.com/GCoiffier/mouette/blob/main/examples/parametrization/tutte.py)
     """
 
     class BoundaryMode(Enum):

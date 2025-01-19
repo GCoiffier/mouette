@@ -8,7 +8,6 @@ from ..utils import keyify, UnionFind, PriorityQueue
 from .paths import shortest_path, shortest_path_to_border, shortest_path_to_vertex_set
 from .trees import FaceSpanningForest
 from .. import attributes
-from ..utils import consecutive_pairs
 from collections import deque
 
 class SingularityCutter(Worker):
@@ -22,6 +21,17 @@ class SingularityCutter(Worker):
             singularities : list,
             features : "FeatureEdgeDetector" = None,
             verbose = False):
+        """
+        Args:
+            mesh (SurfaceMesh): input mesh
+            singularities (list): indices of the singular vertices
+            features (FeatureEdgeDetector, optional): feature edge data structure. If provided, the cuts will follow the feature as much as possible. Defaults to None.
+            verbose (bool, optional): verbose mode. Defaults to False.
+
+        Attributes:
+            cut_edges (set): indices of edges that were cut
+            cut_adj (dict): cut graph given as adjacency lists per vertex
+        """
         super().__init__("SingularityCutter", verbose)
         self.input_mesh : SurfaceMesh = mesh
         
@@ -47,7 +57,8 @@ class SingularityCutter(Worker):
         self._output_mesh : SurfaceMesh = None
     
     @property
-    def has_features(self):
+    def has_features(self) -> bool:
+        """Whether the input mesh has feature edges defined"""
         if self._has_features is None:
             self._has_features = False
             if self.feat_detector is not None:
@@ -59,17 +70,28 @@ class SingularityCutter(Worker):
 
     @property
     def output_mesh(self) -> SurfaceMesh:
+        """
+        Returns:
+            SurfaceMesh: the mesh where cuts have been performed
+        """
         if self._output_mesh is None:
             self._build_mesh_with_cuts()
         return self._output_mesh
     
     @property
     def cut_graph(self) -> PolyLine:
+        """
+        Returns:
+            PolyLine: the cut edges as a Polyline
+        """
         if self._cut_graph is None:
             self._build_cut_graph_as_mesh()
         return self._cut_graph
 
     def run(self):
+        """
+        Runs the cutting process
+        """
         self.log("Cutting to link singularities and retrieve disk topology")
         self.log("# Singularities :", len(self.singularities))
         if self.has_features:

@@ -3,7 +3,7 @@ M.processing
 submodule for algorithms applied on meshes
 """
 
-from .misc import *
+from .misc import smooth
 from .cutting import SingularityCutter
 from .features import FeatureEdgeDetector
 from .expmap import DiscreteExponentialMap

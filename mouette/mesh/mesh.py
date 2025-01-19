@@ -196,3 +196,30 @@ def merge(mesh_list : list) -> Mesh:
             merged.cells += [tuple((vertex_offset+u for u in c)) for c in to_merge.cells]
         vertex_offset += len(to_merge.vertices)
     return _instanciate_raw_mesh_data(merged)
+
+
+def reorder_vertices(mesh : Mesh, new_indices: list) -> Mesh:
+    """Reorders vertex indices in a mesh object.
+
+    Args:
+        mesh (Mesh): input mesh
+        new_indices (list): a list containing a permutation of vertices. New index of vertex L[i] will be i.
+
+    Returns:
+        Mesh: the mesh object with permuted vertices
+    """
+    assert len(new_indices) == len(mesh.vertices)
+    ind = np.argsort(new_indices) # "inverted list"
+    raw = RawMeshData()
+    for v in mesh.id_vertices:
+        raw.vertices.append(mesh.vertices[new_indices[v]])
+    if hasattr(mesh, "edges"):
+        for (A,B) in mesh.edges:
+            raw.edges.append((ind[A], ind[B]))
+    if hasattr(mesh, "faces"):
+        for F in mesh.faces:
+            raw.faces.append([ind[v] for v in F])
+    if hasattr(mesh, "cells"):
+        for C in mesh.cells:
+            raw.cells.append([ind[v] for v in C])
+    return _instanciate_raw_mesh_data(raw)
