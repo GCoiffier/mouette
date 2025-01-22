@@ -1,11 +1,12 @@
 site_name: Mouette
 
-
 theme:
   name: material
 
   features:
     - navigation.instant
+    #- navigation.tabs
+    #- navigation.tabs.sticky
     - navigation.sections
     - navigation.indexes
     - toc.follow
@@ -38,6 +39,7 @@ plugins:
 
 
 markdown_extensions:
+  - codehilite
   - attr_list
   - md_in_html
   - admonition
@@ -59,5 +61,70 @@ extra_javascript:
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
+extra_css:
+  - "custom_css.css"
+
 repo_url: https://github.com/GCoiffier/mouette
 repo_name: GCoiffier/mouette
+
+
+nav:
+  - Home: "index.md"
+  - About: 
+    - "about/installation.md"
+    - "about/dependencies.md"
+    - "about/license.md"
+  - Data structures:
+    - "datastructures/DataContainers.md"
+    - "datastructures/PointClouds.md"
+    - "datastructures/PolyLines.md"
+    - "datastructures/SurfaceMeshes.md"
+    - "datastructures/VolumeMeshes.md"
+  - Data manipulations:
+    - "manipulating_data/editing.md"
+    - "manipulating_data/loading.md"
+    - "manipulating_data/procedural.md"
+    - "manipulating_data/transforms.md"
+    - "manipulating_data/sampling.md"
+    - "manipulating_data/subdivision.md"
+  - Attributes:
+    - "attributes/global.md"
+    - "attributes/per_elements.md"
+    - "attributes/interpolation.md"
+  - Algorithms:
+    - "algorithms/tree.md"
+    - "algorithms/shortest_paths.md"
+    - "algorithms/feature_detection.md"
+    - Frame fields: 
+      - "algorithms/frame_fields/index.md"
+      - "algorithms/frame_fields/connection.md"
+      - "algorithms/frame_fields/surface_ff.md"
+      - "algorithms/frame_fields/curvature.md"
+      - "algorithms/frame_fields/volume_ff.md"
+    - Parametrization: 
+      - "algorithms/parametrization/index.md"
+      - "algorithms/parametrization/Tutte.md"
+      - "algorithms/parametrization/lscm.md"
+      - "algorithms/parametrization/bff.md"
+      - "algorithms/parametrization/cotan_embedding.md"
+      - "algorithms/parametrization/winslow.md"
+      - "algorithms/parametrization/cone_param.md"
+      - "algorithms/parametrization/ff_integration.md"
+      - "algorithms/parametrization/distortion.md"
+
+    - Spatial queries:
+      - "algorithms/knn.md"
+      - "utilities/AABB.md"
+
+  - Utilities:
+    - "utilities/utils.md"
+    - "utilities/vectors.md"
+    - "utilities/spherical_harmonics.md"
+    # - "utilities/AABB.md"
+    - "utilities/priority_queue.md"
+    - "utilities/union_find.md"
+
+  - Misc:
+    # - "visualizing.md"
+    - "operators.md"
+    - "config.md"

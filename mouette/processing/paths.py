@@ -23,7 +23,7 @@ def _check_weight_argument(weights):
         raise InvalidArgumentTypeError("weights", type(weights), str, dict, _BaseAttribute)
 
 @forbidden_mesh_types(PointCloud)
-def shortest_path(mesh : Mesh, start : int, targets : list, weights = "length", export_path_mesh = False):
+def shortest_path(mesh : Mesh, start : int, targets : list, weights = "length", export_path_mesh = False) -> dict:
     """
     Computes the shortest path from 'start' vertex to all given targets.
     Uses Dijsktra's algorithm
@@ -120,8 +120,8 @@ def shortest_path_to_vertex_set(mesh : PolyLine, start : int, targets : list, we
         Exception: No target provided if the target list is empty
 
     Returns:
-        (int) : the index of the closest vertex from the targets set
-        (list) : the list of vertices on the closest path
+        int: the index of the closest vertex from the targets set
+        list: the list of vertices on the closest path
         If export_path_mesh is set to True, also returns a Polyline
     """
     _check_weight_argument(weights)
@@ -205,7 +205,7 @@ def shortest_path_to_vertex_set(mesh : PolyLine, start : int, targets : list, we
     return ind, path
 
 @allowed_mesh_types(SurfaceMesh)
-def shortest_path_to_border(mesh : SurfaceMesh, start : int, weights = "length", export_path_mesh = False):
+def shortest_path_to_border(mesh : SurfaceMesh, start : int, weights = "length", export_path_mesh = False) -> list:
     """
     Computes the shortest path from 'start' vertex to the boundary of the mesh.
     Call to shortest_path_to_vertex_set with the set of boundary vertices

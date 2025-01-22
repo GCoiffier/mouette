@@ -13,7 +13,7 @@ class Vec(np.ndarray):
         return obj
     
     @classmethod
-    def from_complex(cls, c : complex):
+    def from_complex(cls, c : complex) -> "Vec":
         """2D vector from complex number
 
         Args:
@@ -25,7 +25,7 @@ class Vec(np.ndarray):
         return cls(c.real, c.imag)
 
     @classmethod
-    def random(cls, n : int):
+    def random(cls, n : int) -> "Vec":
         """Generates a random vector of size `n` with coefficients sampled uniformly and independently in [0;1)
 
         Args:
@@ -37,7 +37,7 @@ class Vec(np.ndarray):
         return cls(np.random.random(n))
 
     @classmethod
-    def zeros(cls, n : int):
+    def zeros(cls, n : int) -> "Vec":
         """Generates a vector of size `n` full of zeros.
 
         Args:
@@ -49,7 +49,7 @@ class Vec(np.ndarray):
         return cls(np.zeros(n))
     
     @classmethod
-    def X(cls):
+    def X(cls) -> "Vec":
         """The [1,0,0] vector
 
         Returns:
@@ -58,7 +58,7 @@ class Vec(np.ndarray):
         return Vec(1.,0.,0.)
 
     @classmethod
-    def Y(cls):
+    def Y(cls) -> "Vec":
         """The [0,1,0] vector
 
         Returns:
@@ -67,7 +67,7 @@ class Vec(np.ndarray):
         return Vec(0.,1.,0.)
 
     @classmethod
-    def Z(cls):
+    def Z(cls) -> "Vec":
         """The [0,0,1] vector
 
         Returns:
@@ -90,7 +90,7 @@ class Vec(np.ndarray):
         self[0] = value
 
     @property
-    def y(self):
+    def y(self) -> float:
         """Second coordinate of the vector
 
         Returns:
@@ -103,16 +103,16 @@ class Vec(np.ndarray):
         self[1] = value
 
     @property
-    def xy(self):
+    def xy(self) -> np.ndarray:
         """First two coordinates of the vector
 
         Returns:
-            float: `vec[:2]`
+            np.ndarray[float]: `vec[:2]`
         """
         return self[:2]
 
     @property
-    def z(self):
+    def z(self) -> float:
         """Third coordinate of the vector
 
         Returns:
@@ -182,7 +182,7 @@ class Vec(np.ndarray):
         self /= self.norm(which)
 
     @staticmethod
-    def normalized(vec, which="l2"):
+    def normalized(vec, which="l2") -> "Vec":
         """Computes and returns a normalized vector of the input vector `vec`.
 
         Args:

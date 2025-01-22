@@ -206,7 +206,7 @@ def face_basis(*f):
     Given three points A,B,C, returns a basis such that the first vector is along direction AB and third vector is normal to the plane ABC
 
     Args:
-        A,B,C: three points (in a list or not)
+        *f: points of the face, either on a list or not
 
     Returns:
         Vec,Vec,Vec: an orthonormal 3D basis of the face

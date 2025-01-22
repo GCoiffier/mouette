@@ -21,6 +21,6 @@ setuptools.setup(
         'numba',
         'tqdm',
         'stl-reader',
-        "plyfile",
+        'pyminiply',
     ]
 )

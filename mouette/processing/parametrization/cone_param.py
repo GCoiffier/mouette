@@ -32,9 +32,11 @@ class ConformalConeParametrization(BaseParametrization):
         """
         Args:
             mesh (SurfaceMesh): Input mesh
-            singularities (Attribute): float Attribute on vertices. Gives the target angle defects of vertices
-            use_cotan (bool, optional): If True, uses cotangents in the laplacian matrix. Defaults to True. 
+            cones (Attribute): float Attribute on vertices. Gives the target angle defects of vertices
             verbose (bool, optional): verbose mode. Defaults to False.
+            
+        Keyword Args:
+            use_cotan (bool, optional): If True, uses cotangents in the laplacian matrix. Defaults to True. 
             debug (bool, optional) : debug mode. Generates additional output. Defaults to False.
         """
         super().__init__("ConeParam", mesh, verbose, **kwargs)

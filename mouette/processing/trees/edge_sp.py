@@ -126,11 +126,11 @@ class EdgeMinimalSpanningTree(EdgeSpanningTree):
             mesh (Mesh): the input mesh (Polyline, Surface or Volume)
             starting_vertex (int, optional): Index of the root of the tree. If None is provided, root is chosen at random. Defaults to None.
             avoid_boundary (bool, optional): If True, boundary edges will not be traversed by the tree. Defaults to False.
-            weights (str | dict) : provided weights of each edge. Options are:
-                - "one" : uniform weight = 1 for every edge
-                - "length" : use the length of the edge
-                - any dict : custom weights
-            Defaults to "length".
+            weights (str|dict, optional) : provided weights of each edge. Options are:
+                `one` : uniform weight = 1 for every edge;
+                `length` : use the length of the edge;
+                `any dict` : custom weights.
+                Defaults to "length".
         """
         super().__init__(mesh, starting_vertex, avoid_boundary=avoid_boundary)
         if not ((isinstance(weights, str) and weights in ["one", "length"]) or isinstance(weights, dict) or isinstance(weights, Attribute)):
