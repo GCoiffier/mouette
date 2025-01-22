@@ -11,7 +11,7 @@ Using pip:
 
 Mouette allows to easily load data from various file format and access geometrical primitives
 
-#### Import and Export made simple
+#### Import and export made simple
 
 ```python
 import mouette as M
@@ -36,7 +36,7 @@ m_f_attribute[2] = [1,3]
 
 Attributes can store booleans, integers, floating-point numbers, complex numbers and strings, using the provided python types `bool`, `int`, `float`, `complex` and `str`.
 
-#### Call Geometry Processing Algorithms
+#### Call geometry processing algorithms
 
 ```python
 
@@ -48,7 +48,7 @@ M.mesh.save(ffmesh, "framefield.mesh")
 
 #### And much more
 
-See full documentation at https://gcoiffier.github.io/mouette/ (still a Work in Progress)
+See full documentation at https://gcoiffier.github.io/mouette/
 
 
 ### Run tests
