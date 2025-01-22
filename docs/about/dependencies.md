@@ -24,4 +24,4 @@ See the website [https://osqp.org/](https://osqp.org/) for a complete documentat
 
 - stl-reader 
 
-- plyfile 
+- pyminiply

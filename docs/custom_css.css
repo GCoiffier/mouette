@@ -1,25 +1,4 @@
-/* Adjust fonts */
-
-/* html {
-    font-size: 125%;
-} */
-
-/* justify and slightly increase spacing */
-p {
-  text-align: justify;
-  line-height: 1.25;
-}
-ul {
-  text-align: justify;
-  line-height: 1.25;
-}
-li {
-  text-align: justify;
-  line-height: 1.25;
-}
-
 /* Emphasise sections of nav on left hand side */
-
 nav.md-nav {
   padding-left: 10px;
 }
@@ -31,7 +10,7 @@ nav.md-nav--secondary {
 
 /* Decrease spacing on the left side nav bar */
 .md-nav__link {
-  margin-top: 0.3rem;
+  margin-top: 0.25rem;
   text-align: left;
 }
 
