@@ -10,7 +10,7 @@ def euler_characteristic(mesh : SurfaceMesh) -> int:
     
     See https://en.wikipedia.org/wiki/Euler_characteristic
 
-    Parameters:
+    Args:
         mesh (SurfaceMesh): the mesh
 
     Returns:

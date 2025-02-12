@@ -26,9 +26,14 @@ class VolumeMesh(Mesh):
         self._boundary_edges : list = None
         self._interior_edges : list = None
 
-        self.boundary_connectivity = None
+        self.boundary_connectivity : VolumeMesh._BoundaryConnectivity = None
 
     def enable_boundary_connectivity(self):
+        """
+        Builds the indirection maps to the boundary surface mesh, which then can be accessed via the `self.boundary_connectivity` attribute.
+
+        See documentation for VolumeMesh._BoundaryConnectivity for more details.
+        """
         self.boundary_connectivity = VolumeMesh._BoundaryConnectivity(self)
 
     def __str__(self):
@@ -76,7 +81,17 @@ class VolumeMesh(Mesh):
 
     @property
     def boundary_mesh(self):
-        return self.boundary_connectivity.mesh
+        """The boundary of the VolumeMesh as a SurfaceMesh. Shortcut for `self.boundary_connectivity.mesh
+        
+        Returns:
+            None: if the boundary connectivity is not enabled (mesh was not built). See `enable_connectivity`
+            SurfaceMesh: the boundary mesh otherwise
+
+        """
+        try:
+            return self.boundary_connectivity.mesh
+        except Exception as _:
+            return None
 
     def _compute_interior_boundary_faces(self):
         self._interior_faces = []
@@ -119,7 +134,7 @@ class VolumeMesh(Mesh):
         """Simple test to determine if a given face is on the boundary of the mesh.
         
         Parameters:
-            Either an integer index representing a face, or n integer indices representing the vertices
+            *args: Either an integer index representing a face, or n integer indices representing the vertices
             
         Returns:
             bool: Returns True is the given face exists and is on the boundary of the mesh
@@ -139,7 +154,7 @@ class VolumeMesh(Mesh):
         """Simple test to determine if a given edge is on the boundary of the mesh.
 
         Parameters:
-            Either an integer index representing an edge, or two integer indices representing two (adjacent) vertices
+            *args: Either an integer index representing an edge, or two integer indices representing two (adjacent) vertices
 
         Returns:
             bool: Returns True if the given edge is on the boundary of the mesh.
@@ -150,12 +165,23 @@ class VolumeMesh(Mesh):
             return self._is_edge_on_border[args[0]]
         return self._is_edge_on_border[self.connectivity.edge_id(args[0],args[1])]
 
-    def is_cell_tet(self, ic) -> bool:
+    def is_cell_tet(self, ic:int) -> bool:
+        """Returns `True if the cell given by id `ic` is a tetrahedron (i.e. has 4 vertices)
+        
+        Parameters:
+            ic (int): cell index
+            
+        Returns:
+            bool: len(self.cells[ic])==4 """
         return len(self.cells[ic])==4
     
-    def is_cell_hex(self, ic) -> bool:
-        # /!\ not sufficient for a cell to be an hex but good enough
-        return len(self.cells[ic])==8
+    # def is_cell_hex(self, ic) -> bool:
+    #     """Returns True if the cell given by id `ic` is a hexahedron (has 8 vertices) 
+        
+    #     Warning:
+    #         Having 8 vertices is not a sufficient condition for a cell to be a hexahedron, though it is a good enough test.
+    #     """
+    #     return len(self.cells[ic])==8
 
     def is_tetrahedral(self) -> bool:
         """
@@ -449,6 +475,17 @@ class VolumeMesh(Mesh):
     class _BoundaryConnectivity(SurfaceMesh._Connectivity):
 
         def __init__(self, master):
+            """
+            Attributes:
+                m2b_vertex (dict): volume mesh -> boundary indirection for vertices
+                m2b_edge (dict): volume mesh -> boundary indirection for edges
+                m2b_face (dict): volume mesh -> boundary indirection for faces
+
+                b2m_vertex (dict): boundary -> volume mesh indirection for vertices
+                b2m_edge (dict): boundary -> volume mesh indirection for edges
+                b2m_face (dict): boundary -> volume mesh indirection for faces
+
+            """
             self.complete_mesh = master
 
             # indirection maps between boundary elements and their indices in the full mesh
@@ -461,7 +498,7 @@ class VolumeMesh(Mesh):
             self.b2m_face : dict = None
 
             mesh = self._extract_surface_boundary() # builds indirection maps for vertices and faces
-            super().__init__(mesh)
+            super().__init__(mesh) # the boundary mesh can be accessed using the .master attribute
 
             # build indirection map for edges
             for e in self.complete_mesh.boundary_edges:
@@ -472,6 +509,9 @@ class VolumeMesh(Mesh):
                 self.b2m_edge[be] = e            
 
         def _extract_surface_boundary(self):
+            """
+            Builds indirection maps. This is performed automatically upon first connectivity request.
+            """
             boundary = RawMeshData()
             # indirection maps
             self.m2b_vertex, self.b2m_vertex = dict(), dict()
