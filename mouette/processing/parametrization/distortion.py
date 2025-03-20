@@ -182,6 +182,14 @@ class ParamDistortion(Worker):
         return self._summary
 
     @property
+    def det(self) -> ArrayAttribute:
+        """
+        Jacobian determinants of each element
+        """
+        if self._det is None: self.run()
+        return self._det
+
+    @property
     def conformal(self) -> ArrayAttribute:
         """
         Conformal distortion, defined as $\\frac{||J||^2}{\\det(J)}$

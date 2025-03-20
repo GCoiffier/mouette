@@ -14,7 +14,7 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
     
     Returns:
         (list): list of vertices on border in order
-        (list): list of edges on border also in order
+        (list): list of edges on border in order
 
     Raises:
         Exception: Fails if 'starting_point' not on the border

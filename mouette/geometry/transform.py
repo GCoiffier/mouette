@@ -84,19 +84,39 @@ def scale_xyz(mesh : Mesh, fx : float = 1., fy : float = 1., fz : float = 1., or
         mesh.vertices[i] = orig + Vec( fx*(Pi.x - orig.x), fy*(Pi.y - orig.y), fz *(Pi.z - orig.z))
     return mesh
 
-def fit_into_unit_cube(mesh : Mesh) -> Mesh:
-    """Applies translation and global scaling for the mesh to fit inside a cube [0;1]^3
+
+def normalize(mesh : Mesh, center_at_zero : bool=True) -> Mesh:
+    """Applies translation and global scaling so that the barycenter of the mesh becomes the origin and the mesh is contained in [-1,1]^3
 
     Args:
-        mesh (Mesh): the input mesh. Can be any mesh data structure
+        mesh (Mesh): the input mesh
+        center_at_zero (bool, optional): if set to True, will normalize in the cube [-1,1]^3. Otherwise, will normalize in [0,1]^3. Defaults to True.
 
     Returns:
         Mesh: the scaled and translated mesh
     """
     bounding = AABB.of_mesh(mesh)
     sc = 1/np.max(bounding.span)
-    tr = bounding.mini
-    return scale(translate(mesh, -tr), sc)
+    if center_at_zero:
+        return scale(translate(mesh, -bounding.center), 2*sc)
+    else:
+        return scale(translate(mesh, -bounding.mini), sc)
+
+
+def fit_into_unit_cube(mesh : Mesh) -> Mesh:
+    """Applies translation and global scaling for the mesh to fit inside a cube [0;1]^3
+
+    Args:
+        mesh (Mesh): the input mesh. Can be any mesh data structure
+
+    Note:
+        Alias for `transform.normalize(mesh, center_at_zero=False)`
+
+    Returns:
+        Mesh: the scaled and translated mesh
+    """
+    return normalize(mesh, center_at_zero=False)
+
 
 def translate_to_origin(mesh : Mesh) -> Mesh:
     """Translates all vertices of the mesh so that its barycenter is at origin (0., 0., 0.)
@@ -108,6 +128,7 @@ def translate_to_origin(mesh : Mesh) -> Mesh:
         Mesh: the translated mesh
     """
     return translate(mesh, -sum(mesh.vertices)/len(mesh.vertices))
+
 
 def flatten(mesh : Mesh, dim : int = None) -> Mesh:
     """

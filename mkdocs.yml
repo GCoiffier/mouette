@@ -95,6 +95,7 @@ nav:
     - "algorithms/tree.md"
     - "algorithms/shortest_paths.md"
     - "algorithms/feature_detection.md"
+    - "algorithms/normal_estimation.md"
     - Frame fields: 
       - "algorithms/frame_fields/index.md"
       - "algorithms/frame_fields/connection.md"

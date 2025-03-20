@@ -23,8 +23,8 @@ sort_neighborhoods = True
 If set to true, this will sort the corner connectivity arrays of a surface mesh, according to the computed half edges
 """
 
-disable_duplicate_attribute_warning = False
+display_duplicate_attribute_warning = False
 """
 When creating an attribute that already exists on a mesh, mouette prints a warning in the console and returns the attribute currently carrying this name.
-If this flag is set to True, no warning is printed. We then assume that you know what you are doing.
+If this flag is set to True, no warning is printed.
 """

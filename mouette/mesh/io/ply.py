@@ -6,7 +6,7 @@ def import_ply(path : str):
     vertices, faces, normals, uv, color = pyminiply.read(path)
     out = RawMeshData()
     out.vertices += list(vertices)
-    if np.any(np.asarray(F)>=n_vert): raise Exception("Face indices should be between 0 and n_vertices")
+    if np.any(np.asarray(faces)>=len(out.vertices)): raise Exception("Face indices should be between 0 and n_vertices")
     out.faces += list(faces)
     if normals.size>0:
         out.vertices.register_array_as_attribute("normals", normals)

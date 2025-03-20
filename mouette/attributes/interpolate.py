@@ -75,17 +75,19 @@ def interpolate_faces_to_vertices(
     Raises:
         Exception: fails if 'weight' is not in {'uniform', 'area', 'angle'}
     """
+    weight = weight.lower()
+
     if weight not in {'uniform', 'area', 'angle'}:
         raise Exception(f"interpolate_vertices_to_faces: weight argument '{weight}' not recognized.\nPossibilites are {'uniform', 'area', 'angle'}.")
 
-    if weight=="uniform":
+    if weight == "uniform":
         for v in mesh.id_vertices:
             for f in mesh.connectivity.vertex_to_faces(v):
                 vattr[v] = vattr[v] + fattr[f]
         for v in mesh.id_vertices:
             vattr[v] /= len(mesh.connectivity.vertex_to_faces(v))
     
-    elif weight=="area":
+    elif weight == "area":
         if mesh.faces.has_attribute("area"):
             area = mesh.faces.get_attribute("area")
         else:
@@ -99,19 +101,71 @@ def interpolate_faces_to_vertices(
         for v in mesh.id_vertices:
             vattr[v] /= total_area[v]
 
-    elif weight=="angle":
+    elif weight == "angle":
         if mesh.face_corners.has_attribute("angles"):
             angles = mesh.face_corners.get_attribute("angles")
         else:
             angles = corner_angles(mesh, persistent=False)
         defects = np.zeros(len(mesh.vertices))
         for c, v in enumerate(mesh.face_corners):
-            f = mesh.connectivity.corner_to_face(c)
+            f = mesh.face_corners.adj(c)
             vattr[v] = vattr[v] + fattr[f] * angles[c]
             defects[v] = defects[v] + angles[c]
         for v in mesh.id_vertices:
             vattr[v] /= defects[v]
     return vattr
+
+
+@allowed_mesh_types(SurfaceMesh)
+def average_corners_to_vertices(
+    mesh : SurfaceMesh,
+    cattr : Attribute, 
+    vattr : Attribute,
+    weight : str = "uniform")-> Attribute:
+    """Given an attribute on corners, computes a vertex attribute that is the average per vertex
+
+    Parameters:
+        mesh (SurfaceMesh): the mesh
+        cattr (Attribute): input corner attribute
+        vattr (Attribute): output face attribute
+        weight (str): the way attributes are weighted in the sum.
+            two possibilities:
+
+            - uniform: every face will have weight 1
+            - angle: corners contribute to a vertex depending on the interior angle at this vertex
+    Returns:
+        Attribute: modified vattr
+
+    Raises:
+        Exception: fails if 'weight' is not in {'uniform', 'angle'}
+    """
+    weight = weight.lower()
+
+    if weight not in {'uniform', 'angle'}:
+        raise Exception(f"average_corners_to_vertices: weight argument '{weight}' not recognized.\nPossibilites are {'uniform', 'angle'}.")
+
+    if weight == "uniform":
+        count = np.zeros(len(mesh.vertices))
+        for c,v in enumerate(mesh.face_corners):
+            vattr[v] = vattr[v] + cattr[c]
+            count[v] += 1
+        for v in mesh.id_vertices:
+            vattr[v] /= count[v]
+
+    elif weight == "angle":
+        if mesh.face_corners.has_attribute("angles"):
+            angles = mesh.face_corners.get_attribute("angles")
+        else:
+            angles = corner_angles(mesh, persistent=False)
+        defects = np.zeros(len(mesh.vertices))
+        for c, v in enumerate(mesh.face_corners):
+            vattr[v] = vattr[v] + angles[c]*cattr[c]
+            defects[v] += angles[c]
+        for v in mesh.id_vertices:
+            vattr[v] /= defects[v]
+
+    return vattr
+
 
 # @allowed_mesh_types(VolumeMesh)
 # def interpolate_vertices_to_cells(mesh : Mesh, vattr : Attribute, cattr : Attribute)-> Attribute:
