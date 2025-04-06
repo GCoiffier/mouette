@@ -23,7 +23,6 @@ This fills the various container attributes that can be accessed in the `PointCl
 
 
 ## PointCloudNormalEstimator
-
 :::mouette.processing.point_cloud_utils.PointCloudNormalEstimator
     options:
         filters:

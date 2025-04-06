@@ -40,3 +40,6 @@ class Logger:
     def log(self, *messages):
         if self.verbose:
             print(*((f"[{self.name}]",) + messages))
+
+    def warn(self, *messages):
+        print(*((f"/!\\ [{self.name}]",) + messages))

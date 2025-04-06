@@ -27,7 +27,7 @@ class FeatureEdgeDetector(Worker):
             only_border (bool, optional): If set to True, will only consider border edges as features. Defaults to False.
             flag_corners (bool, optional): If set to True, will also compute a goal angle defect (multiple of pi/2) of each detected vertices. Defaults to True.
             corner_order (int, optional): For corner detection, considers corners of angle defect 2pi/corner_order. Defaults to 4 (corners of pi/2).
-            compute_feature_graph (bool, optional): whether to compute a Polyline object representing the feature graph. For debug and visualization purposes. Defaults to True.
+            compute_feature_graph (bool, optional): whether to compute a Polyline object representing the feature graph and a point cloud representing the corners. For debug and visualization purposes. Defaults to True.
             verbose (bool, optional): Verbose mode. Defaults to True.
         
         Attributes:
@@ -38,6 +38,8 @@ class FeatureEdgeDetector(Worker):
             corners (Attribute): the order of each detected vertex corners
         """
         self._feature_graph : PolyLine = None
+        self._corner_pc : PointCloud = None
+
         self.only_border: bool = only_border # whether to ignore every feature edge that is not a boundary
         self.flag_corners: bool = flag_corners # whether to also flag the angle value of each feature vertex
         self.corner_order: int = corner_order
@@ -69,10 +71,25 @@ class FeatureEdgeDetector(Worker):
 
     @property
     def feature_graph(self) -> PolyLine:
-        """the feature edges as a polyline object"""
+        """Feature edges as a polyline object
+
+        Returns:
+            PolyLine: the feature edges
+        """
         if self._feature_graph is None:
-            self._compute_feature_graph()
+            self.warn("Either the detector was not run, or computer_feature_graph was set to False. Returns None.")
         return self._feature_graph
+    
+    @property
+    def corner_point_cloud(self) -> PointCloud:
+        """Corners of the feature edges as a point cloud object
+
+        Returns:
+            PointCloud: Corners
+        """
+        if self._corner_pc is None:
+            self.warn("Either the detector was not run, or computer_feature_graph, or flag_corners was set to False. Returns None.")
+        return self._corner_pc
 
     def _compute_feature_graph(self, mesh: SurfaceMesh):
         """Computes self._feature_mesh"""
@@ -88,6 +105,13 @@ class FeatureEdgeDetector(Worker):
             self._feature_graph.edges.append((fvert[A],fvert[B]))
         self._feature_graph = PolyLine(self._feature_graph)
  
+    def _compute_corner_point_cloud(self, mesh : SurfaceMesh):
+        self._corner_pc = RawMeshData()
+        for v in self.feature_vertices:
+            if self.corners[v] in (self.corner_order, self.corner_order/2) : continue
+            self._corner_pc.vertices.append(mesh.vertices[v])
+        self._corner_pc = PointCloud(self._corner_pc)
+
 ##### Feature detection subfunctions #####
 
     def _add_border_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:
@@ -209,6 +233,8 @@ class FeatureEdgeDetector(Worker):
         if self.compute_feature_graph:
             self.log("Compute feature graph")
             self._compute_feature_graph(mesh)
+            if self.flag_corners:
+                self._compute_corner_point_cloud(mesh)
 
         self.log(f" # Feature edges: {len(self.feature_edges)}")
 

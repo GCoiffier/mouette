@@ -85,7 +85,7 @@ def export_obj(mesh, path):
                 ofile.write('vn '+' '.join(['{}'.format(vn) for vn in nrm])+'\n')
 
         if config.export_edges_in_obj:
-            if not config.complete_edges_from_faces:
+            if not config.complete_edges_from_faces or mesh.dimensionality==1:
                 for a,b in mesh.edges:
                     ofile.write(f'l {a+1} {b+1}\n')
             elif mesh.edges.has_attribute("hard_edges"):

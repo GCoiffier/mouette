@@ -70,16 +70,19 @@ repo_name: GCoiffier/mouette
 
 nav:
   - Home: "index.md"
+
   - About: 
     - "about/installation.md"
     - "about/dependencies.md"
     - "about/license.md"
+
   - Data structures:
     - "datastructures/DataContainers.md"
     - "datastructures/PointClouds.md"
     - "datastructures/PolyLines.md"
     - "datastructures/SurfaceMeshes.md"
     - "datastructures/VolumeMeshes.md"
+
   - Data manipulations:
     - "manipulating_data/editing.md"
     - "manipulating_data/loading.md"
@@ -87,21 +90,25 @@ nav:
     - "manipulating_data/transforms.md"
     - "manipulating_data/sampling.md"
     - "manipulating_data/subdivision.md"
+
   - Attributes:
     - "attributes/global.md"
     - "attributes/per_elements.md"
     - "attributes/interpolation.md"
+
   - Algorithms:
     - "algorithms/tree.md"
     - "algorithms/shortest_paths.md"
     - "algorithms/feature_detection.md"
     - "algorithms/normal_estimation.md"
+
     - Frame fields: 
       - "algorithms/frame_fields/index.md"
       - "algorithms/frame_fields/connection.md"
       - "algorithms/frame_fields/surface_ff.md"
       - "algorithms/frame_fields/curvature.md"
       - "algorithms/frame_fields/volume_ff.md"
+
     - Parametrization: 
       - "algorithms/parametrization/index.md"
       - "algorithms/parametrization/Tutte.md"
@@ -116,6 +123,12 @@ nav:
     - Spatial queries:
       - "algorithms/knn.md"
       - "utilities/AABB.md"
+
+  - Numerical Optimization:
+    - "optimization/index.md"
+    - "optimization/eigensolve.md"
+    - "optimization/levenberg_marquardt.md"
+    - "optimization/newton.md"
 
   - Utilities:
     - "utilities/utils.md"

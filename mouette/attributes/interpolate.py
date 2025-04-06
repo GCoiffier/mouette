@@ -38,6 +38,7 @@ def interpolate_vertices_to_faces(
         mesh (Union[SurfaceMesh, VolumeMesh]): the input mesh
         vattr (Attribute): input vertex attribute 
         fattr (Attribute): output face attribute
+
     Returns:
         Attribute: fattr
     """
@@ -69,6 +70,7 @@ def interpolate_faces_to_vertices(
             - area: face have a weight proportionnal to their area
             
             - angle: face contribute to a vertex depending on the interior angle at this vertex
+
     Returns:
         Attribute: modified vattr
 
@@ -133,6 +135,7 @@ def average_corners_to_vertices(
 
             - uniform: every face will have weight 1
             - angle: corners contribute to a vertex depending on the interior angle at this vertex
+            
     Returns:
         Attribute: modified vattr
 

@@ -1,10 +1,11 @@
 from .base import FrameField
 from ...mesh.mesh_attributes import ArrayAttribute, Attribute, Attribute
+from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
 from ... import operators, utils, attributes, processing
 from...utils import maths
 from ..features import FeatureEdgeDetector
-from ..connection import SurfaceConnectionVertices, FlatConnectionVertices
+from ..connection import SurfaceConnectionVertices
 from ... import geometry as geom
 from ...optimize import inverse_power_method
 
@@ -166,7 +167,7 @@ class _BaseFrameField2DVertices(FrameField):
             PolyLine: the frame field as a mesh object
         """
         self._check_init()
-        FFMesh = PolyLine()
+        FFMesh = RawMeshData()
         L = attributes.mean_edge_length(self.mesh)/3
         n = self.order + 1
         for id_vertex, P in enumerate(self.mesh.vertices):
@@ -187,7 +188,7 @@ class _BaseFrameField2DVertices(FrameField):
                 FFMesh.vertices.append(P)
                 FFMesh.vertices += pts
                 FFMesh.edges += [(n*id_vertex, n*id_vertex+k) for k in range(1,n)]
-        return FFMesh
+        return PolyLine(FFMesh)
 
 class FrameField2DVertices(_BaseFrameField2DVertices):
     """

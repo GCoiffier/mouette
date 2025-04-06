@@ -53,7 +53,11 @@ class LevenbergMarquardt(Logger):
 
     References:
         [1] https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm
+
         [2] Constrained Levenberg-Marquardt Method with global complexity bounds, Marumo et al.
+
+    Example:
+        https://github.com/GCoiffier/mouette/blob/main/examples/optimization/levenberg_marquardt_example.py
     """
 
     def __init__(self,

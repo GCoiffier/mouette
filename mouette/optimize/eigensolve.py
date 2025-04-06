@@ -48,6 +48,23 @@ def rayleigh_quotient_iteration(
         maxiter: int = 100, 
         tol: float = 1e-10
     ) -> np.ndarray:
+    """Performs Rayleigh quotient iteration on matrix A to find an eigenvector of A whose eigenvalue is near 'm'. 
+    Similar to the inverse power method, except that the approximated eigenvalue is computed as the Rayleigh quotient, which converges faster for symmetric matrices.
+
+    Args:
+        A (sp.csc_matrix): the matrix
+        m (float, optional): the approximate eigenvalue. Will compute an eigenvector for the eigenvalue λ that minimizes its distance to m. Defaults to zero.
+        B (sp.csc_matrix, optional): metrics matrix for generalized eigenvectors computation. If not specified, will be the identity matrix. Defaults to None.
+        x0 (np.ndarray, optional): Initial guess for the eigenvector. If not provided, will be taken as a random vector with normalized values. Defaults to None.
+        maxiter (int, optional): maximal number of internal iteration. Defaults to 100.
+        tol (float, optional): early stopping criterion. Will stop the iteration if |x_{n+1} - x_n| < tol. Defaults to 1e-6.
+
+    References:
+        https://en.wikipedia.org/wiki/Rayleigh_quotient_iteration
+
+    Returns:
+        np.ndarray: An eigenvector of A associated with eigenvalue λ that is closest to m.
+    """
     
     n = A.shape[0]
     B = sp.eye(n, format="csc") if B is None else B

@@ -112,19 +112,19 @@ def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=T
     return circum
 
 @allowed_mesh_types(SurfaceMesh)
-def faces_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", persistent:bool = True, dense:bool = False) -> Attribute:
-    """Returns the faces that are at most at 'dist' neighbours from the boundary.
+def face_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", persistent:bool = True, dense:bool = False) -> Attribute:
+    """Returns a boolean attribute that is True if the face is at most at 'dist' neighbours from the boundary.
     Proceeds by region growing, starting from all faces touching the boundary and going inwards.
 
     Parameters:
         mesh (SurfaceMesh): the input mesh
-        dist (int, optional): Extend to which we flag the faces. All faces with a path of length < dist to the boundary will be returned. Defaults to 2.
-        name (str, optional): Name given to the attribute. Defaults to "barycenter".
+        dist (int, optional): Extend to which we flag the faces. All faces with a path of length < dist will be set to True. Defaults to 2.
+        name (str, optional): Name given to the attribute. Defaults to "near_border".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to False
 
     Returns:
-        Attribute: one bool per faces. If not persistent, returns a set.
+        Attribute: one bool per face.
     """
     
     near = set()

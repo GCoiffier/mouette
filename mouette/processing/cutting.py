@@ -338,7 +338,6 @@ class SingularityCutter(Worker):
     def _build_cut_graph_as_mesh(self):
         # Build tree of potential cuts for debug purposes
         self._cut_graph = RawMeshData()
-        hard_edges = self._cut_graph.edges.create_attribute("hard_edges", bool)
 
         new_v_id = dict()
         vid = 0
@@ -350,7 +349,6 @@ class SingularityCutter(Worker):
                     vid += 1
                     self._cut_graph.vertices.append(self.input_mesh.vertices[v])
             e = keyify(new_v_id[v1], new_v_id[v2])
-            hard_edges[len(hard_edges)] = True
             self._cut_graph.edges.append(e)
 
         singuls_attr = self._cut_graph.vertices.create_attribute("selection", bool)

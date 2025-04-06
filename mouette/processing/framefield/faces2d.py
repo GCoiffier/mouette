@@ -1,4 +1,5 @@
 from .base import FrameField
+from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import Attribute, ArrayAttribute
 from ... import geometry as geom
@@ -149,7 +150,7 @@ class _BaseFrameField2DFaces(FrameField) :
         Returns:
             PolyLine: representation of the frame field
         """
-        FFMesh = PolyLine()
+        FFMesh = RawMeshData()
         L = mean_edge_length(self.mesh)/3
         n = self.order+1
         for id_face, face in enumerate(self.mesh.faces):
@@ -163,7 +164,7 @@ class _BaseFrameField2DFaces(FrameField) :
             FFMesh.vertices.append(bary)
             FFMesh.vertices += pts
             FFMesh.edges += [(n*id_face, n*id_face+k) for k in range(1,n)]
-        return FFMesh
+        return PolyLine(FFMesh)
 
 class FrameField2DFaces(_BaseFrameField2DFaces) : 
 
