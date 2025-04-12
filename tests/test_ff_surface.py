@@ -1,6 +1,6 @@
 import pytest
 from mouette import framefield as ff
-from mouette.processing import SurfaceConnectionFaces, SurfaceConnectionVertices, FeatureEdgeDetector
+from mouette.processing import SurfaceConnectionFaces, SurfaceConnectionVertices, SurfaceConnectionEdges, FeatureEdgeDetector
 from mouette.mesh.datatypes.type_checks import BadMeshTypeException
 from mouette.utils.argument_check import InvalidArgumentTypeError,InvalidArgumentValueError, InvalidRangeArgumentError
 from data import *
@@ -13,6 +13,12 @@ def test_connection_faces(m):
 @pytest.mark.parametrize("m",[surf_spline(), surf_half_sphere()])
 def test_connection_vertices(m):
     conn = SurfaceConnectionVertices(m)
+    assert True
+
+
+@pytest.mark.parametrize("m",[surf_spline(), surf_half_sphere()])
+def test_connection_edges(m):
+    conn = SurfaceConnectionEdges(m)
     assert True
 
 def test_surface_framefield_wrong_mesh():
@@ -136,3 +142,9 @@ def test_surface_framefield_custom_singus_faces_invalid_topo(m):
         assert False
     except Exception as e:
         assert True
+
+
+@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
+def test_surface_framefield_edges(m):
+    framefield = ff.SurfaceFrameField(m, "edges")()
+    assert True

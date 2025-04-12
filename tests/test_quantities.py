@@ -7,14 +7,14 @@ from data import *
 def test_degree(s):
     deg = M.attributes.degree(s)
     deg = M.attributes.degree(s, persistent=False)
-    deg = M.attributes.degree(s, dense=False)
+    deg = M.attributes.degree(s, persistent=False, dense=False)
     assert True
 
 @pytest.mark.parametrize("s", surfaces)
 def test_angle_defect(s):
     dfct = M.attributes.angle_defects(s)
     dfct = M.attributes.angle_defects(s, persistent=False)
-    dfct = M.attributes.angle_defects(s, dense=False)
+    dfct = M.attributes.angle_defects(s, persistent=False, dense=False)
     assert True
 
 @pytest.mark.parametrize("s", surfaces)
@@ -59,4 +59,12 @@ def test_mean_cell_volume(s):
 @pytest.mark.parametrize("s", surfaces+point_clouds)
 def test_barycenter(s):
     m = M.attributes.barycenter(s)
+    assert True
+
+
+@pytest.mark.parametrize("s", surfaces)
+def test_middle(s):
+    m = M.attributes.edge_middle_point(s)
+    m = M.attributes.edge_middle_point(s, persistent=False)
+    m = M.attributes.edge_middle_point(s, persistent=False, dense=False)
     assert True
