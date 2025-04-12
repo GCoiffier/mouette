@@ -75,7 +75,7 @@ def laplacian(
         mesh (SurfaceMesh): input mesh
         cotan (bool) : whether to compute real cotan values for more precise discretization or only 0/1 values as a graph laplacian. Defaults to True.
         connection (SurfaceConnectionVertices, optional): For a laplacian on 1-forms, gives the angle in local bases of all adjacent edges. Defaults to None.
-        order (int, optional): Order of the parallel transport (useful when computing frame fields). Does nothing if parallel_transport is set to None. Defaults to 4.
+        order (int, optional): Order of the parallel transport (useful when computing frame fields). Does nothing if connection is set to None. Defaults to 4.
 
     Returns:
         scipy.sparse.csc_matrix : the Laplacian operator as a sparse matrix
@@ -156,6 +156,7 @@ def cotan_edge_diagonal(mesh : SurfaceMesh, inverse:bool=True) -> sp.csc_matrix:
             coeffs[ie] = cT1 + cT2
     return sp.diags(coeffs, format="csc")
 
+
 @allowed_mesh_types(SurfaceMesh)
 def area_weight_matrix_faces(mesh : SurfaceMesh, inverse : bool=False) -> sp.csc_matrix:
     """
@@ -174,6 +175,7 @@ def area_weight_matrix_faces(mesh : SurfaceMesh, inverse : bool=False) -> sp.csc
         area = 1/area
     return sp.diags(area, format="csc")
 
+
 @allowed_mesh_types(SurfaceMesh)
 def laplacian_triangles(
     mesh : SurfaceMesh, 
@@ -185,9 +187,9 @@ def laplacian_triangles(
 
     Args:
         mesh (SurfaceMesh): the supporting mesh
-        cotan (bool, optional): whether to use cotan laplacian or . Defaults to True.
-        connection (SurfaceConnectionFaces, optional): _description_. Defaults to None.
-        order (int, optional): _description_. Defaults to 4.
+        cotan (bool, optional): whether to use cotangents as weights. Defaults to True.
+        connection (SurfaceConnectionFaces, optional): The surface connection describing local bases and parallel transport for a Laplacian that acts on vectors in tangent spaces. Defaults to None (scalar Laplacian).
+        order (int, optional): Order of the parallel transport (useful when computing frame fields). Does nothing if connection is set to None. Defaults to 4.
 
     Returns:
         scipy.sparse.lil_matrix : the Laplacian operator as a sparse matrix
@@ -216,6 +218,88 @@ def laplacian_triangles(
         return Nabla_star @ D @ Nabla
     else:
         return Nabla_star @ Nabla
+
+@allowed_mesh_types(SurfaceMesh)
+def laplacian_edges(
+    mesh : SurfaceMesh, 
+    cotan : bool = True, 
+    connection : "SurfaceConnectionEdges" = None, 
+    order : int = 4) -> sp.csc_matrix:
+    """
+    Cotan laplacian defined on edge connectivity
+
+    Args:
+        mesh (SurfaceMesh): the supporting mesh
+        cotan (bool, optional): whether to use cotan as coefficients. Defaults to True.
+        connection (SurfaceConnectionEdges, optional): The surface connection describing local bases and parallel transport for a Laplacian that acts on vectors in tangent spaces. Defaults to None (scalar Laplacian).
+        order (int, optional): Order of the parallel transport (useful when computing frame fields). Does nothing if connection is set to None. Defaults to 4.
+
+    Returns:
+        scipy.sparse.csc_matrix : the Laplacian operator as a sparse matrix
+
+    Raises:
+        AssertionError : Fails if the mesh is not triangular.
+    """
+    assert mesh.is_triangular()
+    n_coeffs = 4*len(mesh.face_corners)
+    if cotan:
+        if mesh.face_corners.has_attribute("cotan"):
+            cot = mesh.face_corners.get_attribute("cotan")
+        else:
+            cot = cotangent(mesh)
+    else:
+        cot = None
+
+    rows = np.zeros(n_coeffs, dtype=np.int32)
+    cols = np.zeros(n_coeffs, dtype=np.int32)
+    coeffs = np.zeros(n_coeffs, dtype=(complex if connection else np.float64))
+    _c = 0
+    
+    for cnr,curV in enumerate(mesh.face_corners):
+        prevV = mesh.face_corners[mesh.connectivity.previous_corner(cnr)]
+        nextV = mesh.face_corners[mesh.connectivity.next_corner(cnr)]
+
+        coeff = -2*cot[cnr] if cotan else -2.
+        e1,e2 = mesh.connectivity.edge_id(prevV,curV), mesh.connectivity.edge_id(curV,nextV)
+        if connection is not None:
+            a12, a21 = connection.transport(e1,e2), connection.transport(e2,e1)
+            rows[_c], cols[_c], coeffs[_c], _c = e1, e2, coeff*cmath.rect(1., order*a21), _c+1 
+            rows[_c], cols[_c], coeffs[_c], _c = e2, e1, coeff*cmath.rect(1., order*a12), _c+1
+        else:
+            rows[_c], cols[_c], coeffs[_c], _c = e1, e2, coeff, _c+1 
+            rows[_c], cols[_c], coeffs[_c], _c = e2, e1, coeff, _c+1
+
+        rows[_c], cols[_c], coeffs[_c], _c = e1, e1, -coeff, _c+1 
+        rows[_c], cols[_c], coeffs[_c], _c = e2, e2, -coeff, _c+1 
+
+    mat = sp.csc_matrix((coeffs,(rows,cols)), dtype= (complex if connection else np.float64))
+    return mat
+
+
+
+@allowed_mesh_types(SurfaceMesh)
+def area_weight_matrix_edges(mesh : SurfaceMesh, inverse : bool=False) -> sp.csc_matrix:
+    """
+    Returns the diagonal matrix A of area weights on edges
+
+    Args:
+        mesh (SurfaceMesh): the input mesh
+        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
+
+    Returns:
+        sp.csc_matrix
+    """
+    area = face_area(mesh, persistent=False).as_array()
+
+    area_edges = np.zeros(len(mesh.edges))
+    for e,(A,B) in enumerate(mesh.edges):
+        for T in mesh.connectivity.edge_to_faces(A,B):
+            if T is None: continue
+            area_edges[e] += area[T]/3
+    if inverse:
+        area_edges = 1/area_edges
+    return sp.diags(area_edges, format="csc")
+
 
 ##### For Volumes #####
 

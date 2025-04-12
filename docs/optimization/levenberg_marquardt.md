@@ -33,7 +33,7 @@ import scipy.sparse as sp
 
 def function_to_optimize(x, a, b):
     # Rosenbrock function and gradient
-    f = function(x,a,b)
+    f = np.array([(a-x[0])**2 + b*(x[1] - x[0]**2)**2])
     J = sp.csr_matrix([2*(x[0]-a) - 4*b*x[0]*(x[1]-x[0]*x[0]),  2*b*(x[1]-x[0]*x[0])]).reshape((1,2))
     return f,J
 

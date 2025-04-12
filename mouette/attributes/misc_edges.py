@@ -24,6 +24,27 @@ def edge_length(mesh : Mesh, name = "length", persistent:bool=True, dense:bool =
         length[e] = geom.distance(pA,pB)
     return length
 
+@forbidden_mesh_types(PointCloud)
+def edge_middle_point(mesh : SurfaceMesh, name="middle", persistent: bool = True, dense: bool = True) -> Attribute:
+    """Compute the middle point of each edge across the mesh.
+
+    Parameters:
+        mesh (Mesh): the input mesh. PointClouds are forbidden (no edges).
+        name (str, optional): name of the attribute. Defaults to "middle".
+        persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
+        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
+    """
+    dim = len(mesh.vertices[0])
+    if persistent:
+        middle = mesh.edges.create_attribute(name, float, dim, dense=True)
+    else:
+        middle = ArrayAttribute(float, len(mesh.edges), dim) if dense else Attribute(float, dim)
+    for e,(a,b) in enumerate(mesh.edges):
+        pA,pB = mesh.vertices[a], mesh.vertices[b]
+        middle[e] = (pA+pB)/2
+    return middle
+
+
 @allowed_mesh_types(SurfaceMesh)
 def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
     """
@@ -46,7 +67,7 @@ def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
     return data
 
 @allowed_mesh_types(SurfaceMesh)
-def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent:bool = True, dense:bool = True)-> Attribute:
+def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent: bool = True, dense: bool = True)-> Attribute:
     """ Compute the cotan weights of edges.
     The weight of an edge separating T1 and T2 is the sum of cotangent of opposite angles in T1 and T2
 

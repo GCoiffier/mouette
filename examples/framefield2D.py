@@ -7,7 +7,7 @@ if __name__ == "__main__":
     parser.add_argument("input_mesh", type=str, help="path to the input mesh")
     parser.add_argument("-outp", "--outp", default="output.geogram_ascii")
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("-elem", "--elements", type=str, choices=["vertices", "faces"])
+    parser.add_argument("-elem", "--elements", type=str, choices=["vertices", "faces", "edges"])
     parser.add_argument("-order", "--order", type=int, default=4)
     parser.add_argument("-feat", "--features", action="store_true")
     parser.add_argument("-curv", "--curvature", action="store_true")

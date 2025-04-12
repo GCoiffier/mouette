@@ -7,6 +7,7 @@ from ...utils.argument_check import *
 # 2D implementations
 from .faces2d import *
 from .vertex2d import *
+from .edges2d import *
 from .curvature_vertex import PrincipalDirectionsVertices
 from .curvature_faces import PrincipalDirectionsFaces
 
@@ -36,7 +37,7 @@ def SurfaceFrameField(
     Args:
         mesh (SurfaceMesh): the supporting mesh onto which the framefield is based
 
-        elements (str): "vertices" or "faces", the mesh elements onto which the frames live.
+        elements (str): "vertices", "faces" or "edges". The mesh elements onto which the frames live.
     
     Keyword Args:
         order (int, optional): Order of the frame field (number of branches). Defaults to 4.
@@ -82,15 +83,19 @@ def SurfaceFrameField(
         - [2] _Frame Fields for CAD models_, Desobry et al. (2022)
         
         - [3] _Trivial Connections on Discrete Surfaces_, Crane et al. (2010)
+
+        - [4] _Vector Field Processing on Triangle Meshes_, de Goes et al., SIGGRAPH Courses (2016)
+        
+        - [5] _A Heat Method for Generalized Signed Distance_, Feng and Crane (2024)
     
     Example:
         [https://github.com/GCoiffier/mouette/blob/main/examples/framefield2D.py](https://github.com/GCoiffier/mouette/blob/main/examples/framefield2D.py)
     """
 
     ### Assert sanity of arguments
-    check_argument("elements", elements, str, ["vertices", "faces"])
+    check_argument("elements", elements, str, ["vertices", "faces", "edges"])
     check_argument("order", order, int)
-    if order<1: raise InvalidRangeArgumentError("order",order, ">=1")  
+    if order<1: raise InvalidRangeArgumentError("order", order, ">=1")  
     check_argument("n_smooth", n_smooth, int)
     if n_smooth<0: raise InvalidRangeArgumentError("n_smooth", n_smooth, ">=0")
     if smooth_attach_weight is not None and smooth_attach_weight<=0 :
@@ -108,6 +113,10 @@ def SurfaceFrameField(
         if singularity_indices is not None:
             return TrivialConnectionFaces(mesh, singularity_indices, order=order, verbose=verbose, custom_connection=custom_connection, custom_features=custom_features)
         return FrameField2DFaces(mesh, order, features, verbose, n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight,use_cotan=use_cotan,custom_connection=custom_connection,custom_features=custom_features)
+
+    elif elements=="edges":
+        return FrameField2DEdges(mesh, order, features, verbose, n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight, custom_connection=custom_connection, custom_features=custom_features, use_cotan=use_cotan)
+
 
 @allowed_mesh_types(SurfaceMesh)
 def PrincipalDirections(

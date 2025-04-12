@@ -176,7 +176,7 @@ class SurfaceConnectionFaces(SurfaceConnection):
         feat (FeatureEdgeDetector, optional): feature edges of the mesh. If not provided, will be initialized with a FeatureEdgeDetector object that flags only the boundary. Defaults to None.
     """
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, feat : FeatureEdgeDetector = None) -> None:
+    def __init__(self, mesh : SurfaceMesh, feat : FeatureEdgeDetector = None):
         super().__init__(mesh, feat)
 
     def _initialize(self):
@@ -239,3 +239,63 @@ class FlatConnectionFaces(SurfaceConnection):
     def project(self, V:Vec, i:int):
         # projection does not depend on the considered vertex i
         return Vec(self._baseX.dot(V), self._baseY.dot(V))
+    
+
+
+class SurfaceConnectionEdges(SurfaceConnection):
+    """
+    Local bases and parallel transport defined between tangent planes of the mesh at edges
+
+    Reference:
+        _A Heat Method for Generalized Signed Distance_, Feng and Crane (2024)
+    
+    Args:
+        mesh (SurfaceMesh): the supporting mesh
+    
+    Keyword Args:
+        enormals (Attribute): An attribute representing the edge normals. If not provided, will be computed at initialization
+        angles (Attribute) : An attribute representing angles at corners of faces. If not provided, will be computed at initialization
+    
+    Raises:
+        AssertionError: fails if the input mesh is not triangular
+    """
+
+    @allowed_mesh_types(SurfaceMesh)
+    def __init__(self, mesh : SurfaceMesh, **kwargs):
+        assert mesh.is_triangular()
+        self.enormals : ArrayAttribute = kwargs.get("enormals", None)
+        self.fnormals : ArrayAttribute = attributes.face_normals(mesh)
+        if self.enormals is None:
+            self.enormals = mesh.edges.create_attribute("normals", float, 3, dense=True)
+        super().__init__(mesh)
+
+    def _initialize(self):
+        #### Initialize bases
+        NE = len(self.mesh.edges)
+        self._baseX, self._baseY = ArrayAttribute(float, NE, 3), ArrayAttribute(float, NE, 3)
+        self._transport = dict()
+        for id_edge,(A,B) in enumerate(self.mesh.edges):
+            pA,pB = self.mesh.vertices[A], self.mesh.vertices[B]
+            for adj_face in self.mesh.connectivity.edge_to_faces(A,B):
+                if adj_face is None: continue
+                self.enormals[id_edge] += self.fnormals[adj_face]
+            self.enormals[id_edge] = Vec.normalized(self.enormals[id_edge])
+            self._baseX[id_edge] = Vec.normalized(pB-pA)
+            self._baseY[id_edge] = Vec.normalized(geom.cross(self.enormals[id_edge], self._baseX[id_edge]))
+
+        #### Initialize Parallel Transport
+        for F,(A,B,C) in enumerate(self.mesh.faces):
+            e1,s1 = self.mesh.connectivity.edge_id(A,B), (1 if A<B else -1)
+            e2,s2 = self.mesh.connectivity.edge_id(B,C), (1 if B<C else -1)
+            e3,s3 = self.mesh.connectivity.edge_id(C,A), (1 if C<A else -1)
+            
+            X1,X2,X3 = (self._baseX[_e] for _e in (e1,e2,e3))
+
+            self._transport[(e1,e2)] = - geom.signed_angle_2vec3D(s1*X1, s2*X2, self.fnormals[F])
+            self._transport[(e2,e1)] = - self._transport[(e1,e2)]
+
+            self._transport[(e1,e3)] = - geom.signed_angle_2vec3D(s1*X1, s3*X3, self.fnormals[F])
+            self._transport[(e3,e1)] = - self._transport[(e1,e3)]
+            
+            self._transport[(e2,e3)] = - geom.signed_angle_2vec3D(s2*X2, s3*X3, self.fnormals[F])
+            self._transport[(e3,e2)] = - self._transport[(e2,e3)]

@@ -240,7 +240,7 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             target_w[e] = angles[i_angle]
 
         ## build start w for rotation penalty energy
-        cstrfaces = attributes.faces_near_border(self.mesh, 5)
+        cstrfaces = attributes.face_near_border(self.mesh, 5)
         # 1) constraints
         ncstr = len(self.feat.feature_edges)
         nvar = len(self.mesh.edges)

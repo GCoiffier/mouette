@@ -185,7 +185,7 @@ def angle_2vec2D(V1:Vec, V2:Vec) -> float:
     Returns:
         float: the angle
     """
-    return math.atan2(V2.y, V2.x) - math.atan2(V1.y, V1.x)
+    return math.atan2(V2[1], V2[0]) - math.atan2(V1[1], V1[0])
 
 def angle_2vec3D(V1:Vec, V2:Vec) -> float:
     """Angle between two **3D** vectors
