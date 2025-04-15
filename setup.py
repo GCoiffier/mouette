@@ -5,7 +5,7 @@ with open("README.md", "r") as file_handle:
 
 setuptools.setup(
     name="mouette",
-    version='1.2.5',
+    version='1.2.6',
     author="GCoiffier",
     description="Mesh, Tools and Geometry Processing",
     long_description=long_description,
