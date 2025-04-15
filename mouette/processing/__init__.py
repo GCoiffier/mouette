@@ -14,5 +14,5 @@ from .border import extract_border_cycle, extract_border_cycle_all, extract_boun
 from . import trees
 from .parametrization import distortion
 from .connection import SurfaceConnectionFaces, SurfaceConnectionVertices, FlatConnectionVertices, FlatConnectionFaces, SurfaceConnectionEdges
-
+from .heat_method import HeatMethodDistance #, VectorHeatMethod
 from .point_cloud_utils import PointCloudNormalEstimator

@@ -4,9 +4,7 @@ import cmath
 
 from ..geometry import *
 from ..mesh.datatypes import *
-from ..attributes.misc_faces import face_area
-from ..attributes.misc_cells import cell_volume
-from ..attributes.misc_corners import cotangent
+from ..attributes import cotangent
 
 ##### For Surface, on vertices #####
 
@@ -39,29 +37,6 @@ def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
             k = add(k, l, b, -1)
     return sp.csc_matrix((data, (rows,cols)), shape=(n,n))
 
-
-@allowed_mesh_types(SurfaceMesh)
-def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = False, format:str="csc") -> sp.csc_matrix:
-    """
-    Returns the diagonal matrix A of area weights on vertices.
-    
-    Args:
-        mesh (SurfaceMesh): input mesh
-        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
-        sqrt (bool, optional): whether to return A or A^{1/2}. Can be combined with `inverse` to return A^{-1/2}. Defaults to False.
-        format (str, optional): one of the sparse matrix format of scipy (csc, csr, coo, lil, ...). Defaults to csc.
-
-    Returns:
-        sp.csc_matrix: diagonal matrix of vertex areas
-    """
-    A = np.zeros(len(mesh.vertices))
-    area = face_area(mesh)
-    for iT,T in enumerate(mesh.faces):
-        for u in T:
-            A[u] += area[iT]
-    if sqrt: A = np.sqrt(A)
-    if inverse : A = 1/A # /!\ perform inverse after sqrt
-    return sp.diags(A, format=format)
 
 @allowed_mesh_types(SurfaceMesh)
 def laplacian(
@@ -132,7 +107,10 @@ def cotan_edge_diagonal(mesh : SurfaceMesh, inverse:bool=True) -> sp.csc_matrix:
         sp.csc_matrix
     """
     m = len(mesh.edges)
-    cotan = cotangent(mesh, persistent=False)
+    if mesh.face_corners.has_attribute("cotan"):
+        cotan = mesh.face_corners.get_attribute("cotan")
+    else:
+        cotan = cotangent(mesh)
     coeffs = np.zeros(m)
     for ie,(u,v) in enumerate(mesh.edges):
         T1,uT1,vT1 = mesh.connectivity.direct_face(u,v,True)
@@ -155,25 +133,6 @@ def cotan_edge_diagonal(mesh : SurfaceMesh, inverse:bool=True) -> sp.csc_matrix:
         else:
             coeffs[ie] = cT1 + cT2
     return sp.diags(coeffs, format="csc")
-
-
-@allowed_mesh_types(SurfaceMesh)
-def area_weight_matrix_faces(mesh : SurfaceMesh, inverse : bool=False) -> sp.csc_matrix:
-    """
-    Returns the diagonal matrix A of area weights on faces
-    Laplace-beltrami operator for a 2D manifold is (A^-1)L where A is the area weight and L is the cotan matrix
-
-    Args:
-        mesh (SurfaceMesh): the input mesh
-        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
-
-    Returns:
-        sp.csc_matrix
-    """
-    area = face_area(mesh, persistent=False).as_array()
-    if inverse:
-        area = 1/area
-    return sp.diags(area, format="csc")
 
 
 @allowed_mesh_types(SurfaceMesh)
@@ -218,6 +177,8 @@ def laplacian_triangles(
         return Nabla_star @ D @ Nabla
     else:
         return Nabla_star @ Nabla
+
+##### For Surface, on edges #####
 
 @allowed_mesh_types(SurfaceMesh)
 def laplacian_edges(
@@ -276,54 +237,7 @@ def laplacian_edges(
     return mat
 
 
-
-@allowed_mesh_types(SurfaceMesh)
-def area_weight_matrix_edges(mesh : SurfaceMesh, inverse : bool=False) -> sp.csc_matrix:
-    """
-    Returns the diagonal matrix A of area weights on edges
-
-    Args:
-        mesh (SurfaceMesh): the input mesh
-        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
-
-    Returns:
-        sp.csc_matrix
-    """
-    area = face_area(mesh, persistent=False).as_array()
-
-    area_edges = np.zeros(len(mesh.edges))
-    for e,(A,B) in enumerate(mesh.edges):
-        for T in mesh.connectivity.edge_to_faces(A,B):
-            if T is None: continue
-            area_edges[e] += area[T]/3
-    if inverse:
-        area_edges = 1/area_edges
-    return sp.diags(area_edges, format="csc")
-
-
 ##### For Volumes #####
-
-@allowed_mesh_types(VolumeMesh)
-def volume_weight_matrix(mesh: VolumeMesh, inverse: bool = False, sqrt: bool = False, format: str = "csc") -> sp.dia_matrix:
-    """
-    Mass diagonal matrix for volume Laplacian.
-    Args:
-        mesh (VolumeMesh): input mesh
-        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
-        sqrt (bool, optional): whether to return A or A^{1/2}. Can be combined with `inverse` to return A^{-1/2}. Defaults to False.
-        format (str, optional): one of the sparse matrix format of scipy (csc, csr, coo, lil, ...). Defaults to csc.
-
-    Returns:
-        sp.csc_matrix: diagonal matrix of vertices area
-    """
-    A = np.zeros(len(mesh.vertices))
-    volume = cell_volume(mesh, persistent=False)
-    for iC,C in enumerate(mesh.cells):
-        for u in C:
-            A[u] += volume[iC] 
-    if sqrt: A = np.sqrt(A)
-    if inverse: A = 1/A
-    return sp.diags(A, format=format)
 
 @allowed_mesh_types(VolumeMesh)
 def volume_laplacian(mesh : VolumeMesh) -> sp.lil_matrix:

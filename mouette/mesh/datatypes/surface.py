@@ -433,7 +433,16 @@ class SurfaceMesh(Mesh):
             if key is None: return None
             return self._half_edges[key][3]
 
-        def corner_to_half_edge(self, C: int) -> int:
+        def corner_to_half_edge(self, C: int):
+            """
+            Half edge (A -> B) associated with corner C
+            
+            Args:
+                C (int): corner index
+
+            Returns:
+                tuple(int,int): the two vertex indices of the half edge
+            """
             if self._Cn2he is None:
                 self._compute_connectivity()
             return self._Cn2he.get(C,None)

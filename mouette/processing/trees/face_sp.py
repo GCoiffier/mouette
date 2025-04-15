@@ -2,8 +2,7 @@ from random import randint
 from collections import deque
 
 from ...mesh.datatypes import *
-from ...mesh import merge
-from ...attributes.misc_faces import face_barycenter
+from ...attributes import face_barycenter
 from ...utils import keyify
 from .base import SpanningTree, SpanningForest
 

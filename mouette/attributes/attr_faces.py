@@ -56,7 +56,7 @@ def face_normals(mesh : SurfaceMesh, name="normals", persistent:bool=True, dense
     if persistent :
         normals = mesh.faces.create_attribute(name, float, 3)
     else:
-        normals = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float)
+        normals = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
     for iT,T in enumerate(mesh.faces):
         pA,pB,pC = (mesh.vertices[u] for u in T[:3])
         normals[iT] = Vec.normalized(geom.cross(pB-pA, pC-pA))
@@ -161,21 +161,21 @@ def triangle_aspect_ratio(mesh : SurfaceMesh, name : str="aspect_ratio", persist
         Attribute: One float per face.
     """
     if persistent :
-        ratio = mesh.faces.create_attribute(name, float, 3)
+        ratio = mesh.faces.create_attribute(name, float)
     else:
-        ratio = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
+        ratio = ArrayAttribute(float, len(mesh.faces)) if dense else Attribute(float)
     for iF,F in enumerate(mesh.faces):
         if len(F)!=3: ratio[iF] = -1 
         ratio[iF] = geom.aspect_ratio(*(mesh.vertices[u] for u in F))
 
 @allowed_mesh_types(SurfaceMesh)
-def parallel_transport_curvature(mesh : SurfaceMesh, PT:"SurfaceConnectionFaces", name : str="curvature", persistent : bool=True, dense : bool = True):
+def parallel_transport_curvature(mesh : SurfaceMesh, PT:"SurfaceConnectionVertices", name : str="curvature", persistent : bool=True, dense : bool = True):
     """
     Compute the curvature of each face associated to a given parallel transport pT
 
     Args:
-        mesh (SurfaceMesh): _description_
-        PT (dict): parallel transport. Dictionnary of keys (A,B) -> direction (angle) of edge (A,B) in local basis of A
+        mesh (SurfaceMesh): input mesh
+        PT (SurfaceConnectionVertices): local bases and parallel transport for vertices.
         name (str, optional): Name given to the attribute.. Defaults to "curvature".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to False.

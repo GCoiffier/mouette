@@ -5,7 +5,7 @@ from math import isinf
 from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import Attribute
 from ...utils import keyify, UnionFind
-from ...attributes.misc_edges import edge_length as attr_edge_length
+from ...attributes import edge_length as attr_edge_length
 from .base import SpanningForest, SpanningTree
 
 class EdgeSpanningTree(SpanningTree):

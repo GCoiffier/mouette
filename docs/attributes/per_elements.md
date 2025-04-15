@@ -4,7 +4,7 @@ title: "Per element attributes"
 
 ## Vertices
 
-:::mouette.attributes.misc_vertices
+:::mouette.attributes.attr_vertices
     options:
         heading_level: 3
         filters:
@@ -15,7 +15,7 @@ title: "Per element attributes"
 
 ## Edges
 
-:::mouette.attributes.misc_edges
+:::mouette.attributes.attr_edges
     options:
         heading_level: 3
         filters:
@@ -26,7 +26,7 @@ title: "Per element attributes"
 
 ## Faces
 
-:::mouette.attributes.misc_faces
+:::mouette.attributes.attr_faces
     options:
         heading_level: 3
         filters:
@@ -37,7 +37,7 @@ title: "Per element attributes"
 
 ## Face Corners
 
-:::mouette.attributes.misc_corners
+:::mouette.attributes.attr_corners
     options:
         heading_level: 3
         filters:
@@ -48,7 +48,7 @@ title: "Per element attributes"
 
 ## Cells
 
-:::mouette.attributes.misc_cells
+:::mouette.attributes.attr_cells
     options:
         heading_level: 3
         filters:

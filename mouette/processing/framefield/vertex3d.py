@@ -13,6 +13,8 @@ from ...geometry.rotations import match_rotation
 from ...geometry import transform
 
 from ...operators.laplacian_op import *
+from ...operators.mass import volume_weight_matrix
+
 from ...procedural import axis_aligned_cube
 
 import numpy as np

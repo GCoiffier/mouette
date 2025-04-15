@@ -2,7 +2,7 @@ import numpy as np
 from ..mesh.datatypes import *
 from ..mesh.mesh import from_arrays, merge
 from ..mesh.mesh_data import RawMeshData, DataContainer
-from ..attributes.misc_vertices import vertex_normals
+from ..attributes import vertex_normals
 from ..geometry import Vec
 from .. import utils
 from .bezier import BezierCurve

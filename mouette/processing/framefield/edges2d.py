@@ -4,9 +4,10 @@ from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import Attribute, ArrayAttribute
 from ... import geometry as geom
 from ... import operators
+from ... import attributes
+from ...utils import maths
 
-from ... import utils
-from ... import optimize
+from ...optimize import inverse_power_method
 
 from ...attributes import cotangent, mean_edge_length
 from ..features import FeatureEdgeDetector
@@ -87,23 +88,55 @@ class FrameField2DEdges(FrameField) :
 
     def flag_singularities(self, singul_attr_name:str = "singuls"):        
         """
-        Detects singularities of the frame field
+        Detects singularities of the frame field. Singularities of an edge-based frame field can appear both at vertices and inside faces.
 
-        Creates 2 attributes:
-            - An attribute "singuls" on vertices storing the value (+- 1) of singularities (eventually 0 for non singular vertices)
-            - An attribute "angles" on edges storing the angle of the edge, given as the difference between the two frames (associated 1-form of the frame field)
+        Creates 3 attributes:
+            - An attribute "<singul_attr_name>" on *vertices* storing the value (+- 1) of singularities (eventually 0 for non singular vertices)
+            - An attribute "<singul_attr_name>" on *faces* storing the values (+- 1) of singularities 
+            - An attribute "ff_angles" on faces corners storing the angle between two edge frames
         
         Args:
             singul_attr_name (str, optional): Name of the singularity attribute created. Defaults to "singuls".
         """
-        raise NotImplementedError
         self._check_init()
         ZERO_THRESHOLD = 1e-3
-        if self.mesh.vertices.has_attribute(singul_attr_name):
-            singuls = self.mesh.vertices.get_attribute(singul_attr_name)
-            singuls.clear()
-        else:
-            singuls = self.mesh.vertices.create_attribute(singul_attr_name, float)
+
+        cnct = self.mesh.connectivity
+        
+        # compute all corner rotations
+        angles = self.mesh.face_corners.create_attribute("ff_angles", float)
+        for c in self.mesh.id_corners:
+            e1 = cnct.edge_id(*cnct.corner_to_half_edge(cnct.previous_corner(c)))
+            e2 = cnct.edge_id(*cnct.corner_to_half_edge(c))
+        
+            frame1, frame2 = self.var[e1], self.var[e2]
+            pt = self.conn.transport(e1,e2)
+
+            u1 = maths.roots(frame1, self.order)[0]
+            phase1 = cmath.phase(u1)
+            abs_angles12 = [abs(maths.angle_diff(phase1, cmath.phase(u2) - pt)) for u2 in maths.roots(frame2, self.order)]
+            angles12 = [maths.angle_diff(phase1, cmath.phase(u2) - pt) for u2 in maths.roots(frame2, self.order)]
+            i_angle = np.argmin(abs_angles12)
+            angles[c] = angles12[i_angle]
+
+        # compute singularities 
+        singulsV = self.mesh.vertices.create_attribute(singul_attr_name, float)
+        defectsV = attributes.average_corners_to_vertices(self.mesh, angles, ArrayAttribute(float, len(self.mesh.vertices)), weight="sum")
+        angle_defect = attributes.angle_defects(self.mesh, persistent=False)
+       
+        for v in self.mesh.id_vertices:
+            if defectsV[v]+angle_defect[v] > ZERO_THRESHOLD:
+                singulsV[v] = 1
+            elif defectsV[v]+angle_defect[v] < -ZERO_THRESHOLD:
+                singulsV[v] = -1
+        
+        defectsF = attributes.average_corners_to_faces(self.mesh, angles, ArrayAttribute(float, len(self.mesh.faces)) , weight="sum")
+        singulsF = self.mesh.faces.create_attribute(singul_attr_name, float)
+        for F in self.mesh.id_faces:
+            if defectsF[F]>ZERO_THRESHOLD:
+                singulsF[F] = -1 # sign is reversed from vertices
+            elif defectsF[F]<-ZERO_THRESHOLD:
+                singulsF[F] = 1 # sign is reversed from vertices
 
     def export_as_mesh(self) -> PolyLine:
         """
@@ -181,7 +214,7 @@ class FrameField2DEdges(FrameField) :
         else:
             self.log("No border detected")
             self.log("Initial solve of linear system using an eigensolver")
-            self.var = optimize.inverse_power_method(lap)
+            self.var = inverse_power_method(lap)
             if self.n_smooth>0:
                 self.log(f"Solve linear system {self.n_smooth} times with diffusion")
                 alpha = self.smooth_attach_weight or self._compute_attach_weight(A)

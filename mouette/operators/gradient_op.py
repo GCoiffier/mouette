@@ -2,12 +2,11 @@ import numpy as np
 import scipy.sparse as sp
 
 from ..geometry import *
-from ..processing.connection import SurfaceConnectionFaces
 from ..mesh.datatypes import *
-from ..attributes.misc_faces import face_area
+from ..attributes import face_area
 
 @allowed_mesh_types(SurfaceMesh)
-def gradient(mesh: SurfaceMesh, conn: SurfaceConnectionFaces = None, as_complex: bool = True) -> sp.csc_matrix:
+def gradient(mesh: SurfaceMesh, conn: "SurfaceConnectionFaces", as_complex: bool = True) -> sp.csc_matrix:
     """
     Computes the gradient operator, i.e. a |F| x |V| matrix G such that for any scalar function f defined over vertices of a surface mesh, Gf is its gradient inside faces.
 
@@ -18,7 +17,7 @@ def gradient(mesh: SurfaceMesh, conn: SurfaceConnectionFaces = None, as_complex:
 
     Args:
         mesh (SurfaceMesh): The input mesh
-        conn (SurfaceConnectionFaces, optional): Connection objects specifying local bases of faces. Will be computed if not provided. Defaults to None.
+        conn (SurfaceConnectionFaces): Connection objects specifying local bases of faces.
         as_complex (bool, optional): whether the output is |F| complex values of 2|F| float values
 
     Raises:
@@ -29,8 +28,10 @@ def gradient(mesh: SurfaceMesh, conn: SurfaceConnectionFaces = None, as_complex:
     """
     if not mesh.is_triangular():
         raise Exception("Mesh is not a triangulation")
-    if conn is None : conn = SurfaceConnectionFaces(mesh)
-    area = face_area(mesh)
+    if mesh.faces.has_attribute("area"):
+        area = mesh.faces.get_attribute("area")
+    else:
+        area = face_area(mesh)
 
     N = len(mesh.vertices)
     M = len(mesh.faces)

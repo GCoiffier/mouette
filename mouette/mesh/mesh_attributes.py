@@ -327,7 +327,8 @@ class ArrayAttribute(_BaseAttribute):
         """
         Sparse attributes allow to iterate only over non-default elements
         """
-        return range(self.n_elem)
+        for i in range(self.n_elem):
+            yield self._data[i]
 
     def as_array(self, *args):
         return np.squeeze(self._data)

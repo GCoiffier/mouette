@@ -320,7 +320,7 @@ def intersect_2lines2D(p1 : Vec, d1 : Vec, p2: Vec, d2 : Vec) -> Vec:
     return p1+t*d1
 
 def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
-    """Circumcenter of the triangle formed by three points in the plane
+    """Circumcenter of the triangle formed by three points
 
     Parameters:
         v1 (Vec): first point
@@ -333,6 +333,8 @@ def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
     Returns:
         Vec: coordinates of the circumcenter
     """
+    X,Y,_ = face_basis(v1,v2,v3)
+    v1,v2,v3 = (Vec(dot(X,v), dot(Y,v)) for v in (v1,v2,v3)) # projet into basis of the triangle
     p1 = (v1+v2)/2
     p2 = (v1+v3)/2
     d1 = v2-v1
@@ -340,7 +342,7 @@ def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
     d1 = Vec(d1[1], -d1[0])
     d2 = Vec(d2[1], -d2[0])
     S = intersect_2lines2D(p1, d1, p2, d2)
-    return Vec(S.x, S.y, 0.)
+    return X*S.x + Y*S.y
 
 def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
     """
@@ -355,7 +357,7 @@ def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
     Returns:
         float: the aspect ratio of triangle ABC
 
-    Note:
+    References:
         [https://stackoverflow.com/a/10290011](https://stackoverflow.com/a/10290011)
     """
     ab = distance(A,B)

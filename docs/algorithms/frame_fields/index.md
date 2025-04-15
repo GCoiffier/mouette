@@ -2,14 +2,14 @@
 title: "Frame Fields"
 ---
 
-A frame field is a set of directions that live in the tangent space of a manifold. On a mesh, it can be represented as a set of vectors for each element (vertex/face/cell) on which it is defined.
+A frame field is a set of directions that live in the tangent space of a manifold. On a mesh, it can be represented as a set of vectors for each element (vertex/edge/face/cell) on which it is defined.
 
 <figure markdown>
   ![](../../_img/ff.jpeg){ width="700" }
   <figcaption>Smooth frame field on the bunny model and on a CAD mesh</figcaption>
 </figure>
 
-A demo of mouette's frame field algorithms visualized in [Polyscope](https://polyscope.run/py/) can be found [here](https://github.com/GCoiffier/Frame-Fields-Demo)
+A demo of mouette's surface frame field algorithms visualized in [Polyscope](https://polyscope.run/py/) can be found [here](https://github.com/GCoiffier/Frame-Fields-Demo)
 
 
 ## The FrameField base class
@@ -46,7 +46,7 @@ The `export_as_mesh()` method of the `FrameField` class outputs frames either as
 `mouette` implements different kinds of frame fields:
 
 ### 2D frame fields
-- [Surface frame fields](./surface_ff.md) are orthogonal crosses on a surface mesh, either on its vertices or its faces
+- [Surface frame fields](./surface_ff.md) are orthogonal crosses on a surface mesh, either on its vertices, its edges or its faces
 - [Principal directions of curvature](./curvature.md) follow the extrema of Gaussian curvature on a surface mesh
 
 To work on curved surfaces, these frame field require the definition of a [discrete surface connection](./connection.md) which allows the comparison of elements in adjacent tangent spaces.

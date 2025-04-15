@@ -3,7 +3,7 @@ from ...mesh.mesh_attributes import ArrayAttribute, Attribute, Attribute
 from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
 from ... import operators, utils, attributes, processing
-from...utils import maths
+from ...utils import maths
 from ..features import FeatureEdgeDetector
 from ..connection import SurfaceConnectionVertices
 from ... import geometry as geom

@@ -4,8 +4,8 @@ from ..mesh.mesh_attributes import Attribute
 from ..mesh.datatypes import *
 from ..mesh.mesh_data import RawMeshData
 from .. import geometry
-from ..attributes.misc_faces import face_normals
-from ..attributes.misc_corners import corner_angles
+from ..attributes.attr_faces import face_normals
+from ..attributes.attr_corners import corner_angles
 from math import pi
 
 class FeatureEdgeDetector(Worker):

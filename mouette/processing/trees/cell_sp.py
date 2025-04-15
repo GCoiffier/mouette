@@ -2,7 +2,7 @@ from random import randint
 from collections import deque
 
 from ...mesh.datatypes import *
-from ...attributes.misc_cells import cell_barycenter
+from ...attributes import cell_barycenter
 from ...utils import keyify
 from .base import SpanningTree, SpanningForest
 

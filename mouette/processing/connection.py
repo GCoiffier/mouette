@@ -18,8 +18,8 @@ class SurfaceConnection(ABC):
     def __init__(self, mesh : SurfaceMesh, feat : FeatureEdgeDetector = None ):
         self.mesh = mesh
         self.feat = feat or FeatureEdgeDetector(only_border=True, compute_feature_graph=False, verbose=False)(self.mesh)
-        self._baseX : np.ndarray = None
-        self._baseY : np.ndarray = None
+        self._baseX : ArrayAttribute = None
+        self._baseY : ArrayAttribute = None
         self._transport : dict = None
         self._initialize()
     
@@ -52,6 +52,22 @@ class SurfaceConnection(ABC):
             `cross(X,Y)` is the normal of element i
         """
         return self._baseX[i], self._baseY[i]
+
+    @property
+    def bX(self) -> np.ndarray:
+        """
+        Returns:
+            np.ndarray: local X vectors of bases as a 2D numpy array
+        """
+        return self._baseX.as_array()
+    
+    @property
+    def bY(self) -> np.ndarray:
+        """
+        Returns:
+            np.ndarray: local Y vectors of bases as a 2D numpy array
+        """
+        return self._baseY.as_array()
 
     def project(self, V:Vec, i:int):
         return Vec(self._baseX[i].dot(V), self._baseY[i].dot(V))

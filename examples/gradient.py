@@ -39,7 +39,7 @@ if __name__ == "__main__":
         signal = signal[:,np.newaxis]
 
     print("Compute gradient")
-    grad = M.operators.gradient(mesh, connection)
+    grad = M.operators.gradient_op(mesh, connection)
     signal_G = grad @ signal
 
     print("Output results")

@@ -1,6 +1,6 @@
 from ..mesh.mesh_attributes import Attribute, ArrayAttribute
 from ..mesh.datatypes import *
-from .misc_corners import cotangent
+from .attr_corners import cotangent
 from .. import geometry as geom
 from ..geometry import Vec
 import numpy as np

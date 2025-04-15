@@ -221,9 +221,9 @@ def shortest_path_to_border(mesh : SurfaceMesh, start : int, weights = "length",
         export_path_mesh (bool, optional): 
             If specified, will also return the path as a Polyline file. 
             Defaults to False.
+
     Raises:
-        Exception: "Mesh has no border"
-            raised if the border of the mesh does not exist
+        Exception: "Mesh has no border" raised if the border of the mesh does not exist
 
     Returns:
        list: The list of vertices on shortest path

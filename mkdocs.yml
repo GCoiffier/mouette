@@ -99,6 +99,7 @@ nav:
   - Algorithms:
     - "algorithms/tree.md"
     - "algorithms/shortest_paths.md"
+    - "algorithms/heat_method.md"
     - "algorithms/feature_detection.md"
     - "algorithms/normal_estimation.md"
 

@@ -6,8 +6,7 @@ from ...mesh.datatypes import *
 from ...mesh.mesh import copy
 from ...mesh.mesh_attributes import ArrayAttribute
 from ... import geometry as geom
-from ...attributes.glob import euler_characteristic
-from ...attributes.misc_faces import face_area
+from ...attributes import euler_characteristic, face_area
 
 @njit(cache=True, fastmath=True)
 def chi(D, eps):

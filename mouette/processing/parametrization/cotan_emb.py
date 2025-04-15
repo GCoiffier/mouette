@@ -9,8 +9,7 @@ from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import ArrayAttribute
 from ... import geometry as geom
 from ...utils.argument_check import check_argument
-from ...attributes.glob import euler_characteristic
-from ...attributes.misc_corners import cotangent
+from ...attributes import euler_characteristic, cotangent
 from ...operators import area_weight_matrix
 
 @njit(cache=True, fastmath=True)

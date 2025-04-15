@@ -1,7 +1,7 @@
 from ..worker import Worker
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import Attribute, ArrayAttribute
-from ...attributes.misc_faces import face_area
+from ...mesh.mesh_attributes import ArrayAttribute
+from ...attributes import face_area
 
 from ...geometry import Vec
 from ... import geometry as geom

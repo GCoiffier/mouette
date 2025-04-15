@@ -1,7 +1,7 @@
 from ..mesh.datatypes import *
 from ..geometry import Vec
-from .misc_faces import face_area
-from .misc_cells import cell_volume
+from .attr_faces import face_area
+from .attr_cells import cell_volume
 
 @allowed_mesh_types(SurfaceMesh)
 def euler_characteristic(mesh : SurfaceMesh) -> int:

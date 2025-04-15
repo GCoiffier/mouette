@@ -1,10 +1,9 @@
-import numpy as np
-from math import pi, atan2
+from math import pi
 
 from ..mesh.datatypes import *
 from ..mesh.mesh_attributes import Attribute, ArrayAttribute, Attribute
-from .misc_faces import face_normals
-from .misc_corners import corner_angles
+from .attr_faces import face_normals
+from .attr_corners import corner_angles
 from .interpolate import interpolate_faces_to_vertices
 from .. import geometry as geom
 from ..geometry import Vec
@@ -111,7 +110,7 @@ def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpol
     if persistent:
         normals = mesh.vertices.create_attribute(name, float, 3, dense=dense)
     else:
-        normals = ArrayAttribute(float, len(mesh.vertices), 3) if dense else Attribute(float)
+        normals = ArrayAttribute(float, len(mesh.vertices), 3) if dense else Attribute(float, 3)
 
     normals = interpolate_faces_to_vertices(mesh, fnormals, normals, weight=interpolation)
     for v in mesh.id_vertices:
