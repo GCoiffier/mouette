@@ -14,7 +14,7 @@ from ..features import FeatureEdgeDetector
 from ..connection import SurfaceConnectionEdges
 
 import numpy as np
-from math import pi, atan2
+from math import pi
 import cmath
 import scipy.sparse as sp
 from scipy.sparse import linalg
@@ -138,15 +138,18 @@ class FrameField2DEdges(FrameField) :
             elif defectsF[F]<-ZERO_THRESHOLD:
                 singulsF[F] = 1 # sign is reversed from vertices
 
-    def export_as_mesh(self) -> PolyLine:
+    def export_as_mesh(self, **kwargs) -> PolyLine:
         """
         Exports the frame field as a set of crosses on each faces, for visualization purposes
+
+        Additionnal Args:
+            length_mult (float, optional): multiplier of the length of each vector for visualization purposes. Defaults to 1.
 
         Returns:
             PolyLine: representation of the frame field
         """
         FFMesh = RawMeshData()
-        L = mean_edge_length(self.mesh)/5
+        L = kwargs.get("length_mult", 1.) * mean_edge_length(self.mesh)/4
         n = self.order+1
         for id_edge, (A,B) in enumerate(self.mesh.edges):
             pA,pB = self.mesh.vertices[A], self.mesh.vertices[B]

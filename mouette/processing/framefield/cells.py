@@ -213,7 +213,6 @@ class FrameField3DCells(FrameField):
 
         cstrMat = sp.csc_matrix((coeffs, (rows, cols)), shape=(ncstr, nvar))
         cstrRHS = np.array(cstrRHS)
-        # print(geom.norm(cstrMat.dot(self.var) - cstrRHS))
         return cstrMat, cstrRHS
 
     def optimize(self):

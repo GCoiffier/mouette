@@ -132,3 +132,6 @@ dmypy.json
 # vscode files
 *.code-workspace
 .vscode/
+
+# output files
+*.geogram_ascii

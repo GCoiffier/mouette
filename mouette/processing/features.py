@@ -18,7 +18,7 @@ class FeatureEdgeDetector(Worker):
     
     - Edges such that their dihedral angle is large (crease edges)
 
-    The `FeatureEdgeDetector` object ican be given as a parameter in parametrization or frame field algorithms that need feature edge alignment.
+    The `FeatureEdgeDetector` object can be given as a parameter in parametrization or frame field algorithms that need feature edge alignment.
     """
 
     def __init__(self, only_border : bool = False, flag_corners=True, corner_order:int = 4, compute_feature_graph=True, verbose=True):
@@ -167,6 +167,7 @@ class FeatureEdgeDetector(Worker):
             self.corners = mesh.vertices.get_attribute("corners")
         else:
             self.corners = mesh.vertices.create_attribute("corners", int)
+        if len(self.feature_vertices)==0: return
         angles = corner_angles(mesh, persistent=False)
         for v in self.feature_vertices:
             angle_v = 0.

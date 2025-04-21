@@ -10,7 +10,6 @@ if __name__ == "__main__":
     parser.add_argument("-elem", "--elements", type=str, choices=["vertices", "faces", "edges"])
     parser.add_argument("-order", "--order", type=int, default=4)
     parser.add_argument("-feat", "--features", action="store_true")
-    parser.add_argument("-curv", "--curvature", action="store_true")
     parser.add_argument("-cadff", "--cadff", action="store_true")
     parser.add_argument("-singus", "--singular-indices", nargs="+", help="list of alternating elem_id singu_id")
     parser.add_argument("-n", "--n-smooth", default=0, type=int)
@@ -30,10 +29,7 @@ if __name__ == "__main__":
         singus = mesh.vertices.create_attribute("singuls", float) if args.elem == "faces" else mesh.faces.create_attribute("singuls", float)
         for i in range(len(args.singular_indices)//2):
             singus[args.singular_indices[2*i]] = args.singular_indices[2*i+1]
-
-    if args.curvature:
-        ff = framefield.PrincipalDirections(mesh, args.elements, args.features, 
-            args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha)
+            
     else:
         ff = framefield.SurfaceFrameField(mesh, args.elements, args.order, args.features, 
             verbose=args.verbose, n_smooth=args.n_smooth, smooth_attach_weight=args.alpha, 

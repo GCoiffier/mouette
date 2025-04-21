@@ -124,11 +124,15 @@ def PrincipalDirections(
     elements : str,
     features : bool = True,
     verbose : bool = False,
+    
+    patch_size : int = 2,
+    confidence_threshold : float = 0.5,
+
     n_smooth : int = 1,
     smooth_attach_weight : float = None,
-    patch_size : int = 3,
-    curv_threshold : float = 0.01,
-    complete_ff : bool = True,
+    smooth_threshold : float = 0.7,
+
+    custom_connection : SurfaceConnection = None,
     custom_features : FeatureEdgeDetector = None) -> FrameField:
     """
     Args:
@@ -144,19 +148,23 @@ def PrincipalDirections(
 
         n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 1.
         
-        smooth_attach_weight (float, optional): Custom attach weight to previous solution during smoothing steps. 
-            If not provided, will be estimated at 1 for vertex version and 1e-3 for faces version. Defaults to None.
+        smooth_attach_weight (float, optional): Custom attach weight to previous solution during smoothing steps. If not provided, will be estimated at 1 for vertex version and 1e-3 for faces version. Defaults to None.
         
-        patch_size (int, optional): On vertices only. Radius (in nubmer of edges) of the neighboring patch to be considered to approximate the shape operator. Defaults to 3.
+        patch_size (int, optional): On vertices only. Radius (in nubmer of edges) of the neighboring patch to be considered to approximate the shape operator. Defaults to 2.
         
-        curv_threshold (float, optional): On vertices only. Threshold on the eigenvalues of the shape operator. If smaller, eigenvectors will not be extracted (curvature is too small). Defaults to 0.01.
+        confidence_threshold (float, optional): On vertices only. Threshold on the anisotropy of the shape operator. Great anisotropy values (between 0 and 1) give good confidence on the principal directions. If the confidence is smaller than the threshold, eigenvectors will not be extracted and will instead be harmonically filled in. Defaults to 0.5.
         
-        complete_ff (bool, optional): Whether to smoothly interpolate directions on low curvature areas (< curv_threshold). Defaults to True.
+        smooth_threshold (float, optional): On vertices only. Threshold on the anisotropy of the shape operator. Points with a confidence value higher than the threshold will be considered fixed during smoothing. Ignored is n_smooth is 0. Defaults to 0.7.
 
+        custom_connection (SurfaceConnection, optional): custom connection object to be used for parallel transport. If not provided, a connection will be automatically computed (see SurfaceConnection class). Defaults to None.
+        
         custom_features (FeatureEdgeDetector, optional): custom feature edges to be used in frame field optimization. If not provided, feature edges will be automatically detected. If the 'features' flag is set to False, features of this object are ignored. Defaults to None.
 
     Returns:
         Framefield : a frame field object representing the curvature directions
+
+    Note:
+        Order of the frame field is fixed at 4 since principal curvature directions form an orthonormal basis.
 
     References:
         - [1] https://en.wikipedia.org/wiki/Principal_curvature
@@ -171,12 +179,14 @@ def PrincipalDirections(
 
     ### Build the correct FF class
     if elements=="vertices":
-        return PrincipalDirectionsVertices(mesh, features, verbose,
-        patch_size=patch_size,n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight, 
-        curv_threshold=curv_threshold,complete_ff=complete_ff, custom_features=custom_features)
+        return PrincipalDirectionsVertices(mesh, feature_edges=features, verbose=verbose,
+        patch_size=patch_size, confidence_threshold=confidence_threshold,
+        n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight, smooth_threshold=smooth_threshold,
+        custom_features=custom_features, custom_connection=custom_connection)
+    
     elif elements=="faces":
-        return PrincipalDirectionsFaces(mesh, features, verbose, 
-        n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight, custom_features=custom_features)
+        return PrincipalDirectionsFaces(mesh, features=features, verbose=verbose, 
+        n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight, custom_features=custom_features, custom_connection=custom_connection)
 
 @allowed_mesh_types(VolumeMesh)
 def VolumeFrameField(

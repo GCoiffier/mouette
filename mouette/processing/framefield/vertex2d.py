@@ -29,13 +29,6 @@ class _BaseFrameField2DVertices(FrameField):
         verbose : bool = True,
         **kwargs
     ):
-        """
-        Parameters:
-            supporting_mesh (SurfaceMesh): the mesh (surface) on which to calculate the frame field
-            order (int, optional): Order of the frame field (number of branches). Defaults to 4.
-            feature_edges (bool, optional): _description_. Defaults to False.
-            verbose (bool, optional): _description_. Defaults to True.
-        """
         super().__init__("vertices", verbose=verbose)
         self.mesh : SurfaceMesh = supporting_mesh
         self.order : int = order
@@ -126,7 +119,7 @@ class _BaseFrameField2DVertices(FrameField):
         """
         self._check_init()
         curvature = attributes.parallel_transport_curvature(self.mesh, self.conn, persistent=False)
-        ZERO_THRESHOLD = 1e-2
+        ZERO_THRESHOLD = np.pi/(1.1*self.order) #1e-2
 
         edge_rot = dict() # the rotation induced by the frame field on every edge
         if self.mesh.edges.has_attribute("angles"):
@@ -302,7 +295,6 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             
             lapI = lap[freeInds,:][:,freeInds]
             lapB = lap[freeInds,:][:,fixedInds]
-            AI = A[freeInds, :][:,freeInds]
             # for lapI and lapB, only lines of freeInds are relevant : lines of fixedInds link fixed variables -> useless constraints
             valB = lapB.dot(self.var[fixedInds]) # right hand side
 
@@ -311,14 +303,16 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
             self.var[freeInds] = res
 
             if self.n_smooth>0:
+                AI = A[freeInds, :][:,freeInds]
                 self.log(f"Solve linear system {self.n_smooth} times with diffusion")
                 alpha = self.smooth_attach_weight or self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian if not provided as argument
                 self.log("Attach weight: {}".format(alpha))
                 mat = lapI - alpha * AI.astype(complex)
+                solve = linalg.factorized(mat)
                 for _ in range(self.n_smooth):
                     self.normalize()
                     valI2 = alpha * AI.dot(self.var[freeInds])
-                    res = linalg.spsolve(mat, - valB - valI2)
+                    res = solve(- valB - valI2)
                     self.var[freeInds] = res
             self.normalize()
 
@@ -331,10 +325,11 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
                 alpha = self.smooth_attach_weight or self._compute_attach_weight(A) # Compute attach weight as smallest eigenvalue of the laplacian
                 self.log("Attach weight: {}".format(alpha))
                 mat = lap  - alpha * A.astype(complex)
+                solve = linalg.factorized(mat)
                 for _ in range(self.n_smooth):
                     self.normalize()
                     valI2 = alpha * A.dot(self.var)
-                    self.var = linalg.spsolve(mat, - valI2)
+                    self.var = solve(- valI2)
             self.normalize()
         self.smoothed = True
 

@@ -48,7 +48,10 @@ def edge_middle_point(mesh : SurfaceMesh, name="middle", persistent: bool = True
 @allowed_mesh_types(SurfaceMesh)
 def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
     """
-    Curvature matrix for each edge on the mesh, as defined in 'Restricted Delaunay Triangulations and Normal Cycle', David Cohen-Steiner and Jean-Marie Morvan, 2003
+    Curvature matrix for each edge on the mesh
+    
+    References:
+        _Restricted Delaunay Triangulations and Normal Cycle_, David Cohen-Steiner and Jean-Marie Morvan (2003)
 
     Note:
         See Curvature Frame Fields for their aggregation on triangles or vertices
@@ -58,12 +61,13 @@ def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
     for e, (A,B) in enumerate(mesh.edges):
         T1,T2 = mesh.connectivity.edge_to_faces(A,B)
         if T1 is not None and T2 is not None:
+            pA, pB = mesh.vertices[A], mesh.vertices[B]
             _,_,n1 = geom.face_basis(*(mesh.vertices[u] for u in mesh.faces[T1]))
             _,_,n2 = geom.face_basis(*(mesh.vertices[u] for u in mesh.faces[T2]))
             # angle = geom.signed_angle_2vec3D(n1,n2,n2-n1)
             angle = geom.angle_2vec3D(n1,n2)
-            edge = Vec.normalized(mesh.vertices[B] - mesh.vertices[A])
-            data[e,:,:] = angle * np.outer(edge,edge)
+            edge = Vec.normalized(pB-pA)
+            data[e,:,:] = angle * geom.distance(pA,pB) * np.outer(edge,edge)
     return data
 
 @allowed_mesh_types(SurfaceMesh)

@@ -10,8 +10,7 @@ The principal directions of curvature are the two tangent eigenvectors of the cu
 #### Usage
 ```python
 from mouette import framefield
-ff = framefield.PrincipalDirections(mesh, "vertices", features=True, 
-      verbose=True, n_smooth=3, smooth_attach_weight=0.5)
+ff = framefield.PrincipalDirections(mesh, "vertices", features=True, verbose=True, n_smooth=3)
 ff.run()
 ff.flag_singularities()
 ```

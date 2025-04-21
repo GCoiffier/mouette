@@ -30,7 +30,7 @@ ff() # produces similar results
 `FrameField` objects are iterable. Indexing a frame field returns the representation of the frame at the given index. For 2D frame fields, this representation is a complex number. For 3D frame fields, it is a numpy array of shape (9,) representing the corresponding [L4 spherical harmonics](../../utilities/spherical_harmonics.md).
 
 ```python
-ff[7] # returns the representation of the frame for element (vertex/face/cell )
+ff[7] # returns the representation of the frame for element (vertex/face/edge/cell)
 ```
 
 ### Singularity flagging
@@ -47,7 +47,7 @@ The `export_as_mesh()` method of the `FrameField` class outputs frames either as
 
 ### 2D frame fields
 - [Surface frame fields](./surface_ff.md) are orthogonal crosses on a surface mesh, either on its vertices, its edges or its faces
-- [Principal directions of curvature](./curvature.md) follow the extrema of Gaussian curvature on a surface mesh
+- [Principal directions of curvature](./curvature.md) follow the eigenvectors of the approximated shape operator
 
 To work on curved surfaces, these frame field require the definition of a [discrete surface connection](./connection.md) which allows the comparison of elements in adjacent tangent spaces.
 
