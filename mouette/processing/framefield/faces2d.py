@@ -1,7 +1,7 @@
 from .base import FrameField
 from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import Attribute, ArrayAttribute
+from ...mesh.mesh_attributes import Attribute
 from ... import geometry as geom
 from ... import operators
 
@@ -49,7 +49,6 @@ class _BaseFrameField2DFaces(FrameField) :
         self.initialized = False
 
     def _initialize_attributes(self):
-        #processing.split_double_boundary_edges_triangles(self.mesh) # A triangle has only one edge on the boundary
         self.cot = cotangent(self.mesh, persistent=False)
         self.defect = angle_defects(self.mesh,persistent=False, dense=True)
         if self.feat is None:
@@ -79,7 +78,7 @@ class _BaseFrameField2DFaces(FrameField) :
             try:
                 self.log("First estimation of alpha failed: {}".format(e))
                 lap_no_pt = operators.laplacian_triangles(self.mesh, cotan=False)
-                eigs = sp.linalg.eigsh(lap_no_pt+1e-3*sp.identity(lap_no_pt.shape[0]), M=A, k=2, which="SM", tol=1e-2, maxiter=100, return_eigenvectors=False)
+                eigs = sp.linalg.eigsh(lap_no_pt+0.1*sp.identity(lap_no_pt.shape[0]), M=A, k=2, which="SM", tol=1e-2, maxiter=500, return_eigenvectors=False)
             except:
                 self.log("Second estimation of alpha failed: taking alpha = ", fail_value)
                 return fail_value
@@ -228,10 +227,11 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
                 alpha = self.smooth_attach_weight or self._compute_attach_weight(A)
                 self.log("Attach weight: {}".format(alpha))
                 mat = lapI - alpha * AI
+                solve = linalg.factorized(mat)
                 for _ in range(self.n_smooth):
                     self.normalize()
                     valI2 = alpha * AI.dot(self.var[freeInds])
-                    res = linalg.spsolve(mat, -valB - valI2)
+                    res = solve(-valB - valI2)
                     self.var[freeInds] = res
             self.normalize()
 

@@ -17,13 +17,14 @@ title: "Parametrization algorithms for surface meshes"
 
 - [Cotangent Embedding](./cotan_embedding.md)  
  
-#### Global Parametrization:  
+#### Global Parametrization:
 
 - [Conformal Parametrization with cones](./cone_param.md)  
 
 - [Frame Field Integration](./ff_integration.md)  
 
-
 #### Misc 
 
-[Measuring a mapping's distortion](./distortion.md)  
+- [Surface cutting](./surface_cutting.md)
+
+- [Measuring a mapping's distortion](./distortion.md)  

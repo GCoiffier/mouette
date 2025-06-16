@@ -37,7 +37,7 @@ class ParamDistortion(Worker):
         try:
             self.UV = self.mesh.face_corners.get_attribute(uv_attr)
         except:
-            self.log(f"Mesh has no attribute '{uv_attr}'. Cannot compute distortion.")
+            self.log(f"Mesh has no attribute '{uv_attr}' on face corners. Cannot compute distortion.")
             raise Exception("Initialization failed")
 
         self.save_on_mesh : bool = save_on_mesh
@@ -65,7 +65,10 @@ class ParamDistortion(Worker):
         self._init_containers()
         xy_area = 0.
         uv_area = 0.
-        area = face_area(self.mesh, persistent=False)
+        if self.mesh.faces.has_attribute("area"):
+            area = self.mesh.faces.get_attribute("area")
+        else:
+            area = face_area(self.mesh)
         for T in self.mesh.id_faces:
             cnr = 3*T # self.mesh.connectivity.face_to_first_corner(T)
             xy_area += area[T]
@@ -80,6 +83,7 @@ class ParamDistortion(Worker):
         shearDist = 0. # dot(c_1, c_2) of columns of jacobian 
         stretchDistMean = 0 # sigma_1 / sigma_2 
         stretchDistMax = -float("inf") # sigma_1 / sigma_2
+        detMin = float("inf")
 
         for T in self.mesh.id_faces:
             try:
@@ -127,6 +131,7 @@ class ParamDistortion(Worker):
 
                 detJ *= scale_ratio
                 self._det[T] = detJ
+                detMin = min(detMin, detJ)
                 
                 authDistT = ( detJ + 1 / detJ)/2
                 self._scale[T] = authDistT
@@ -145,6 +150,7 @@ class ParamDistortion(Worker):
                 continue
 
         self._summary = {
+            "det_min" : detMin,
             "conformal" : conformalDist,
             "iso" : isoDist,
             "shear" : shearDist,

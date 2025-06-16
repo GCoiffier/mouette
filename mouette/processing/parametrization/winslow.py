@@ -115,7 +115,7 @@ def untangle(
     for _ in range(n_eps_update):
         mindet = min_det(points, triangles, ref_jacs)
         if mindet>0 and stop_if_pos: break
-        eps = np.sqrt(1e-12 + .04*min(mindet, 0)**2) # the regularization parameter e
+        eps = np.sqrt(1e-12 + 0.04*min(mindet, 0)**2) # the regularization parameter e
         if verbose:
             print("min det=", mindet)
             print("epsilon=", eps)
@@ -148,15 +148,33 @@ class WinslowInjectiveEmbedding(BaseParametrization):
     """
             
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, uv_init: ArrayAttribute, verbose : bool=True, **kwargs):
+    def __init__(self, 
+        mesh : SurfaceMesh, 
+        uv_init : ArrayAttribute, 
+        lmbd : float = 1., 
+        n_iter_max : int = 10_000, 
+        stop_if_positive : bool = False, 
+        verbose : bool = True, 
+        **kwargs
+    ):
         """
         Args:
             mesh (SurfaceMesh): the supporting mesh. Should be a surface with disk topology.
+            
             uv_init (ArrayAttribute): array of initial uv-coordinates per vertices. np.array of shape (V,2) or mouette.ArrayAttribute object.
+            
+            lmbd (float, optional): weighting term between the two energies. Higher lambda means more focus on area preservation instead of angle preservation. Defaults to 1.
+            
+            n_iter_max (int, optional): maximal number of BFGS iterations. Defaults to 10_000.
+
+            stop_if_positive (bool, optional): whether to stop the optimization as soon as all determinants are positive. Defaults to False.
             verbose (bool, optional): verbose mode. Defaults to True.
         
         Keyword Args:
-            stop_if_positive (bool, optional): whether to stop the optimization as soon as all determinants are positive. Defaults to False.
+            ref_jacs (np.ndarray, optional): array of shape (F,2,2) that contains, for each face, the 2x2 reference Jacobian of the face. If not provided, reference Jacobians are taken as the identity matrix. Defaults to None.
+
+            areas (Attribute, optional): face areas, or weight per face in winslow energy. If not provided, weights are taken as 1 for each face. Defaults to None.
+
             solver_verbose (bool, optional): Verbose tag for the L-BFGS solver. Defaults to False.
 
         Attributes:
@@ -164,10 +182,12 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         """
         super().__init__("Winslow", mesh, verbose=verbose, uv_attr=uv_init, **kwargs)
         self._save_on_corners = False
-        self._solver_verbose = kwargs.get("solver_verbose", False)
-        self.lmbd = kwargs.get("lmbd", 1.)
-        self.stop_if_pos = kwargs.get("stop_if_positive", False)
+        self.lmbd = lmbd
+        self.iter_max = n_iter_max
+        self.stop_if_pos = stop_if_positive
         self.ref_jacs = kwargs.get("ref_jacs", None)
+        self._solver_verbose = kwargs.get("solver_verbose", False)
+        self._areas = kwargs.get("areas", None)
         
     def run(self):
         """
@@ -192,12 +212,9 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         points *= scale
         locked = np.array([self.mesh.is_vertex_on_border(v) for v in self.mesh.id_vertices])
         triangles = np.array(self.mesh.faces)
-        
-        areas = face_area(self.mesh, persistent=False, dense=True).as_array()
-
         final_points = untangle(points, locked, triangles, ref_jacs,
-            areas=areas, weight_angles=1., weight_areas=self.lmbd, 
-            verbose=self.verbose, stop_if_positive = self.stop_if_pos)
+            areas=self._areas, weight_angles=1., weight_areas=self.lmbd, 
+            verbose=self.verbose, stop_if_positive = self.stop_if_pos, iter_max=self.iter_max)
         final_points /= scale
 
         # Retrieve uvs and write them in attribute

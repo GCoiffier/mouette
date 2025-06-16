@@ -8,8 +8,8 @@ from tqdm import tqdm, trange
 from tqdm.utils import _term_move_up
 prefix = _term_move_up() + '\r'
 
-from ..utils import Logger, get_osqp_lin_solver
 from .. import geometry as geom
+from ..utils import Logger
 
 @dataclass
 class NewtonParameters:
@@ -61,9 +61,6 @@ class Newton(Logger):
 
         ### Others
         self._stop_criterion_instance = None # OSQP instance to compute projected gradient norm
-
-        ### Additionnal parameters
-        self._linsys_solver = kwargs.get("lin_solver", get_osqp_lin_solver())
 
     def register_constraints(self, A : sp.spmatrix, l : np.ndarray = None, u : np.ndarray = None):
         """
@@ -169,8 +166,8 @@ class Newton(Logger):
                 osqp_instance.setup(H, q=G, A=self._cstM, l=cstL, u=cstU,
                     verbose=self.verbose_options.solver_verbose,
                     eps_abs=1e-3, eps_rel=1e-3,
-                    max_iter=100, polish=True, check_termination=10, 
-                    adaptive_rho=True, linsys_solver= self._linsys_solver)
+                    max_iter=100, polishing=True, check_termination=10, 
+                    adaptive_rho=True)
                 s = osqp_instance.solve().x # computed increment
                 if s[0] is None: print(s)
 
@@ -221,7 +218,7 @@ class Newton(Logger):
         instance = OSQP()
         instance.setup(sp.eye(nvar, format="csc"), q=-x_init, 
                     A=self._cstM, l=self._cstL, u=self._cstU, 
-                    verbose=True, linsys_solver= self._linsys_solver)
+                    verbose=True)
         x_proj = instance.solve().x
         return x_proj
 

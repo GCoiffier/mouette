@@ -113,7 +113,7 @@ class LSCM(BaseParametrization):
         locked1, locked2 = self.mesh.edges[e]
         locked1, locked2 = min(locked1, locked2), max(locked1, locked2)
 
-        instance = OSQP()
+        instance = OSQP(algebra="mkl")
         Q = A.transpose() @ A
         Cst = sp.lil_matrix((4,2*n))
         Cst[0, 2*locked1] = 1
@@ -124,7 +124,7 @@ class LSCM(BaseParametrization):
         Cst_rhs = np.array([0.,0.,1.,0.])
         
         self.log("Solving system...")
-        instance.setup(Q, A=Cst, l=Cst_rhs, u=Cst_rhs, eps_abs=0., verbose=verbose)
+        instance.setup(Q, q=None, A=Cst, l=Cst_rhs, u=Cst_rhs, eps_abs=0., verbose=verbose)
         res = instance.solve()
         self.log(f"System solved in {res.info.run_time} s")
         self.residual = res.info.obj_val
@@ -135,8 +135,6 @@ class LSCM(BaseParametrization):
         self.log("Building system...")
         A = self._build_system()
         self.log("Solving for eigenvector...")
-        # u,s,v = linalg.svds(A, 2, which="SM", solver="lobpcg", maxiter=1000)
-        # U = v[0]
         eigs, U = linalg.eigsh(A.transpose() @ A, 2, which="SM", tol=1e-2)
         self.log("Smallest eigenvalues:", eigs)
         U = U[:,1]

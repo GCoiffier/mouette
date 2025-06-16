@@ -86,6 +86,12 @@ def surf_pointy():
 def surf_quad_subdiv():
     return M.mesh.load("tests/data/quad_split2.geogram_ascii")
 
+def surf_spot():
+    return M.mesh.load("tests/data/spot_1000.obj")
+
+def surf_cube_subdiv():
+    return M.mesh.load("tests/data/cube_subdiv.obj")
+
 surfaces = [
     surf_triangle(),
     surf_one_ring(),
@@ -94,8 +100,12 @@ surfaces = [
     surf_spline(),
     surf_feat(),
     surf_two_pieces(),
-    surf_pointy()
+    surf_pointy(),
+    surf_cube_subdiv()
 ]
+
+def surf_torus(triangulate=True):
+    return M.procedural.torus(triangulate=triangulate)
 
 def surf_uv_sphere_quads():
     # example of a quad mesh

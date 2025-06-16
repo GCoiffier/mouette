@@ -9,6 +9,7 @@ from ... import attributes
 from .. import SingularityCutter
 from ..trees import FaceSpanningTree
 from ..connection  import SurfaceConnectionFaces
+from ...attributes import euler_characteristic
 
 from ... import geometry as geom
 from ...geometry import Vec
@@ -28,6 +29,11 @@ class ConformalConeParametrization(BaseParametrization):
         - [2] _Boundary first flattening_, Sawhney R. and Crane K., ACM Transaction on Graphics, 2018
     """
 
+    class InvalidConesException(Exception):
+        def __init__(self, dfct, target):
+            message = f"Cone distribution does not satisfy the Poincarré-Hopf theorem! Got a total index of {dfct/(2*np.pi)} while it should be {target}. Aborting."
+            super().__init__(message)
+
     def __init__(self, mesh:SurfaceMesh, cones: Attribute, verbose:bool=False, **kwargs):
         """
         Args:
@@ -46,6 +52,7 @@ class ConformalConeParametrization(BaseParametrization):
         assert cones.elemsize == 1
         assert cones.type == Attribute.Type.Float
         self._singus : Attribute = cones
+        self._check_singularity_validity()
 
         self._scale_factor : np.ndarray = None
         self._frames : np.ndarray = None
@@ -53,8 +60,12 @@ class ConformalConeParametrization(BaseParametrization):
         self._cutter : SingularityCutter
     
     def _check_singularity_validity(self):
-        ### TODO
-        return
+        total_defect = 0
+        for v in self._singus:
+            total_defect += self._singus[v]
+        charac = euler_characteristic(self.mesh)
+        if not np.isclose(total_defect, 2*np.pi*charac):
+            raise ConformalConeParametrization.InvalidConesException(total_defect,charac)
 
     def run(self) :
         """
@@ -118,7 +129,7 @@ class ConformalConeParametrization(BaseParametrization):
         scale_edges = np.zeros(2*len(self.cut_mesh.edges), dtype=float)
         cot = attributes.cotan_weights(self.cut_mesh, dense=True, persistent=False)
         for e,(A,B) in enumerate(self.cut_mesh.edges):
-            rA,rB = self._cutter.ref_vertex[A], self._cutter.ref_vertex[B]
+            rA,rB = self._cutter.ref_vertex(A), self._cutter.ref_vertex(B)
             E = self.mesh.vertices[rB] - self.mesh.vertices[rA]
             sce = np.exp( (self._scale_factor[rA] + self._scale_factor[rB])/2) # discrete scale factor of edge
             if self.cut_mesh.is_edge_on_border(A,B):
@@ -184,7 +195,7 @@ class ConformalConeParametrization(BaseParametrization):
         Returns:
             SurfaceMesh: the mesh where seams have been disconnected
         """
-        return self._cutter.output_mesh
+        return self._cutter.cut_mesh
 
     @property
     def cut_graph(self) -> PolyLine:

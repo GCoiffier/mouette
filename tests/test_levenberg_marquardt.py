@@ -11,7 +11,7 @@ def optim():
 
 def test_LM1(optim):
     optim.register_function(
-        lambda X : (2*X, 2*sp.eye(X.size, dtype=np.float32)),
+        lambda X : (2*X, 2*sp.eye(X.size, dtype=np.float64)),
         lambda X : 2*X,
         0.5,
         "test1")
@@ -22,7 +22,7 @@ def test_LM1(optim):
 
 def test_LM_only1fun(optim):
     optim.register_function(
-        lambda X : (2*X, 2*sp.eye(X.size, dtype=np.float32)),
+        lambda X : (2*X, 2*sp.eye(X.size, dtype=np.float64)),
         weight=1,
         name="test2")
     X0 = np.full(42, 1.)
@@ -32,7 +32,7 @@ def test_LM_only1fun(optim):
 
 def test_LM_constraints1(optim):
     optim.register_function(
-        lambda X : (2*X, 2*sp.eye(X.size, dtype=np.float32)),
+        lambda X : (2*X, 2*sp.eye(X.size, dtype=np.float64)),
         weight=1,
         name="test2")
     
@@ -50,18 +50,18 @@ def test_LM_constraints1(optim):
 
 def test_LM_constraints2(optim):
     optim.register_function(
-        lambda X : (X, sp.eye(X.size, dtype=np.float32)),
+        lambda X : (X, sp.eye(X.size, dtype=np.float64)),
         weight=1,
         name="test2")
     A = np.zeros((3,42))
     A[0,0]  =  1 # x0  = 1
-    A[1,16] =  1 # x15 = 3
+    A[1,16] =  1 # x16 = 2
     A[2,16] =  1 
-    A[2,20] =  1 # x15 + x19 = 0
+    A[2,20] =  1 # x16 + x20 = 0
     A = sp.csc_matrix(A)
     B = np.array([1,2,0])
     optim.register_constraints(A,B,B)
-    en = optim.run(x_init=np.full(42, 1.))
+    en = optim.run(x_init=np.full(42, 1., dtype=np.float64))
     assert abs(en-4.5)<1e-4
     assert abs(optim.X[0]-1)<1e-4
     assert abs(optim.X[16]-2)<1e-4
@@ -80,11 +80,11 @@ def test_LM2(optim):
 
 def test_LM_twofunctions(optim):
     optim.register_function(
-        lambda X : (X, sp.eye(X.size, dtype=np.float32)),
+        lambda X : (X, sp.eye(X.size, dtype=np.float64)),
         weight=1,
     )
     optim.register_function(
-        lambda X : (2*X, 2*sp.eye(X.size, dtype=np.float32)),
+        lambda X : (2*X, 2*sp.eye(X.size, dtype=np.float64)),
         weight=1.2
     )
     en = optim.run(x_init=np.full(42, 1.))

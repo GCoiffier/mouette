@@ -133,5 +133,12 @@ dmypy.json
 *.code-workspace
 .vscode/
 
+# polyscope files
+*.ini
+
 # output files
 *.geogram_ascii
+examples/*.obj
+examples/*.geogram_ascii
+examples/*.mesh
+examples/*.stl

@@ -61,7 +61,7 @@ class _BaseDataContainer(ABC):
             default_value (Any, optional): The default value to fill the attribute with. If not provided, will be taken as the default value of the type `data_type`. Defaults to None.
         """
          # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
-        if name in self._attr and not config.display_duplicate_attribute_warning:
+        if name in self._attr and config.display_duplicate_attribute_warning:
             warnings.warn(f"Attribute '{name}' already exists on {self.id}")
         else:
             if len(data.shape)==1: 

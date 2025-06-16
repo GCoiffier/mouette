@@ -195,25 +195,25 @@ class SurfaceMesh(Mesh):
         return self._is_vertex_on_border[u]
 
     @property
-    def interior_edges(self):
+    def interior_edges(self) -> list:
         if self._interior_edges is None:
             self._compute_interior_boundary_edges()
         return self._interior_edges
 
     @property
-    def boundary_edges(self):
+    def boundary_edges(self) -> list:
         if self._boundary_edges is None:
             self._compute_interior_boundary_edges()
         return self._boundary_edges
 
     @property
-    def boundary_vertices(self):
+    def boundary_vertices(self) -> list:
         if self._boundary_vertices is None:
             self._compute_interior_boundary_vertices()
         return self._boundary_vertices
     
     @property
-    def interior_vertices(self):
+    def interior_vertices(self) -> list:
         if self._interior_vertices is None:
             self._compute_interior_boundary_vertices()
         return self._interior_vertices

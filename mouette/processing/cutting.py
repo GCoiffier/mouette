@@ -4,37 +4,187 @@ from ..geometry import distance
 from ..mesh.datatypes import *
 from ..mesh.mesh_data import RawMeshData
 from ..mesh.mesh_attributes import *
-from ..utils import keyify, UnionFind, PriorityQueue
+from ..utils import keyify, UnionFind, PriorityQueue, consecutive_pairs
 from .paths import shortest_path, shortest_path_to_border, shortest_path_to_vertex_set
-from .trees import FaceSpanningForest
-from .. import attributes
+from .trees import FaceSpanningForest 
+from .. import attributes, utils 
 from collections import deque
+from typing import Iterable
+from enum import Enum
 
-class SingularityCutter(Worker):
-    """
-    Given some indexes in the mesh, performs optimal cuts connecting all these vertices with the boundary.
-    """
+class SurfaceMeshCutter(Worker):
+
+    def __init__(self, mesh: SurfaceMesh, verbose: bool = False, **kwargs):
+        """
+        Args:
+            mesh (SurfaceMesh): input mesh
+            verbose (bool, optional): verbose mode. Defaults to False.
+
+        Attributes:
+            cut_edges (set): indices of edges that were cut
+            cut_mesh (SurfaceMesh): a copy of the mesh where specified edges have been cut
+        """
+        
+        super().__init__(kwargs.get("name", "MeshCutter"), verbose)
+        self.input_mesh : SurfaceMesh = mesh
+        self.cut_mesh : SurfaceMesh = None
+        
+        self.cut_edges : set = None # ids of edges of input mesh that were cut 
+
+        # /!\ global ordering of vertices/edges is likely to change. Only triangles remain the same
+        self._ref_vertex : dict = None # split vertex -> original vertex
+        self._cut_graph : PolyLine = None
+
+    def cut(self, edges_to_cut: Iterable):
+        """Cut the mesh. Alias for `SurfaceMeshCutter.run`"""
+        return self.run(edges_to_cut)
+
+    def run(self, edges_to_cut: Iterable):
+        """
+        Cut the mesh. Fills the attributes and builds `cut_mesh`, which is a copy of the input mesh with corresponding edges disconnected
+
+        Args:
+            edges_to_cut (Iterable): containers of all the indices of edges to be cut
+        """
+        self.cut_edges = set([x for x in edges_to_cut if not self.input_mesh.is_edge_on_border(*self.input_mesh.edges[x])])        
+        self._ref_vertex = dict()
+
+        self.cut_mesh = RawMeshData()
+        self.cut_mesh.vertices += self.input_mesh.vertices
+        self.cut_mesh.faces += self.input_mesh.faces
+
+        ### Duplicate vertices adjacent to cut edges. N-1 copies of a vertex should be created if it is adjacent to N cuts
+        cut_degree = dict()
+        for e in self.cut_edges:
+            A,B = self.input_mesh.edges[e]
+            cut_degree[A] = cut_degree.get(A, -1)+1
+            cut_degree[B] = cut_degree.get(B, -1)+1
+
+        duplicates = dict()
+        for v in cut_degree:
+            if self.input_mesh.is_vertex_on_border(v): cut_degree[v] +=1
+            if cut_degree[v]==0: continue # no copies needed (vertex at the end of a cut => 1-ring still connected)
+            duplicates[v] = [v]
+            for _ in range(cut_degree[v]):
+                new_v = len(self.cut_mesh.vertices)
+                self._ref_vertex[new_v] = v
+                duplicates[v].append(new_v)
+                self.cut_mesh.vertices.append(self.input_mesh.vertices[v])
+
+        ### Reassign face indices
+        for v in cut_degree:
+            if cut_degree[v]==0: continue
+            ind = 0
+            ndup = len(duplicates[v])
+            for c in self.input_mesh.connectivity.vertex_to_corners(v):
+                # corners are ordered counter-clockwise aroud v
+                current_v = duplicates[v][ind]
+                F = self.input_mesh.face_corners.adj(c)
+                self.cut_mesh.faces[F] = utils.replace_in_list(self.cut_mesh.faces[F], v, current_v)
+                e = self.input_mesh.connectivity.edge_id(v,self.input_mesh.connectivity.corner_to_half_edge(c)[1])
+                if e in self.cut_edges: # switch to next version of v upon passing a cut edge
+                    ind = (ind+1)%ndup
+        self.cut_mesh = SurfaceMesh(self.cut_mesh) # finalize creation
+
+    def duplicated_vertices(self, v:int) -> set:
+        """Given the index v of a vertex in the input mesh, returns the set of all copies of v in the cut mesh.
+
+        Args:
+            v (int): index of a vertex in the input mesh
+
+        Returns:
+            set[int]: all vertex indices corresponding to copies of v in the cut mesh
+        """
+        return set(self.cut_mesh.face_corners[c] for c in self.input_mesh.connectivity.vertex_to_corners(v))
+
+    def ref_vertex(self, v_cut: int) -> int:
+        """Given the index `v_cut` of a vertex in the cut mesh, returns the index of the corresponding vertex in the original mesh.
+
+        Args:
+            v_cut (int): index of a vertex in the cut mesh. If the index is invalid, returns None
+
+        Returns:
+            int: index of the reference vertex in the original mesh
+        """
+        if v_cut>len(self.cut_mesh.vertices): return None
+        return self._ref_vertex.get(v_cut, v_cut)
+
+    @property
+    def cut_graph(self) -> PolyLine:
+        """The graph formed by all cut edges as a Polyline object
+
+        Returns:
+            PolyLine: the cut graph
+        """
+        if self._cut_graph is None:
+            self._build_cut_graph()
+        return self._cut_graph
+
+    def _build_cut_graph(self):
+        # Build tree of potential cuts for debug purposes
+        self._cut_graph = RawMeshData()
+        new_v_id = dict()
+        vid = 0
+        for ie in self.cut_edges:
+            v1,v2 = self.input_mesh.edges[ie]
+            for v in (v1,v2):
+                if v not in new_v_id:
+                    new_v_id[v] = vid
+                    vid += 1
+                    self._cut_graph.vertices.append(self.input_mesh.vertices[v])
+            e = keyify(new_v_id[v1], new_v_id[v2])
+            self._cut_graph.edges.append(e)
+        self._cut_graph = PolyLine(self._cut_graph)
+
+
+class SingularityCutter(SurfaceMeshCutter):
+
+    class Strategy(Enum):
+        SIMPLE=0
+        SHORTEST_PATHS=1
+        FEATURES=2 
+
+        @classmethod
+        def from_string(cls, txt : str):
+            if "short" in txt.lower() or "path" in txt.lower():
+                return cls.SHORTEST_PATHS
+            if "feat" in txt.lower():
+                return cls.FEATURES
+            return cls.SIMPLE
+        
+        def to_string(self) -> str:
+            return {
+                SingularityCutter.Strategy.SIMPLE : "simple",
+                SingularityCutter.Strategy.SHORTEST_PATHS : "approx. shortest cuts",
+                SingularityCutter.Strategy.FEATURES : "follow features",
+            }[self]
 
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, 
             mesh : SurfaceMesh,
             singularities : list,
-            features : "FeatureEdgeDetector" = None,
-            verbose = False):
+            strategy : str = "simple",
+            verbose = False,
+            **kwargs):
         """
         Args:
             mesh (SurfaceMesh): input mesh
             singularities (list): indices of the singular vertices
-            features (FeatureEdgeDetector, optional): feature edge data structure. If provided, the cuts will follow the feature as much as possible. Defaults to None.
+            strategy (str): which strategy to use. Choices are ["simple", "short", "feat"]
             verbose (bool, optional): verbose mode. Defaults to False.
+
+        Keyword Args:
+            features (FeatureEdgeDetector, optional): feature edge data structure. If provided, the cuts will follow the feature as much as possible. Defaults to None.
+            debug (bool): debug mode. Computes additionnal outputs as mesh attributes. Defaults to False
 
         Attributes:
             cut_edges (set): indices of edges that were cut
-            cut_adj (dict): cut graph given as adjacency lists per vertex
+            cut_mesh (SurfaceMesh): a copy of the mesh where specified edges have been cut
         """
-        super().__init__("SingularityCutter", verbose)
-        self.input_mesh : SurfaceMesh = mesh
-        
+        super().__init__(mesh, verbose, name="SingularityCutter")
+        self._strategy = SingularityCutter.Strategy.from_string(strategy)
+        self._debug : bool = kwargs.get("debug", False)
+
         if isinstance(singularities, list):
             self.singularities = singularities
             self.singu_set = set(singularities)
@@ -42,102 +192,63 @@ class SingularityCutter(Worker):
             self.singularities : list = [_x for _x in singularities]
             self.singu_set = set(singularities)
 
-        self.edge_lengths = attributes.edge_length(self.input_mesh, persistent=False)
+        self._feat_detector : "FeatureEdgeDetector" = kwargs.get("features", None)
+        if self._strategy == SingularityCutter.Strategy.FEATURES and self._feat_detector is None:
+            self.warn("Please provide a FeatureEdgeDetector object to run the 'feature' cutting stragegy. Switching back to 'simple' strategy.")
+            self._strategy = SingularityCutter.Strategy.SIMPLE
+        self.log("Strategy:", self._strategy.to_string())
 
-        self.feat_detector : "FeatureEdgeDetector" = features
-        self._has_features : bool = None
-
-        self.cut_edges : set = None # ids of edges of input mesh that were cut 
-        self.cut_adj : dict = None # vertex -> set of adjacent vertices in the cut graph
-
-        # /!\ global ordering of vertices/edges is likely to change. Only triangles remain the same
-        self.ref_vertex : dict = None # split vertex -> original vertex
-
-        self._cut_graph : PolyLine = None
-        self._output_mesh : SurfaceMesh = None
+    def cut(self):
+        self.run()
     
-    @property
-    def has_features(self) -> bool:
-        """Whether the input mesh has feature edges defined"""
-        if self._has_features is None:
-            self._has_features = False
-            if self.feat_detector is not None:
-                for e in self.feat_detector.feature_edges:
-                    if not self.input_mesh.is_edge_on_border(*self.input_mesh.edges[e]):
-                        self._has_features = True
-                        break
-        return self._has_features
-
-    @property
-    def output_mesh(self) -> SurfaceMesh:
-        """
-        Returns:
-            SurfaceMesh: the mesh where cuts have been performed
-        """
-        if self._output_mesh is None:
-            self._build_mesh_with_cuts()
-        return self._output_mesh
-    
-    @property
-    def cut_graph(self) -> PolyLine:
-        """
-        Returns:
-            PolyLine: the cut edges as a Polyline
-        """
-        if self._cut_graph is None:
-            self._build_cut_graph_as_mesh()
-        return self._cut_graph
-
     def run(self):
         """
         Runs the cutting process
         """
-        self.log("Cutting to link singularities and retrieve disk topology")
-        self.log("# Singularities :", len(self.singularities))
-        if self.has_features:
-            self.log(f"{len(self.feat_detector.feature_edges)} feature edges and {len(self.feat_detector.feature_vertices)} feature vertices provided")
-            self._run_with_features()
-        else:
-            self._run_no_features()
-
-    def _run_with_features(self):
-        self.log("Step 1 : Minimal Spanning Tree to link singularities and border")
-        edge_flag = self._build_singularity_spanning_tree_with_features()
-
-        self.log("Step 2 : BFS on dual graph + BFS on non-traversed edges to extract cuts and homology")
-        evisited = self._build_dual_tree_with_features(edge_flag)
-        self._build_cut_edges_tree(evisited) # builds attributes self.cut_edges and self.cut_adj
-
-        self.log("Step 3 : pruning homology tree")
-        self._prune_edge_tree()
-        self.log("Cutting done")
-
-    def _run_no_features(self):
+        self.log(f"Cutting to link {len(self.singularities)} singularities and retrieve disk topology")
         
-        self.log("Step 1 : Minimal Spanning Tree to link singularities and border")
-        edge_flag = self._build_singularity_spanning_tree_no_features()
+        ### Run heuristic cuts depending on the strategy
+        if self._strategy == SingularityCutter.Strategy.SIMPLE:
+            edge_flag = Attribute(bool) # False by default for all edges
+            regions = None # no features
+        
+        elif self._strategy == SingularityCutter.Strategy.SHORTEST_PATHS:
+            self.log("Run heuristic spanning tree to flag candidate seams")
+            edge_flag = self._heuristic_flag_edges_shortest_path()
+            regions = None # no features 
     
-        self.log("Step 2 : BFS on dual graph + BFS on non-traversed edges to extract cuts and homology")
-        evisited = self._build_dual_tree_no_features(edge_flag)
-        self._build_cut_edges_tree(evisited) # builds attributes self.cut_edges and self.cut_adj
+        elif self._strategy == SingularityCutter.Strategy.FEATURES:
+            self.log(f"{len(self._feat_detector.feature_edges)} feature edges and {len(self._feat_detector.feature_vertices)} feature vertices provided")
+            self.log("Run heuristic spanning tree to flag candidate seams")
+            edge_flag = self._heuristic_flag_edges_features()
+            self.log("Building feature region connectivity")
+            regions = self._build_feature_regions(edge_flag) # face regions delimited by feature edges
+            
+        else:
+            self.warn("Cutting strategy not recognized. Should not happen.")
+            raise Exception("Aborting")
 
-        self.log("Step 3 : pruning homology tree")
-        self._prune_edge_tree()
-        self.log("Cutting done")
 
-    def _build_singularity_spanning_tree_no_features(self):
-        """
-        Returns:
-            Attribute: the spanning tree given as a boolean attribute on edges
-        """
+        self.log("BFS on dual graph")
+        visited_edges = self._build_dual_tree(edge_flag, regions)
+
+        self.log("Pruning non-traversed edges to extract cuts")
+        seam_edges = self._prune_edge_tree(visited_edges)
+        
+        self.log("Building cut mesh")
+        super().run(seam_edges)
+ 
+    def _heuristic_flag_edges_shortest_path(self) -> Attribute:
+        # With the shortest path strategy, we first compute all shortest paths between pairs of singularities and restrain the cut graph to be a spanning tree on this path graph
+
         mesh_has_border = len(self.input_mesh.boundary_vertices)>0
+        edge_lengths = attributes.edge_length(self.input_mesh, persistent=False)
 
         BORDER = -1 # the index of border (>0 are vertices)
         singul = self.singularities + [BORDER] if mesh_has_border else self.singularities
 
-        # edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) 
-        edge_flags = Attribute(bool) # edge selected for spanning tree
-        
+        # edge selected for spanning tree
+        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else Attribute(bool) 
         if not self.singularities:
             # no singularities => no spanning tree and no constraints on edges
             return edge_flags
@@ -145,18 +256,17 @@ class SingularityCutter(Worker):
         # Compute all edge paths between singularities (and border)
         path_btw_singus = dict()
         for i,a in enumerate(self.singularities):
-            paths_a = shortest_path(self.input_mesh, a, set(self.singularities[i:]), weights=self.edge_lengths)
+            paths_a = shortest_path(self.input_mesh, a, set(self.singularities[i:]), weights=edge_lengths)
             for b in paths_a:
                 path_btw_singus[keyify(a,b)] = paths_a[b]
             if mesh_has_border:
-                path_btw_singus[(BORDER,a)] = shortest_path_to_border(self.input_mesh, a, weights=self.edge_lengths)
+                path_btw_singus[(BORDER,a)] = shortest_path_to_border(self.input_mesh, a, weights=edge_lengths)
 
         # Compute path lengths
         def compute_path_length(path): # utility function for readability
             l = 0
-            for i in range(1, len(path)):
-                A,B = path[i-1], path[i]
-                l += self.edge_lengths[self.input_mesh.connectivity.edge_id(A,B)]
+            for A,B in consecutive_pairs(path):
+                l += edge_lengths[self.input_mesh.connectivity.edge_id(A,B)]
             return l
         
         path_lengths = []
@@ -181,21 +291,21 @@ class SingularityCutter(Worker):
                 edge_flags[ self.input_mesh.connectivity.edge_id(u,v) ] = True
         return edge_flags
 
-    def _build_singularity_spanning_tree_with_features(self):
-        """We do not apply the same algorithm as we want the spanning tree to have the maximal possible intersection with the feature graph. This leads to prettier results.
+    def _heuristic_flag_edges_features(self) -> Attribute:
+        # With the feature strategy we want the spanning tree to have the maximal possible intersection with the feature graph. This leads to prettier results
 
-        Returns:
-            Attribute: the spanning tree given as a boolean attribute on edges
-        """
-        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) # edge selected for spanning tree
+        edge_lengths = attributes.edge_length(self.input_mesh, persistent=False)
+        # edge selected for spanning tree
+        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else Attribute(bool) 
         if len(self.singularities)==0:
             # no singularities => no spanning tree and no constraints on edges
             return edge_flags
 
         # First compute the closest point from singularities to feature graph
+        # boundary vertices are included as feature vertices -> boundary is handled automatically
         closest_v = set()
         for v in self.singularities:
-            id_feat, path = shortest_path_to_vertex_set(self.input_mesh, v, self.feat_detector.feature_vertices, weights=self.edge_lengths)
+            id_feat, path = shortest_path_to_vertex_set(self.input_mesh, v, self._feat_detector.feature_vertices, weights=edge_lengths)
             closest_v.add(id_feat)
             for i in range(len(path)-1):
                 u,v = path[i], path[i+1]
@@ -203,42 +313,41 @@ class SingularityCutter(Worker):
                 edge_flags[e] = True
 
         # Then construct a tree on the feature graph linking all the previous points. Perform a BFS
-        closest_v = list(closest_v)
-        queue = deque()
-        visited = dict([(v, False) for v in self.feat_detector.feature_vertices])
-        parent = dict([(v, None) for v in self.feat_detector.feature_vertices])
-        for v in closest_v:
-            queue.append((v,None))
+        queue = deque([(v,None) for v in closest_v])
+        visited = dict([(v, False) for v in self._feat_detector.feature_vertices])
         while len(queue)>0:
             v,prev = queue.popleft()
             if visited[v] : continue
             visited[v] = True
-            parent[v] = prev
             if prev is not None:
                 e = self.input_mesh.connectivity.edge_id(v,prev)
                 edge_flags[e] = True
             for e in self.input_mesh.connectivity.vertex_to_edges(v):
-                if e in self.feat_detector.feature_edges:
+                if e in self._feat_detector.feature_edges:
                     nv = self.input_mesh.connectivity.other_edge_end(e,v)
                     if not visited[nv]:
                         queue.append((nv,v))
         return edge_flags
 
-    def _build_feature_regions(self, forbidden_edges):
-        if not self.has_features: return None
+    def _build_feature_regions(self, forbidden_edges : Attribute) -> UnionFind:
+        ### Builds a UnionFind data structure over faces. Two faces are connected if they can be linked by dual edges that do not cross the feature graph.
         regions = UnionFind(self.input_mesh.id_faces)
-        not_traversible = { _e for _e in forbidden_edges} | self.feat_detector.feature_edges
+        not_traversible = { _e for _e in forbidden_edges} | self._feat_detector.feature_edges
         tree = FaceSpanningForest(self.input_mesh, not_traversible)()
         for vertex,father in tree.traverse():
             if father is not None:
                 regions.union(vertex,father)
-
-        TriFlagAttr = ArrayAttribute(int, len(self.input_mesh.faces)) # self.input_mesh.faces.create_attribute("face_regions", int)
-        for f in self.input_mesh.id_faces:
-            TriFlagAttr[f] = regions.find(f)
+        if self._debug:
+            TriFlagAttr = self.input_mesh.faces.create_attribute("face_regions", int)
+            for f in self.input_mesh.id_faces:
+                TriFlagAttr[f] = regions.find(f)
         return regions
 
-    def _build_dual_tree_no_features(self, forbidden_edges:Attribute):
+    def _build_dual_tree(self, forbidden_edges:Attribute = None, regions : UnionFind = None):
+        ### Builds a spanning tree over dual edges, so that each face is visited
+        # If forbidden_edges is provided, will avoid crossing those edges.
+        # If regions is provided, will make sure that two adjacent regions are connected by only one edge to avoid creating additionnal seams
+    
         # Dijsktra on faces (dual edges)
         fvisited = ArrayAttribute(bool, len(self.input_mesh.faces)) #self.input_mesh.faces.create_attribute("cut_visited", bool)
         path = [None for _ in self.input_mesh.id_faces]
@@ -261,79 +370,47 @@ class SingularityCutter(Worker):
                 v1,v2 = self.input_mesh.edges[e]
                 if forbidden_edges[e] : continue # edge is on the singularity spanning tree
                 iF2 = self.input_mesh.connectivity.opposite_face(v1,v2,iF)
-                if iF2 is not None: 
-                    d = face_distance(iF,iF2)
-                    if dist[iF2] > dist[iF] + d :
-                        dist[iF2] = dist[iF] + d
-                        path[iF2] = e
-                    if not fvisited[iF2] :
-                        queue.push(iF2, dist[iF2])
-        return {path[f] for f in self.input_mesh.id_faces if path[f] is not None }
-    
-    def _build_dual_tree_with_features(self, forbidden_edges:Attribute):
-        regions = self._build_feature_regions(forbidden_edges) # face regions delimited by feature edges
-
-        # Dijsktra on faces (dual edges)
-        fvisited = ArrayAttribute(bool, len(self.input_mesh.faces)) #self.input_mesh.faces.create_attribute("cut_visited", bool)
-        path = [None for _ in self.input_mesh.id_faces]
-        dist = [float("inf") for _ in self.input_mesh.id_faces]
-        queue : PriorityQueue = PriorityQueue() # queue contains indexes of faces
-        queue.push(0,0)
-        dist[0] = 0
-
-        barycenters = attributes.face_barycenter(self.input_mesh, persistent=False)
-
-        def face_distance(f1,f2):
-            # Heuristic for distance between two faces
-            return distance(barycenters[f1], barycenters[f2])
-
-        while not queue.empty():
-            iF = queue.get().x
-            if fvisited[iF] : continue
-            fvisited[iF] = True        
-            for e in self.input_mesh.connectivity.face_to_edges(iF):
-                v1,v2 = self.input_mesh.edges[e]
-                if forbidden_edges[e] : continue # edge is on the singularity spanning tree
-                iF2 = self.input_mesh.connectivity.opposite_face(v1,v2,iF)
-                if iF2 is not None:
-                    u,v = set(self.input_mesh.faces[iF]) & set(self.input_mesh.faces[iF2])
-                    blocked = self.input_mesh.connectivity.edge_id(u,v) in self.feat_detector.feature_edges and regions.connected(iF,iF2)
-                    if not blocked:
-                        d = face_distance(iF,iF2)
-                        if dist[iF2] > dist[iF] + d :
-                            dist[iF2] = dist[iF] + d
-                            path[iF2] = e
-                        if not fvisited[iF2]:
-                            queue.push(iF2, dist[iF2])
-                            regions.union(iF,iF2)
+                if iF2 is None: continue
+                blocked = (regions is not None) and (e in self._feat_detector.feature_edges and regions.connected(iF,iF2))
+                # if regions is provided, will check if this region is already reached by another branch of the tree. It that is the case, stop here.
+                if blocked: continue
+                if regions is not None: regions.union(iF,iF2)
+                d = face_distance(iF,iF2)
+                if dist[iF2] > dist[iF] + d :
+                    dist[iF2] = dist[iF] + d
+                    path[iF2] = e
+                if not fvisited[iF2] :
+                    queue.push(iF2, dist[iF2])
         return {path[f] for f in self.input_mesh.id_faces if path[f] is not None }
 
-    def _build_cut_edges_tree(self, evisited):
-        # Build self._cut_edges with edges that were **not** used during the above search
-        self.cut_edges = set(self.input_mesh.id_edges) - evisited
+    def _prune_edge_tree(self, visited_edges):
+        # seams are a subset of edges that were **not** used during the dual search
+        remaining_edges = set(self.input_mesh.id_edges) - visited_edges
+        
         # build connectivity on the edge tree
-        self.cut_adj = dict([(i,set()) for i in self.input_mesh.id_vertices]) # connectivity lists of cut tree
-        for e in self.cut_edges:
+        cut_adj = dict([(i,set()) for i in self.input_mesh.id_vertices])
+        for e in remaining_edges:
             a,b = self.input_mesh.edges[e]
-            self.cut_adj[a].add(b)
-            self.cut_adj[b].add(a)
+            cut_adj[a].add(b)
+            cut_adj[b].add(a)
 
-    def _prune_edge_tree(self):
         # remove leaves of cut tree until we fall on singularities
         queue = deque()
         for i in self.input_mesh.id_vertices:
-            d = len(self.cut_adj[i])
+            # append all tree leaves on the queue
+            d = len(cut_adj[i])
             if d==1 and i not in self.singularities:
                 queue.append(i)
         while len(queue)>0:
             A = queue.popleft()
-            for B in self.cut_adj[A]:
-                self.cut_adj[B].remove(A)
-                self.cut_edges.remove(self.input_mesh.connectivity.edge_id(A,B))
-                if len(self.cut_adj[B])==1 and B not in self.singularities:
+            for B in cut_adj[A]:
+                cut_adj[B].remove(A)
+                remaining_edges.remove(self.input_mesh.connectivity.edge_id(A,B))
+                if len(cut_adj[B])==1 and B not in self.singularities:
                     queue.append(B)
-            self.cut_adj[A] = set() # A is disconnected
-        self.log("# Edges cut:", len(self.cut_edges) - len(self.input_mesh.boundary_edges))
+            cut_adj[A] = set() # A is disconnected
+        self.log("# Edges cut:", len(remaining_edges) - len(self.input_mesh.boundary_edges))
+        return remaining_edges
 
     def _build_cut_graph_as_mesh(self):
         # Build tree of potential cuts for debug purposes
@@ -355,62 +432,3 @@ class SingularityCutter(Worker):
         for x in self.singularities:
             singuls_attr[new_v_id[x]] = True
         self._cut_graph = PolyLine(self._cut_graph)
-
-    def _build_mesh_with_cuts(self):
-        self._output_mesh = RawMeshData()
-        uf = UnionFind(range(3*len(self.input_mesh.faces)))
-        duplicate_vertices = dict([(v, set()) for v in self.input_mesh.id_vertices])
-
-        # At first, no faces are adjacent
-        kF = 0
-        for iF,F in enumerate(self.input_mesh.faces):
-            nF = len(F)
-            self._output_mesh.faces.append([kF+_i for _i in range(nF)])
-            for iv,v in enumerate(F):
-                pv = self.input_mesh.vertices[v]
-                self._output_mesh.vertices.append(pv)
-                duplicate_vertices[v].add(kF+iv)
-            kF += nF
-
-        # Fusion vertices along edges that are not a cut
-        for e in self.input_mesh.interior_edges:
-            a,b = self.input_mesh.edges[e]
-            if e not in self.cut_edges:
-                F1, iA1, iB1 = self.input_mesh.connectivity.direct_face(a,b,True)
-                F2, iB2, iA2 = self.input_mesh.connectivity.direct_face(b,a,True)
-                uf.union(self._output_mesh.faces[F1][iA1], self._output_mesh.faces[F2][iA2])
-                uf.union(self._output_mesh.faces[F1][iB1], self._output_mesh.faces[F2][iB2])
-
-        for i,F in enumerate(self._output_mesh.faces):
-            self._output_mesh.faces[i] = [uf.find(v) for v in F]
-            
-        # Reorder vertices to [0,n-1] and get rid of non connected duplicates
-        imap = dict()
-        i=0
-        for F in self._output_mesh.faces:
-            for v in F:
-                if v in imap: continue
-                imap[v]=i # assign new index to first version of vertex u met
-                i+=1
-
-        for iF,F in enumerate(self._output_mesh.faces):
-            self._output_mesh.faces[iF] = [imap[v] for v in F]
-        order_verts = [None]*len(imap)
-
-        for u in range(len(self._output_mesh.vertices)):
-            if u not in imap: continue
-            order_verts[imap[u]] = self._output_mesh.vertices[u]
-        self._output_mesh.vertices.clear()
-        self._output_mesh.vertices += order_verts
-        self._output_mesh = SurfaceMesh(self._output_mesh)
-        
-        # get rid of duplicated and isolated vertices in map
-        for v in duplicate_vertices:
-            duplicate_vertices[v] = {imap[uf.find(u)] for u in duplicate_vertices[v]}
-
-        # inverse duplicate_vertices to get self.ref_vertex
-        self.ref_vertex = dict()
-        for v in duplicate_vertices:
-            for u in duplicate_vertices[v]:
-                self.ref_vertex[u] = v
-

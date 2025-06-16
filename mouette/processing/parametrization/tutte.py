@@ -34,12 +34,16 @@ class TutteEmbedding(BaseParametrization):
         Attributes:
             CIRCLE (int): 0
             SQUARE (int): 1
-            CUSTOM (int): 2
+            XY     (int): 2
+            XZ     (int): 3
+            CUSTOM (int): 4
         """
         
         CIRCLE = 0
         SQUARE = 1
-        CUSTOM = 2
+        XY = 2
+        XZ = 3
+        CUSTOM = 4
 
         @staticmethod
         def from_string(s :str):
@@ -53,6 +57,10 @@ class TutteEmbedding(BaseParametrization):
                 return TutteEmbedding.BoundaryMode.CIRCLE
             if "square" in s.lower():
                 return TutteEmbedding.BoundaryMode.SQUARE
+            if "xy" in s.lower():
+                return TutteEmbedding.BoundaryMode.XY
+            if "xz" in s.lower():
+                return TutteEmbedding.BoundaryMode.XZ
             if "custom" in s.lower():
                 return TutteEmbedding.BoundaryMode.CUSTOM
             raise Exception(f"'{s}' does correspond to any boundary mode. Choices are : 'circle', 'square', 'custom'")
@@ -61,7 +69,7 @@ class TutteEmbedding(BaseParametrization):
         """
         Args:
             mesh (SurfaceMesh): the mesh to embed. Should be a surface with disk topology.
-            boundary_mode (str, optional): Shape of the boundary. Possible choices are ["square", "circle"]. Defaults to "circle".
+            boundary_mode (str, optional): Shape of the boundary. Possible choices are ["square", "circle", "xy]. Defaults to "circle".
             use_cotan (bool, optional): If True, uses cotangents as weights in the Laplacian matrix [2]. Otherwise, use Tutte's original barycentric embedding [1]. Defaults to False.
             verbose (bool, optional): verbose mode. Defaults to False.
             
@@ -75,9 +83,9 @@ class TutteEmbedding(BaseParametrization):
             save_on_corners (bool): whether the coordinates are saved as a vertex attribute or a face_corner attribute
 
         Raises:
-            InvalidArgumentValueError : if 'boundary_mode' is not "square" or "circle".
+            InvalidArgumentValueError : if 'boundary_mode' is not a valid mode.
         """
-        check_argument("boundary_mode", boundary_mode, str, ["square", "circle"])
+        check_argument("boundary_mode", boundary_mode, str, ["square", "circle", "xy", "xz"])
         super().__init__("Tutte", mesh, verbose, **kwargs)
         self._custom_bnd : np.ndarray = kwargs.get("custom_boundary", None)
         self._use_cotan : bool = use_cotan
@@ -99,7 +107,10 @@ class TutteEmbedding(BaseParametrization):
 
         lap = operators.laplacian(self.mesh, cotan=self._use_cotan)
         freeInds = self.mesh.interior_vertices
-        if self._bnd_mode == TutteEmbedding.BoundaryMode.CUSTOM:
+        if self._bnd_mode in (
+            TutteEmbedding.BoundaryMode.CUSTOM, 
+            TutteEmbedding.BoundaryMode.XY,
+            TutteEmbedding.BoundaryMode.XZ):
             bndInds = self.mesh.boundary_vertices
         else: # otherwise boundary should be sorted
             bndInds, _ = extract_border_cycle(self.mesh)
@@ -129,12 +140,24 @@ class TutteEmbedding(BaseParametrization):
         n = len(self.mesh.boundary_vertices)
         U, V = np.zeros(n), np.zeros(n)
         if boundary_mode == TutteEmbedding.BoundaryMode.CUSTOM:
-            return self._custom_bnd[:,0], self._custom_bnd[:,1]     
+            return self._custom_bnd[:,0], self._custom_bnd[:,1]
+        
+        elif boundary_mode == TutteEmbedding.BoundaryMode.XY:
+            for iv,v in enumerate(self.mesh.boundary_vertices):
+                U[iv] = self.mesh.vertices[v][0]
+                V[iv] = self.mesh.vertices[v][1]
+        
+        elif boundary_mode == TutteEmbedding.BoundaryMode.XZ:
+            for iv,v in enumerate(self.mesh.boundary_vertices):
+                U[iv] = self.mesh.vertices[v][0]
+                V[iv] = self.mesh.vertices[v][2]
+
         elif boundary_mode == TutteEmbedding.BoundaryMode.CIRCLE:
             for i in range(n):
                 rt = cmath.rect(1., 2*pi*i/n)
                 U[i] = rt.real
                 V[i] = rt.imag
+                
         elif boundary_mode == TutteEmbedding.BoundaryMode.SQUARE:
             corners = [0, n//4, n//2, (3*n)//4]
             U[corners[0]], V[corners[0]] = 0,0

@@ -8,8 +8,8 @@ from tqdm import tqdm, trange
 from tqdm.utils import _term_move_up
 prefix = _term_move_up() + '\r'
 
-from ..utils import Logger, get_osqp_lin_solver
 from .. import geometry as geom
+from ..utils import Logger
 
 @dataclass
 class LMParameters:
@@ -84,9 +84,6 @@ class LevenbergMarquardt(Logger):
         ### Others
         self._stop_criterion_instance = None # OSQP instance to compute projected gradient norm
         
-        ### Additionnal parameters
-        self._linsys_solver = kwargs.get("lin_solver", get_osqp_lin_solver())
-
     def register_constraints(self, A : sp.spmatrix, l : np.ndarray = None, u : np.ndarray = None):
         """
         Adds linear constraints to the optimization problem :
@@ -232,11 +229,11 @@ class LevenbergMarquardt(Logger):
                     cstU = self._cstU - xCst
                 else:
                     cstL,cstU = None, None
-                osqp_instance.setup(JtJ + gamma*self._W, q=q, A=self._cstM, l=cstL, u=cstU,
+                osqp_instance.setup(P=JtJ + gamma*self._W, q=q, A=self._cstM, l=cstL, u=cstU,
                     verbose=self.verbose_options.solver_verbose,
-                    eps_abs=1e-3, eps_rel=1e-3,
-                    max_iter=100, polish=True, check_termination=10, 
-                    adaptive_rho=True, linsys_solver= self._linsys_solver)
+                    eps_abs=1e-6, eps_rel=1e-6,
+                    max_iter=100, check_termination=10, 
+                    adaptive_rho=True)
                 s = osqp_instance.solve().x # computed increment
 
                 if s[0] is not None:
@@ -297,7 +294,9 @@ class LevenbergMarquardt(Logger):
             if self._stop_criterion_instance is None:
                 self._stop_criterion_instance = OSQP()
                 self._stop_criterion_instance.setup(
-                    sp.eye(n,format=("csc")), q=-2*G, A = self._cstM, l = self._cstL, u = self._cstU,
+                    P=sp.eye(n,format=("csc")), 
+                    q=-2*G, 
+                    A = self._cstM, l = self._cstL, u = self._cstU,
                     verbose=self.verbose_options.solver_verbose)
             else:
                 self._stop_criterion_instance.update(q=-2*G)

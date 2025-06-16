@@ -14,7 +14,7 @@ def chain_of_vertices(vertices: np.ndarray, loop:bool = False) -> PolyLine:
     Returns:
         PolyLine: _description_
     """
-    pl = from_arrays(vertices, raw=True)
+    pl = from_arrays(np.asarray(vertices), raw=True)
     n = len(pl.vertices)
     if loop:
         pl.edges += [x for x in iterators.cyclic_pairs(range(n))]

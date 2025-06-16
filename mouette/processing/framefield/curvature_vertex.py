@@ -68,7 +68,6 @@ class PrincipalDirectionsVertices(_BaseFrameField2DVertices):
         self.curv_mat_vert = np.zeros((len(self.mesh.vertices),3,3), dtype=np.float64)
         row,col = self.M.nonzero()
         self.curv_mat_vert = aggregate_mats(self.curv_mat_vert, curv_mat_edges, row, col, self.M.count_nonzero())
-        print(curv_mat_edges)
 
     def initialize(self):
         super()._initialize_attributes()

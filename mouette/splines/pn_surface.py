@@ -72,11 +72,11 @@ class P2Triangulation(_PnTriangulation):
         ^
         |
         2
-        |`\ 
-        |  `\ 
+        |`\\ 
+        |  `\\ 
         5    `4 
-        |      `\ 
-        |        `\ 
+        |      `\\ 
+        |        `\\ 
         0-----3----1  -> u
 
 
@@ -234,11 +234,11 @@ class P3Triangulation(_PnTriangulation):
         ^
         |
         2
-        | \ 
+        | \\ 
         7   6
-        |     \ 
+        |     \\  
         8   9   5
-        |         \ 
+        |         \\ 
         0---3---4---1 -> u
 
 

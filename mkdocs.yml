@@ -101,6 +101,7 @@ nav:
     - "algorithms/shortest_paths.md"
     - "algorithms/heat_method.md"
     - "algorithms/feature_detection.md"
+    - "algorithms/parametrization/surface_cutting.md"
     - "algorithms/normal_estimation.md"
 
     - Frame fields: 

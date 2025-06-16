@@ -45,7 +45,6 @@ class FrameField(Worker):
             self.log("Optimize")
             self.optimize()
             self.smoothed = True
-        self.log("Done.")
 
     def normalize(self):
         if self.var is None: return

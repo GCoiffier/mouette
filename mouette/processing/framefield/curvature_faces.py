@@ -14,7 +14,7 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
 
     def __init__(self, 
         supporting_mesh : SurfaceMesh,
-        features : bool = True,
+        features : bool = False,
         verbose : bool = False,
         confidence_threshold : float = 0.5,
         smooth_threshold : float = 0.7,

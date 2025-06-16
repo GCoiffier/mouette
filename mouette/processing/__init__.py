@@ -4,7 +4,7 @@ submodule for algorithms applied on meshes
 """
 
 from .misc import smooth
-from .cutting import SingularityCutter
+from .cutting import SurfaceMeshCutter, SingularityCutter
 from .features import FeatureEdgeDetector
 from .expmap import DiscreteExponentialMap
 

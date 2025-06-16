@@ -12,10 +12,8 @@ from ...mesh.datatypes import PolyLine,SurfaceMesh,VolumeMesh
 from ...mesh.mesh_data import RawMeshData
 from ...mesh.mesh_attributes import Attribute, ArrayAttribute
 
-from ... import attributes
+from ... import attributes, utils, geometry as geom
 
-from ... import geometry as geom
-from ... import utils
 from ...geometry import Vec, SphericalHarmonics
 from ...geometry.rotations import match_rotation
 from ...geometry import transform
@@ -223,8 +221,8 @@ class FrameField3DCells(FrameField):
         cstrMat, cstrRHS = self._compute_constraints()
         self.log(" | Initial solve of linear system")
         instance = OSQP()
-        instance.setup(Q, None, A=cstrMat, l=cstrRHS, u=cstrRHS, verbose=self.verbose, polish=True, check_termination=10, 
-                        adaptive_rho=True,  linsys_solver=utils.get_osqp_lin_solver())
+        instance.setup(Q, None, A=cstrMat, l=cstrRHS, u=cstrRHS, verbose=self.verbose, polishing=True, check_termination=10, 
+                        adaptive_rho=True)
         res = instance.solve()
         self.var = res.x
 

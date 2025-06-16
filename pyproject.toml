@@ -1,12 +1,6 @@
 [build-system]
 requires = [
   "setuptools>=61.0",
-  "aenum",
-  "tqdm",
-  "numpy",
-  "scipy",
-  "numba",
-  "osqp"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -19,11 +13,10 @@ authors = [
 ]
 description = "Geometry Processing and mesh handling in python"
 readme = "README.md"
-license = { file="LICENSE" }
+license = "MIT"
 requires-python = ">=3.6"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -31,11 +24,10 @@ dependencies = [
   "tqdm",
   "numpy",
   "scipy",
-  "osqp",
+  "osqp>=1.0.4",
   "numba",
-  "mkdocstrings[python]>=0.18",
   "stl-reader",
-  "plyfile"
+  "pyminiply"
 ]
 
 

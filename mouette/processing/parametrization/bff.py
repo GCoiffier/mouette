@@ -13,6 +13,7 @@ from ..border import extract_border_cycle
 import numpy as np
 import cmath
 import scipy.sparse as sp
+from scipy.sparse import linalg as splinalg
 
 class BoundaryFirstFlattening(BaseParametrization):
     """
@@ -67,13 +68,13 @@ class BoundaryFirstFlattening(BaseParametrization):
 
         self._curv : ArrayAttribute = None
         self.NV,self.NB = None,None
-        self._L : sp.csc_matrix = None # Laplacian operator
-        self._Lii, self._Lib, self._Lbb = None, None, None # Laplacian submatrices
+        self._solve_L : sp.csc_matrix = None # Laplacian operator
+        self._solve_Lii, self._Lib, self._Lbb = None, None, None # Laplacian submatrices
         
         self._vertex_permutation = None
         self._Bedges = None # list of edges (in order) that make the boundary
         self._Blengths = None
-        self._Btarget_lenghts = None
+        self._Btarget_lengths = None
 
     def run(self) -> SurfaceMesh:
         """Run the algorithm
@@ -98,10 +99,12 @@ class BoundaryFirstFlattening(BaseParametrization):
 
         self.log("Compute Laplacian operator")
         self._L = laplacian(self.mesh, cotan = self.use_cotan)
+        self._solve_L = sp.linalg.factorized(self._L)
 
-        self._Lii = self._L[ self.NB:,:][:, self.NB:]
+        self._solve_Lii = splinalg.factorized(self._L[ self.NB:,:][:, self.NB:])
         self._Lib = self._L[ self.NB:,:][:,:self.NB ]
         self._Lbb = self._L[:self.NB ,:][:,:self.NB ]
+
 
         self.log("Initialize Boundary scale factor and curvature")
         if self._Bscale_fctr is None and self._Bcurvature is None:
@@ -109,12 +112,15 @@ class BoundaryFirstFlattening(BaseParametrization):
             self._Bscale_fctr = np.zeros(self.NB)
         
         if self._Bscale_fctr is not None:
+            # Scale factors were provided -> extrapolate curvature via Dirichlet to Neumann 
             self._Bscale_fctr = np.array([self._Bscale_fctr[v] for v in self._vertex_permutation[:self.NB]])
-            # Curvature was provided -> extrapolate scale factors via Neumann to Dirichlet
             self._Bcurvature = self._dirichlet_to_neumann(-self._curv, self._Bscale_fctr)
         elif self._Bcurvature is not None:
-            # Scale factors were provided -> extrapolate curvature via Dirichlet to Neumann
-            self._Bscale_fctr = self._neumann_to_dirichlet()
+            # Curvature was provided -> extrapolate scale factors via Neumann to Dirichlet
+            k = np.zeros(len(self.mesh.vertices))
+            for iv,v in enumerate(self._vertex_permutation[:self.NB]):
+                k[iv] = -self._Bcurvature[v]
+            self._Bscale_fctr = self._neumann_to_dirichlet(-self._curv, k)
         else:
             raise Exception("Should not happen.")
                 
@@ -141,20 +147,21 @@ class BoundaryFirstFlattening(BaseParametrization):
         return e_border
 
     def _dirichlet_to_neumann(self, phi, U):
-        a = sp.linalg.spsolve(self._Lii, phi[self.NB:] - self._Lib @ U)
+        a = self._solve_Lii(phi[self.NB:] - self._Lib @ U)
         return phi[:self.NB] - self._Lib.transpose() @ a - self._Lbb @ U
 
-    def _neumann_to_dirichlet(self):    
-        raise NotImplementedError
-
+    def _neumann_to_dirichlet(self, phi, h):
+        a = self._solve_L(phi - h)
+        return a[:self.NB]
+    
     def _fit_boundary_curve(self):
         self._Blengths = np.zeros(len(self.mesh.boundary_edges))
-        self._Btarget_lenghts = np.zeros(len(self.mesh.boundary_edges))
+        self._Btarget_lengths = np.zeros(len(self.mesh.boundary_edges))
         for ie,e in enumerate(self._Bedges):
             A,B = self.mesh.edges[e]
             uA,uB = self._Bscale_fctr[A], self._Bscale_fctr[B]
             self._Blengths[ie] = geom.distance( self.mesh.vertices[A], self.mesh.vertices[B])
-            self._Btarget_lenghts[ie] = self._Blengths[ie] * np.exp((uA+uB)/2)
+            self._Btarget_lengths[ie] = self._Blengths[ie] * np.exp((uA+uB)/2)
         
         T = np.zeros((self.NB,2))
         direction = 0.
@@ -162,7 +169,7 @@ class BoundaryFirstFlattening(BaseParametrization):
             direction += self._Bcurvature[i]
             T[i] = geom.Vec.from_complex(cmath.rect(1, direction))
         N = sp.diags(self._Blengths)
-        final_lengths = self._Btarget_lenghts - N @ T @ np.linalg.inv(T.transpose() @ N @ T) @ T.transpose() @ self._Btarget_lenghts
+        final_lengths = self._Btarget_lengths - N @ T @ np.linalg.inv(T.transpose() @ N @ T) @ T.transpose() @ self._Btarget_lengths
         bnd_pts = np.zeros((self.NB,2))
         for i in range(1,self.NB):
             bnd_pts[i] = bnd_pts[i-1] + final_lengths[i-1] * T[i-1]
@@ -170,14 +177,14 @@ class BoundaryFirstFlattening(BaseParametrization):
     
     def _extend_boundary_values(self, Ub, Vb):
         if self.hilbert_transform:
-            Ui = sp.linalg.spsolve(self._Lii, - self._Lib @ Ub) # extending u coordinate
+            Ui = self._solve_Lii(- self._Lib @ Ub) # extending u coordinate
             U = np.concatenate((Ub,Ui))
             h = np.zeros(self.NV)
             for i in range(self.NB):
                 h[i] = (Ub[(i+1)%self.NB] - Ub[(i-1)%self.NB])/2
-            V = sp.linalg.spsolve(self._L, h)
+            V = self._solve_L(h)
         else:
-            Ui = sp.linalg.spsolve(self._Lii, - self._Lib @ Ub) # extending u coordinate
-            Vi = sp.linalg.spsolve(self._Lii, -self._Lib @ Vb) # extending v coordinate
+            Ui = self._solve_Lii(-self._Lib @ Ub) # extending u coordinate
+            Vi = self._solve_Lii(-self._Lib @ Vb) # extending v coordinate
             U,V = np.concatenate((Ub,Ui)), np.concatenate((Vb,Vi))    
         return U,V

@@ -24,7 +24,6 @@ from tqdm import tqdm
 from scipy.spatial.transform import Rotation
 from math import atan2
 from osqp import OSQP
-from ...utils.osqp_lin_solve import get_osqp_lin_solver
 
 class FrameField3DVertices(FrameField): 
 
@@ -166,8 +165,8 @@ class FrameField3DVertices(FrameField):
         cstrMat, cstrRHS = self.compute_constraints()
        
         self.log(" | Initial solve of linear system")
-        instance = OSQP()
-        instance.setup(lap, None, A=cstrMat, l=cstrRHS, u=cstrRHS, verbose=self.verbose, linsys_solver=get_osqp_lin_solver())
+        instance = OSQP(algebra="builtin")
+        instance.setup(lap, None, A=cstrMat, l=cstrRHS, u=cstrRHS, verbose=self.verbose)
         res = instance.solve()
         self.var = res.x
 

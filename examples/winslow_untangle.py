@@ -15,22 +15,29 @@ if __name__ == "__main__":
     if not mesh.is_triangular():
         raise Exception("Mesh is not triangular")
     
-    # Create a flat mesh 
-    uv_init = mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
-    for v in mesh.id_vertices:
-        uv_init[v] = [mesh.vertices[v][0], mesh.vertices[v][2]] # flatten y coordinate
-        # uv_init[v] = [mesh.vertices[v][0], mesh.vertices[v][2] + mesh.vertices[v][1]] # even more broken initialization
-
+    # Create a flat mesh
+    tutte = M.parametrization.TutteEmbedding(mesh, "xz", use_cotan=False, save_on_corners=False)()
+    uv_init = mesh.vertices.get_attribute("uv_coords")
+    # uv_init = mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
+    # for v in mesh.id_vertices:
+    #     uv_init[v] = [mesh.vertices[v][0], mesh.vertices[v][2]] # flatten y coordinate
+    #     uv_init[v] = [mesh.vertices[v][0], mesh.vertices[v][2] + mesh.vertices[v][1]] # even more broken initialization
     uv_init_corners = mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
     M.attributes.scatter_vertices_to_corners(mesh, uv_init, uv_init_corners)
-
     dist_init = M.parametrization.ParamDistortion(mesh)()
+    if dist_init.summary["det_min"]<0:
+        for v in mesh.id_vertices:
+            uv_init[v] = [uv_init[v][0], -uv_init[v][1]]
+        M.attributes.scatter_vertices_to_corners(mesh, uv_init, uv_init_corners)
+        dist_init = M.parametrization.ParamDistortion(mesh)()
+
     print("Initial Mapping Distortion:", dist_init.summary)
     M.mesh.save(mesh, "init_mesh.obj")
     M.mesh.save(mesh, "init_mesh.geogram_ascii")
 
+
     # Run the untangler
-    untangler = M.parametrization.WinslowInjectiveEmbedding(mesh, uv_init, lmbd=args.lmbd)
+    untangler = M.parametrization.WinslowInjectiveEmbedding(mesh, uv_init, lmbd=args.lmbd, n_iter_max=args.n_iter)
     M.mesh.save(untangler.flat_mesh, "init_flat.obj")
     
     untangler.run()

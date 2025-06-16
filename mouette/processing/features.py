@@ -17,8 +17,6 @@ class FeatureEdgeDetector(Worker):
     - Boundary edges
     
     - Edges such that their dihedral angle is large (crease edges)
-
-    The `FeatureEdgeDetector` object can be given as a parameter in parametrization or frame field algorithms that need feature edge alignment.
     """
 
     def __init__(self, only_border : bool = False, flag_corners=True, corner_order:int = 4, compute_feature_graph=True, verbose=True):
@@ -92,7 +90,7 @@ class FeatureEdgeDetector(Worker):
         return self._corner_pc
 
     def _compute_feature_graph(self, mesh: SurfaceMesh):
-        """Computes self._feature_mesh"""
+        # Computes self._feature_mesh
         self._feature_graph = RawMeshData()
         fvert = list(self.feature_vertices)
         fvert = dict([(fvert[i],i) for i in range(len(self.feature_vertices))])
@@ -106,6 +104,7 @@ class FeatureEdgeDetector(Worker):
         self._feature_graph = PolyLine(self._feature_graph)
  
     def _compute_corner_point_cloud(self, mesh : SurfaceMesh):
+        # Computes self._corner_pc
         self._corner_pc = RawMeshData()
         for v in self.feature_vertices:
             if self.corners[v] in (self.corner_order, self.corner_order/2) : continue
@@ -121,15 +120,15 @@ class FeatureEdgeDetector(Worker):
         return feature_attr
 
     def _add_hard_edges_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:
-        """The mesh may already define a set of "hard" edges, for instance if it was imported from a file where edges were specified.
-        These edges should be registered as features, but we filter them if their curvature is too small.
+        # The mesh may already define a set of "hard" edges, for instance if it was imported from a file where edges were specified.
+        # These edges should be registered as features, but we filter them if their curvature is too small.
 
-        Parameters:
-            feature_attr (Attribute): the feature flag to fill in
+        # Parameters:
+        #     feature_attr (Attribute): the feature flag to fill in
 
-        Returns:
-            Attribute: the modified feature flag
-        """
+        # Returns:
+        #     Attribute: the modified feature flag
+
         if self.only_border : return feature_attr
         DOT_THRESHOLD = 0.2
         if mesh.edges.has_attribute("hard_edges"):
@@ -144,14 +143,14 @@ class FeatureEdgeDetector(Worker):
         return feature_attr
 
     def _add_sharp_angles_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:
-        """Flags as features all edges which dihedral angle is smaller than pi/2 or greater than 3*pi/2
+        # Flags as features all edges which dihedral angle is smaller than pi/2 or greater than 3*pi/2
 
-        Parameters:
-            feature_attr (Attribute): the feature flag to fill in
+        # Parameters:
+        #     feature_attr (Attribute): the feature flag to fill in
 
-        Returns:
-            Attribute: the modified feature flag
-        """
+        # Returns:
+        #     Attribute: the modified feature flag
+        
         if self.only_border : return feature_attr
         DOT_THRESHOLD = 0.5
         for e, (A,B) in enumerate(mesh.edges):
@@ -244,7 +243,7 @@ class FeatureEdgeDetector(Worker):
 
 
     def detect(self, mesh : SurfaceMesh):
-        """Runs the detection on a provided mesh.
+        """Runs the detection on a provided mesh. Alias for `FeatureEdgeDetector.run(mesh)`
 
         Args:
             mesh (SurfaceMesh): the input mesh

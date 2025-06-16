@@ -3,6 +3,7 @@
 Maillages, Outils Et Traitement auTomatique de la géométriE
 (Meshes, Tools and Geometry Processing)
 """
+__version__ = "1.2.6"
 
 from . import config
 from . import utils

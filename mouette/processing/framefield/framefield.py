@@ -20,7 +20,7 @@ def SurfaceFrameField(
     mesh : SurfaceMesh,
     elements : str,
     order : int = 4,
-    features : bool = True,
+    features : bool = False,
     verbose : bool = False,
     n_smooth : int = 3,
     smooth_attach_weight : float = None,
@@ -43,7 +43,7 @@ def SurfaceFrameField(
         order (int, optional): Order of the frame field (number of branches). Defaults to 4.
         
         features (bool, optional): Whether to consider feature edges or not. 
-            If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to True.
+            If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to False.
         
         n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 3.
         
@@ -122,7 +122,7 @@ def SurfaceFrameField(
 def PrincipalDirections(
     mesh : SurfaceMesh, 
     elements : str,
-    features : bool = True,
+    features : bool = False,
     verbose : bool = False,
     
     patch_size : int = 2,
@@ -142,7 +142,7 @@ def PrincipalDirections(
     
     Keyword Args:
         features (bool, optional): Whether to consider feature edges or not. 
-            If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to True.
+            If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to False.
 
         verbose (bool, optional): verbose mode. Defaults to False.
 
@@ -152,9 +152,9 @@ def PrincipalDirections(
         
         patch_size (int, optional): On vertices only. Radius (in nubmer of edges) of the neighboring patch to be considered to approximate the shape operator. Defaults to 2.
         
-        confidence_threshold (float, optional): On vertices only. Threshold on the anisotropy of the shape operator. Great anisotropy values (between 0 and 1) give good confidence on the principal directions. If the confidence is smaller than the threshold, eigenvectors will not be extracted and will instead be harmonically filled in. Defaults to 0.5.
+        confidence_threshold (float, optional): Threshold on the anisotropy of the shape operator. Great anisotropy values (between 0 and 1) give good confidence on the principal directions. If the confidence is smaller than the threshold, eigenvectors will not be extracted and will instead be harmonically filled in. Defaults to 0.5.
         
-        smooth_threshold (float, optional): On vertices only. Threshold on the anisotropy of the shape operator. Points with a confidence value higher than the threshold will be considered fixed during smoothing. Ignored is n_smooth is 0. Defaults to 0.7.
+        smooth_threshold (float, optional): Threshold on the anisotropy of the shape operator. Points with a confidence value higher than the threshold will be considered fixed during smoothing. Ignored is n_smooth is 0. Defaults to 0.7.
 
         custom_connection (SurfaceConnection, optional): custom connection object to be used for parallel transport. If not provided, a connection will be automatically computed (see SurfaceConnection class). Defaults to None.
         
