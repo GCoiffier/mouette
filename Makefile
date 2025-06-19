@@ -8,4 +8,4 @@ test:
 	python -m pytest --cov=mouette tests/
 
 servedoc:
-	mkdocs serve
+	python -m mkdocs serve

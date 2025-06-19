@@ -120,6 +120,7 @@ nav:
       - "algorithms/parametrization/winslow.md"
       - "algorithms/parametrization/cone_param.md"
       - "algorithms/parametrization/ff_integration.md"
+      - "algorithms/parametrization/orbifold_tutte.md"
       - "algorithms/parametrization/distortion.md"
 
     - Spatial queries:

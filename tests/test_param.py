@@ -42,25 +42,29 @@ def test_export_LSCM(m, tmp_path):
 
 ########## Tutte Embedding ##########
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere()])
-def test_tutte_circle(m):
-    tutte = PARAM.TutteEmbedding(m,verbose=False, save_on_corners=True, boundary_mode="circle")
+@pytest.mark.parametrize("m,bnd", [
+    (surf_circle(), "square"), 
+    (surf_circle(), "circle"), 
+    (surf_spline(), "circle"), 
+    (surf_spline(), "xy"),
+    (surf_half_sphere(), "square"),
+    (surf_half_sphere(), "xz"),
+])
+def test_tutte_emd(m, bnd):
+    tutte = PARAM.TutteEmbedding(m, verbose=False, save_on_corners=True, boundary_mode=bnd)
     tutte.run()
     assert m.face_corners.has_attribute("uv_coords")
+    if bnd not in ("xy", "xz"):
+        dist = M.parametrization.ParamDistortion(m)()
+        assert dist.summary["det_min"] > 0
 
-    tutte = PARAM.TutteEmbedding(m,verbose=False, save_on_corners=False, boundary_mode="circle")
+
+@pytest.mark.parametrize("m,bnd", [(surf_spline(), "circle"), (surf_half_sphere(), "square")])
+def test_tutte_save_on_vertices(m, bnd):
+    tutte = PARAM.TutteEmbedding(m,verbose=False, save_on_corners=False, boundary_mode=bnd)
     tutte.run()
     assert m.vertices.has_attribute("uv_coords")
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere()])
-def test_tutte_square(m):
-    tutte = PARAM.TutteEmbedding(m,verbose=False, save_on_corners=True, boundary_mode="square")
-    tutte.run()
-    assert m.face_corners.has_attribute("uv_coords")
-
-    tutte = PARAM.TutteEmbedding(m,verbose=False, save_on_corners=False, boundary_mode="square")
-    tutte.run()
-    assert m.vertices.has_attribute("uv_coords")
 
 @pytest.mark.parametrize("m", [surf_circle()])
 def test_tutte_invalid_boundary(m):
@@ -174,3 +178,41 @@ def test_cone_param_invalid_cones(mesh : M.mesh.SurfaceMesh):
         assert False
     except M.parametrization.ConformalConeParametrization.InvalidConesException as e:
         assert True 
+
+
+
+########## Orbifold Tutte Embedding ##########
+
+@pytest.mark.parametrize("mesh,cones,orbifold", [
+    (surf_spot(), [796, 978, 995], "square"),
+    (surf_spot(), [589, 995, 895, 560], "parallelogram")
+])
+def test_orbifold_tutte(mesh, cones, orbifold):
+    orbTutte = M.parametrization.OrbifoldTutteEmbedding(mesh, orbifold, cones, verbose=True)
+    orbTutte.run()
+    assert mesh.face_corners.has_attribute("uv_coords")
+    assert isinstance(orbTutte.flat_mesh, M.mesh.SurfaceMesh)
+    dist = M.parametrization.ParamDistortion(mesh)()
+    assert dist.summary["det_min"] > 0
+
+
+@pytest.mark.parametrize("mesh", [surf_spot()])
+def test_orbifold_tutte_invalid_cones(mesh):
+    try:
+        orbTutte = M.parametrization.OrbifoldTutteEmbedding(mesh, "square", [0,1,2,3])
+        assert False
+    except M.parametrization.OrbifoldTutteEmbedding.InvalidConesException as e:
+        assert True
+
+    try:
+        orbTutte = M.parametrization.OrbifoldTutteEmbedding(mesh, "parallelogram", [0,1,2])
+        assert False
+    except M.parametrization.OrbifoldTutteEmbedding.InvalidConesException as e:
+        assert True
+
+    try:
+        orbTutte = M.parametrization.OrbifoldTutteEmbedding(mesh, "triangle", [0,1,2])
+        orbTutte.run()
+        assert False
+    except NotImplementedError as e:
+        assert True

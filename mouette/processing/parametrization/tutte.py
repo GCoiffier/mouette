@@ -154,7 +154,7 @@ class TutteEmbedding(BaseParametrization):
 
         elif boundary_mode == TutteEmbedding.BoundaryMode.CIRCLE:
             for i in range(n):
-                rt = cmath.rect(1., 2*pi*i/n)
+                rt = cmath.rect(1., -2*pi*i/n)
                 U[i] = rt.real
                 V[i] = rt.imag
                 
@@ -176,4 +176,5 @@ class TutteEmbedding(BaseParametrization):
             for i,v in enumerate(range((3*n)//4+1, n)):
                 # U = 0
                 V[v] = 1-4*i/n
+            V = 1-V
         return U, V
