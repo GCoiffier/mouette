@@ -25,12 +25,6 @@ class OrbifoldTutteEmbedding(BaseParametrization):
     """
 
     class OrbifoldType(Enum):
-        """The four types of Euclidean orbifold.  
-        SQUARE = 1  
-        DIAMOND = 2  
-        TRIANGLE = 3  
-        PARALLELOGRAM = 4  
-        """
         SQUARE        = 1 # { pi/2,  pi,  pi/2 }
         DIAMOND       = 2 # { 2pi/3, 2pi/3, 2pi/3 }
         TRIANGLE      = 3 # { pi, 2pi/3, 2pi/6 }

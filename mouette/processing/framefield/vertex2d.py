@@ -95,11 +95,11 @@ class _BaseFrameField2DVertices(FrameField):
         # A is area weight matrix
         lap_no_pt = operators.laplacian(self.mesh)
         try:
-            eigs = sp.linalg.eigsh(lap_no_pt, k=2, M=A, which="SM", tol=1e-3, maxiter=1000, return_eigenvectors=False)
+            eigs = sp.linalg.eigsh(lap_no_pt, k=2, M=A, sigma=0., tol=1e-3, maxiter=1000, return_eigenvectors=False)
         except Exception as e:
             try:
                 self.log("First estimation of alpha failed: {}".format(e))
-                eigs = sp.linalg.eigsh(lap_no_pt+0.1*sp.identity(lap_no_pt.shape[0]), M=A, k=2, which="SM", tol=1e-3, maxiter=1000, return_eigenvectors=False)
+                eigs = sp.linalg.eigsh(lap_no_pt+0.1*sp.identity(lap_no_pt.shape[0]), M=A, k=2, sigma=0., tol=1e-3, maxiter=1000, return_eigenvectors=False)
             except:
                 self.log("Second estimation of alpha failed: taking alpha = ", fail_value)
                 return fail_value

@@ -158,7 +158,7 @@ class _BaseAttribute(ABC):
         pass
 
     @abstractmethod
-    def _expand(self, n : int):
+    def _expand(self, n: int):
         """Expands the storage capacity of the attributes. Adds `n` to self.n_elem
         Parameters:
             n (int) : number of new elements
@@ -166,7 +166,7 @@ class _BaseAttribute(ABC):
         pass
 
     @abstractmethod
-    def as_array(self):
+    def as_array(self, container_size: int = None):
         pass
 
     def empty(self):
@@ -197,10 +197,7 @@ class Attribute(_BaseAttribute):
             default_value (optional) : the default value of the attribute is n_elem is not specified. 
                 If it is not specified either, it will correspond to the default value of the type provided in elem_type.
         """
-        self.type : Attribute.Type = Attribute.Type(elem_type)
-        self.elemsize : int = elem_size
-        self._default_value = default_value
-        self._check_default_value_type()
+        super().__init__(elem_type, elem_size, default_value)
         self._data = dict()
     
     def __getitem__(self, key):
@@ -245,7 +242,20 @@ class Attribute(_BaseAttribute):
         """
         return self._data.keys().__iter__()
 
-    def as_array(self, container_size):
+    def as_array(self, container_size : int = None) -> np.ndarray:
+        """Converts the attribute to a numpy array
+
+        Args:
+            container_size (int, optional): the total size of the array. Needs to be provided for a dictionnary-based attribute. Ignored for an array-based attribute. Defaults to None.
+
+        Raises:
+            Exception: fails if the container size is not provided.
+
+        Returns:
+            np.ndarray : attribute as an array over elements.
+        """
+        if container_size is None:
+            raise Exception("Dictionnary based attributes need to know the size before being converted to an array.\nPlease call `attribute.as_array(size)` instead.")
         out = np.full((container_size, self.elemsize), self.default_value, dtype= self.type.dtype)
         for i,x in self._data.items():
             out[i,:] = x
@@ -256,6 +266,7 @@ class Attribute(_BaseAttribute):
         Empties the attribute. Frees the memory and ensures that all access return default value
         """
         self._data = dict()
+
 
 class ArrayAttribute(_BaseAttribute):
     def __init__(self, elem_type, n_elem:int, elem_size:int=1, default_value=None):
@@ -270,17 +281,12 @@ class ArrayAttribute(_BaseAttribute):
 
             elem_size (int, optional): Number of elem_type objects to be stored per element. Defaults to 1.
             
-            dense (bool, optional): _description_. Defaults to False.
-
             default_value (optional) : the default value of the attribute is n_elem is not specified. 
                 If it is not specified either, it will correspond to the default value of the type provided in elem_type.
         """
-        self.type : Attribute.Type = Attribute.Type(elem_type)
-        self.elemsize : int = elem_size
+        super().__init__(elem_type, elem_size, default_value)
         self.n_elem:int = n_elem
-        self._default_value = default_value
-        self._check_default_value_type()
-        self._data = np.full((n_elem, elem_size), self.default_value, dtype= self.type.dtype)
+        self._data = np.full((n_elem, elem_size), self.default_value, dtype=self.type.dtype)
     
     def _check_out_of_bounds(self,key):
         if key<0 or key>self.n_elem:
@@ -330,7 +336,12 @@ class ArrayAttribute(_BaseAttribute):
         for i in range(self.n_elem):
             yield self._data[i]
 
-    def as_array(self, *args):
+    def as_array(self, *args) -> np.ndarray:
+        """Converts the attribute to a numpy array
+
+        Returns:
+            np.ndarray : attribute as an array over elements.
+        """
         return np.squeeze(self._data)
     
     def clear(self):

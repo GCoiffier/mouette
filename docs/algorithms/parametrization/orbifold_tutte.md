@@ -9,7 +9,7 @@ This method embeds a sphere-topology mesh into an Euclidean orbifold, that is a 
 
 They are four ways to perform such an embedding:  
 1) Square orbifold : 3 cones of $\pi/2$, $\pi$ and $\pi/2$  
-2) Diamond orbifold : 3 cones $2\pi/3$, $2*\pi/3$ and $2*\pi/3$  
+2) Diamond orbifold : 3 cones $2\pi/3$, $2\pi/3$ and $2\pi/3$  
 3) Triangle orbifold : 3 cones of $\pi$, $2\pi/3$ and $\pi/3$  
 4) Parallelogram orbifold : 4 cones of $\pi$, $\pi$, $\pi$ and $\pi$  
 

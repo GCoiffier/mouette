@@ -47,7 +47,8 @@ class _BaseDataContainer(ABC):
             warnings.warn(f"Attribute '{name}' already exists on {self.id}")
         else:
             if dense:
-                self._attr[name] = ArrayAttribute(data_type, len(self) if size is None else int(size), elem_size=elem_size, default_value=default_value)
+                n_elem = len(self) if size is None else int(size)
+                self._attr[name] = ArrayAttribute(data_type, n_elem, elem_size=elem_size, default_value=default_value)
             else:
                 self._attr[name] = Attribute(data_type, elem_size=elem_size, default_value=default_value)
         return self._attr[name]

@@ -7,7 +7,7 @@ if __name__ == "__main__":
     parser.add_argument("input_mesh", type=str, help="path to the input mesh")
     parser.add_argument("-outp", "--outp", default="output.geogram_ascii")
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("-elem", "--elements", type=str, choices=["vertices", "faces"])
+    parser.add_argument("-elem", "--elements", type=str, choices=["vertices", "faces"], required=True)
     parser.add_argument("-ps", "--patch-size", type=int, default=2)
     parser.add_argument("-ct", "--confidence-threshold", type=float, default=0.5)
     parser.add_argument("-st", "--smooth-threshold", type=float, default=0.7)
@@ -20,7 +20,9 @@ if __name__ == "__main__":
     PREV = OUTPUT_FILE.split(".")
     OUTPUT_FF  = PREV[0] + "_FF." + PREV[1]
 
-    mesh = M.mesh.load(args.input_mesh)    
+    mesh = M.mesh.load(args.input_mesh)
+    # mesh = M.transform.fit_into_unit_cube(mesh)
+    
     ff = framefield.PrincipalDirections(mesh, args.elements, features=args.features, verbose=args.verbose, n_smooth=args.n_smooth, smooth_threshold=args.smooth_threshold, confidence_threshold=args.confidence_threshold, patch_size=args.patch_size)
     ff.run()
     ff.flag_singularities()

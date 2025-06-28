@@ -31,7 +31,32 @@ class PrincipalDirectionsVertices(_BaseFrameField2DVertices):
         confidence_threshold : float = 0.5,
         smooth_threshold : float = 0.7,
         verbose : bool = True,
-        **kwargs): 
+        **kwargs):
+        """
+
+        Args:
+            mesh (SurfaceMesh): _description_
+            feature_edges (bool, optional): _description_. Defaults to False.
+            patch_size (int, optional): _description_. Defaults to 2.
+            confidence_threshold (float, optional): _description_. Defaults to 0.5.
+            smooth_threshold (float, optional): _description_. Defaults to 0.7.
+            verbose (bool, optional): _description_. Defaults to True.
+        
+        Keyword Args:
+            n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 3.
+            
+            smooth_attach_weight (float, optional): Custom attach weight to previous solution during smoothing steps. 
+                If not provided, will be estimated automatically during optimization. Defaults to None.
+
+            use_cotan (bool, optional): whether to use cotan for a better approximation of the Laplace-Beltrami operator. 
+                If False, will use a simple adjacency laplacian operator (See the _operators_ module). Defaults to True.
+
+            smooth_normals : Whether to initialize the frame field as a mean of adjacent feature edges (True), or following one of the edges (False). has no effect for frame field on faces. Defaults to True.
+            
+            custom_connection (SurfaceConnection, optional): custom connection object to be used for parallel transport. If not provided, a connection will be automatically computed (see SurfaceConnection class). Defaults to None.
+            
+            custom_feature (FeatureEdgeDetector, optional): custom feature edges to be used in frame field optimization. If not provided, feature edges will be automatically detected. If the 'features' flag is set to False, features of this object are ignored. Defaults to None.
+        """
         super().__init__(mesh, 
             4, # order is always 4 
             feature_edges,

@@ -100,7 +100,7 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
                 lap = operators.laplacian_triangles(self.mesh, order=4, connection=self.conn).tocsc()
                 A = operators.area_weight_matrix_faces(self.mesh)
             self.log(f"Solve linear system {self.n_smooth} times with diffusion")
-            alpha = self.smooth_attach_weight or 1.
+            alpha = self.smooth_attach_weight or self._compute_attach_weight(A)
             A = A.astype(complex)
             self.log("Attach weight: {}".format(alpha))
             

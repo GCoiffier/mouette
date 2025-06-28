@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
 from ..mesh.datatypes import *
-from ..attributes import face_area, cell_volume
+from ..attributes import face_area, cell_volume, cotangent
 
 @allowed_mesh_types(SurfaceMesh)
 def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = False, format: str = "csc") -> sp.csc_matrix:
@@ -29,6 +29,31 @@ def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = Fal
     if inverse : A = 1/A # /!\ perform inverse after sqrt
     return sp.diags(A, format=format)
 
+
+@allowed_mesh_types(SurfaceMesh)
+def cotan_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = False, format: str = "csc") -> sp.csc_matrix:
+    """
+    Returns the diagonal matrix A of cotan weights on vertices. The weight of vertex v is defined as the sum of cotangents around v.
+    
+    Args:
+        mesh (SurfaceMesh): input mesh
+        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
+        sqrt (bool, optional): whether to return A or A^{1/2}. Can be combined with `inverse` to return A^{-1/2}. Defaults to False.
+        format (str, optional): one of the sparse matrix format of scipy (csc, csr, coo, lil, ...). Defaults to csc.
+
+    Returns:
+        sp.csc_matrix: diagonal matrix of vertex areas
+    """
+    A = np.zeros(len(mesh.vertices))
+    if mesh.face_corners.has_attribute("cotan"):
+        cotan = mesh.face_corners.get_attribute("cotan")
+    else:
+        cotan = cotangent(mesh)
+    for c,v in enumerate(mesh.face_corners):
+        A[v] += cotan[c]
+    if sqrt: A = np.sqrt(A)
+    if inverse : A = 1/A # /!\ perform inverse after sqrt
+    return sp.diags(A, format=format)
 
 
 @allowed_mesh_types(SurfaceMesh)

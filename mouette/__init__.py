@@ -11,18 +11,18 @@ from . import mesh
 from . import attributes
 from . import procedural
 from . import operators
-from . import geometry
-from . import processing
-from . import optimize
 from . import sampling
 from . import spatial
 from . import splines
+from . import optimize
 
+from . import processing
 from .processing import framefield
 from .processing import parametrization
 
-from .geometry.vector import Vec
+from . import geometry
 from .geometry import transform
-from .utils import Logger
-from .processing.worker import Worker
-from .mesh.mesh_attributes import ArrayAttribute, Attribute
+from .geometry.vector import Vec
+
+from .processing.worker import Worker 
+from .utils.utilities import Logger

@@ -73,12 +73,12 @@ class _BaseFrameField2DFaces(FrameField) :
         # A is area weight matrix
         lap_no_pt = operators.laplacian_triangles(self.mesh, cotan=self.use_cotan)
         try:
-            eigs = sp.linalg.eigsh(lap_no_pt, k=2, M=A, which="SM", tol=1e-2, maxiter=100, return_eigenvectors=False)
+            eigs = sp.linalg.eigsh(lap_no_pt, k=2, M=A, sigma=0., tol=1e-2, maxiter=100, return_eigenvectors=False)
         except Exception as e:
             try:
                 self.log("First estimation of alpha failed: {}".format(e))
                 lap_no_pt = operators.laplacian_triangles(self.mesh, cotan=False)
-                eigs = sp.linalg.eigsh(lap_no_pt+0.1*sp.identity(lap_no_pt.shape[0]), M=A, k=2, which="SM", tol=1e-2, maxiter=500, return_eigenvectors=False)
+                eigs = sp.linalg.eigsh(lap_no_pt+0.1*sp.identity(lap_no_pt.shape[0]), M=A, k=2, sigma=0., tol=1e-2, maxiter=500, return_eigenvectors=False)
             except:
                 self.log("Second estimation of alpha failed: taking alpha = ", fail_value)
                 return fail_value
