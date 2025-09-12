@@ -18,6 +18,7 @@ from ... import utils
 import numpy as np
 import cmath
 import scipy.sparse as sp
+# from scipy.optimize import milp
 from osqp import OSQP
 
 class FrameFieldIntegration(BaseParametrization):
@@ -213,6 +214,8 @@ class FrameFieldIntegration(BaseParametrization):
             zT = self._get_ff_dir(iT)
             rhs[4*iT:4*iT+4] = [zT.real, zT.imag, -zT.imag, zT.real]
         self._Q = sp.coo_matrix((vals, (rows, cols)), shape=(n_lines, n_cols)).tocsc()
+        self._q = rhs * self.scaling
+        # problem to solve is min_x ||Qx - q||² 
         
         #### Compute constraints
         self._A = None
@@ -278,84 +281,16 @@ class FrameFieldIntegration(BaseParametrization):
 
         #### Solve system with OSQP
         Qt = self._Q.transpose()
-        self._q = -Qt @ rhs
-        self._q *= self.scaling
-        self._Q = Qt @ self._Q
-
         instance = OSQP()
-        instance.setup(self._Q, self._q, self._A, self._b, self._b, verbose=self.verbose,
+        instance.setup(Qt @ self._Q, -Qt @ self._q, self._A, self._b, self._b, verbose=self.verbose,
                     eps_abs=1e-6, eps_rel=1e-6, max_iter=1000)
         result = instance.solve()
+        self._wm = result
         self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
         for cnr in self.mesh.id_corners:
             idc = id(cnr)
             self.uvs[cnr] = result.x[2*idc:2*idc+2]
-
-
-    def quantize(self):
-        """
-        Resolves the problem with hard constraints on the translations accross seams, which have been computed by rounding the integrated translations
-        
-        References:
-            QuadCover
-            Mixed Integer Quadrangulation
-        """
-
-        id = lambda c : self._var_indirection[c] # shortcut
-        rows, cols, vals, rhs = [], [], [], []
-        irow = 0
-        visited = set()
-
-        for e in self._cutter.cut_edges:
-            A,B = self.mesh.edges[e]
-            je = self._jumps[e]
-            T1, T2 = self.mesh.connectivity.edge_to_faces(A,B)
-            for P in A,B:
-                c1 = self.mesh.connectivity.vertex_to_corner_in_face(P,T1)
-                c2 = self.mesh.connectivity.vertex_to_corner_in_face(P,T2)
-                if utils.keyify(id(c1), id(c2)) in visited:
-                    continue
-                visited.add(utils.keyify(id(c1), id(c2)))
-                tr = self.uvs[c1] - geom.rotate_2d(self.uvs[c2], np.pi/2 * je)
-                if je==0:
-                    rows += [irow,  irow,  irow+1,  irow+1]
-                    cols += [2*id(c1), 2*id(c2), 2*id(c1)+1, 2*id(c2)+1]
-                    vals += [1,          -1,          1,       -1]
-                elif je==1:
-                    rows += [irow,  irow,  irow+1,  irow+1]
-                    cols += [2*id(c1), 2*id(c2)+1, 2*id(c1)+1, 2*id(c2)]
-                    vals += [1,          1,          1,       -1]
-                elif je==2:
-                    rows += [irow,  irow,  irow+1,  irow+1]
-                    cols += [2*id(c1), 2*id(c2), 2*id(c1)+1, 2*id(c2)+1]
-                    vals += [1,          1,          1,        1]                    
-                elif je==3:
-                    rows += [irow,  irow,  irow+1,  irow+1]
-                    cols += [2*id(c1), 2*id(c2)+1, 2*id(c1)+1, 2*id(c2)]
-                    vals += [1,          -1,          1,         1]
-                rhs += [round(tr[0]), round(tr[1])]
-                # rhs += [tr[0], tr[1]]
-                irow+=2
-
-        self._A_quantized = sp.coo_matrix((vals, (rows, cols)), shape=(irow, self.nvar)).tocsc()
-        A = sp.vstack((self._A, self._A_quantized))
-        b = np.concatenate((self._b, np.asarray(rhs)))        
-        
-        instance = OSQP()
-        instance.setup(self._Q, self._q, A, b, b, verbose=self.verbose)
-        result = instance.solve()
-
-        for v in self.mesh.vertices.get_attribute("singuls"):
-            first_singu = v
-            break
-        ref_pt_id = id(self.mesh.connectivity.vertex_to_corners(first_singu)[0])
-        ref_pt = result.x[2*ref_pt_id:2*ref_pt_id+2]
-        self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
-        for cnr in self.mesh.id_corners:
-            idc = id(cnr)
-            self.uvs[cnr] = result.x[2*idc:2*idc+2] - ref_pt
     
-
     def export_frame_field_as_mesh(self) -> PolyLine:
         """
         Exports the frame field as a PolyLine for visualization

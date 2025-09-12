@@ -59,7 +59,11 @@ def shortest_path(mesh : Mesh, start : int, targets : list, weights = "length", 
     if weights=="one":
         edge_length = lambda _ : 1.
     elif weights== "length":
-        edge_length = lambda u,v : geom.distance(mesh.vertices[u], mesh.vertices[v])
+        if mesh.edges.has_attribute("length"):
+            length_attr = mesh.edges.get_attribute("length")
+            edge_length = lambda u,v : length_attr[mesh.connectivity.edge_id(u,v)]
+        else:
+            edge_length = lambda u,v : geom.distance(mesh.vertices[u], mesh.vertices[v])
     else:
         edge_length = lambda u,v : weights[mesh.connectivity.edge_id(u,v)]
 
@@ -98,6 +102,7 @@ def shortest_path(mesh : Mesh, start : int, targets : list, weights = "length", 
         return paths_list, path_mesh
     return paths_list
 
+
 @forbidden_mesh_types(PointCloud)
 def shortest_path_to_vertex_set(mesh : PolyLine, start : int, targets : list, weights = "length", export_path_mesh = False):
     """Computes the shortest path from 'start' vertex to the closest vertex in the target set
@@ -117,7 +122,7 @@ def shortest_path_to_vertex_set(mesh : PolyLine, start : int, targets : list, we
             Defaults to False.
     
     Raises:
-        Exception: No target provided if the target list is empty
+        Exception: Fails if the target list is empty
 
     Returns:
         int: the index of the closest vertex from the targets set
@@ -126,22 +131,15 @@ def shortest_path_to_vertex_set(mesh : PolyLine, start : int, targets : list, we
     """
     _check_weight_argument(weights)
 
-    if not isinstance(targets, list):
-        targets = [x for x in targets]
-
     if len(targets)==0 :
         raise Exception("No target provided")
 
-    TARGET = -1 # an additionnal vertex linked to every vertex in the target set
-
     if len(targets)==1 : 
         # nothing special to do in this case, just call shortest_path between two vertices
-        if export_path_mesh:
-            parent, mesh = shortest_path(mesh, start, TARGET, weights, export_path_mesh)
-            return TARGET, parent[TARGET], mesh
-        else:
-            parent = shortest_path(mesh, start, TARGET, weights, export_path_mesh)[TARGET]
-            return TARGET, parent
+        target = [x for x in targets][0]
+        return target, *shortest_path(mesh, start, target, weights, export_path_mesh)
+    
+    TARGET = -1 # an additionnal vertex linked to every vertex in the target set
 
     # Initialize data
     # build a dict u -> (v -> d) with u and v vertices and d the weight between them
@@ -204,13 +202,97 @@ def shortest_path_to_vertex_set(mesh : PolyLine, start : int, targets : list, we
 
     return ind, path
 
+
+@forbidden_mesh_types(PointCloud)
+def closest_n_vertices(mesh : SurfaceMesh, start : int, n : int, targets : list, weights = "length", export_path_mesh = False):
+    """Computes a direct path to the first n vertices of the target list. Paths are the ones computed by BFS order, and are not garanteed to be the shortest. This is done so that traversal of the mesh remains local for performance purposes.
+
+    If less than n vertices are provided in the list, will compute the shortest path to all provided targets.
+
+    Args:
+        mesh (SurfaceMesh): the mesh.
+        start (int): Vertex index of starting point in the mesh.
+        n (int): 
+        targets (list): _description_
+        weights (str | dict | Attribute) : provided weights of each edge. Options are:  
+            - "one" : uniform weight = 1 for every edge  
+            - "length" : use the length of the edge  
+            - any dict or Attribute on edges : custom weights  
+            weights are set to 0 for edges on the boundary. Defaults to "length".  
+        export_path_mesh (bool, optional):  
+            If specified, will also return the path as a Polyline file. Defaults to False.
+    
+    Raises:
+        Exception: Fails if the target list is empty
+    """
+    if len(targets)<= n:
+        return shortest_path(mesh, start, targets, weights=weights, export_path_mesh=export_path_mesh)
+    _check_weight_argument(weights)
+    targets = set(targets)
+
+    # Initialize data
+    if weights=="one":
+        edge_length = lambda _ : 1.
+    elif weights== "length":
+        if mesh.edges.has_attribute("length"):
+            length_attr = mesh.edges.get_attribute("length")
+            edge_length = lambda u,v : length_attr[mesh.connectivity.edge_id(u,v)]
+        else:
+            edge_length = lambda u,v : geom.distance(mesh.vertices[u], mesh.vertices[v])
+    else:
+        edge_length = lambda u,v : weights[mesh.connectivity.edge_id(u,v)]
+
+    queue = PriorityQueue()
+    n_visited = 0
+    visited = dict([(_i,False) for _i in mesh.id_vertices])
+    path = dict([(_i,None) for _i in mesh.id_vertices])
+    distance = dict([(_i,float("inf")) for _i in mesh.id_vertices])
+    distance[start] = 0.
+
+    # Run Dijkstra's algorithm
+    queue.push(start, 0.)
+    while not queue.empty():
+        if n_visited==n : break
+        v = queue.get().x
+        if visited[v] : continue
+        visited[v] = True
+        if v in targets: n_visited += 1
+
+        for nv in mesh.connectivity.vertex_to_vertices(v):
+            d = distance[v] + edge_length(v,nv)
+            if distance[nv] > d:
+                distance[nv] = d
+                path[nv] = v
+            if not visited[nv]:
+                queue.push(nv, distance[nv])
+    
+    # Build paths
+    visited_targets = [x for x in targets if visited[x]]
+    assert len(visited_targets)==n
+
+    paths_list = dict([(t, []) for t in visited_targets])
+    for t in visited_targets:
+        v = t
+        while v != start:
+            paths_list[t].append(v)
+            v = path[v]
+        paths_list[t].append(start)
+        paths_list[t].reverse()
+    
+    if export_path_mesh:
+        path_mesh = build_path(mesh, paths_list)
+        return paths_list, path_mesh
+    return paths_list
+
+
+
 @allowed_mesh_types(SurfaceMesh)
 def shortest_path_to_border(mesh : SurfaceMesh, start : int, weights = "length", export_path_mesh = False) -> list:
     """
     Computes the shortest path from 'start' vertex to the boundary of the mesh.
     Call to shortest_path_to_vertex_set with the set of boundary vertices
 
-    Parameters:
+    Args:
         mesh (SurfaceMesh): The mesh
         start (int): Vertex index of starting point on the mesh
         weights (str | dict | Attribute) : provided weights of each edge. Options are:

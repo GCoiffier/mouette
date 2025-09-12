@@ -216,3 +216,14 @@ def test_orbifold_tutte_invalid_cones(mesh):
         assert False
     except NotImplementedError as e:
         assert True
+
+########## Discrete Exponential Map ##########
+
+@pytest.mark.parametrize("mesh", [surf_circle(), surf_spot()])
+def test_exp_map(mesh : M.mesh.SurfaceMesh):
+    conn = M.processing.SurfaceConnectionVertices(mesh)
+    param = M.processing.DiscreteExponentialMap(mesh,conn)
+    param.run([0,1,2])
+    uv = param.map(0,mesh.connectivity.vertex_to_vertices(0)[0])
+    assert True
+    assert isinstance(param.export_map_as_mesh(0), M.mesh.SurfaceMesh)

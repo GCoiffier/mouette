@@ -5,7 +5,7 @@ from ..mesh.datatypes import *
 from ..mesh.mesh_data import RawMeshData
 from ..mesh.mesh_attributes import *
 from ..utils import keyify, UnionFind, PriorityQueue, consecutive_pairs
-from .paths import shortest_path, shortest_path_to_border, shortest_path_to_vertex_set
+from .paths import *
 from .trees import FaceSpanningForest 
 from .. import attributes, utils 
 from collections import deque
@@ -140,37 +140,46 @@ class SurfaceMeshCutter(Worker):
 class SingularityCutter(SurfaceMeshCutter):
 
     class Strategy(Enum):
-        SIMPLE=0
-        SHORTEST_PATHS=1
-        FEATURES=2 
+        AUTO = 0
+        SIMPLE = 1
+        SHORTEST_PATHS=2
+        SHORTEST_LIMITED=3
+        FEATURES=4
 
         @classmethod
         def from_string(cls, txt : str):
-            if "short" in txt.lower() or "path" in txt.lower():
+            key = txt.lower()
+            if "short" in key:
                 return cls.SHORTEST_PATHS
-            if "feat" in txt.lower():
+            if "limited" in key:
+                return cls.SHORTEST_LIMITED
+            if "feat" in key:
                 return cls.FEATURES
-            return cls.SIMPLE
+            if "simple" in key:
+                return cls.SIMPLE
+            return cls.AUTO
         
         def to_string(self) -> str:
             return {
+                SingularityCutter.Strategy.AUTO : "auto",
                 SingularityCutter.Strategy.SIMPLE : "simple",
                 SingularityCutter.Strategy.SHORTEST_PATHS : "approx. shortest cuts",
                 SingularityCutter.Strategy.FEATURES : "follow features",
+                SingularityCutter.Strategy.SHORTEST_LIMITED : "limited shortest cuts"
             }[self]
 
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, 
             mesh : SurfaceMesh,
             singularities : list,
-            strategy : str = "simple",
+            strategy : str = "auto",
             verbose = False,
             **kwargs):
         """
         Args:
             mesh (SurfaceMesh): input mesh
             singularities (list): indices of the singular vertices
-            strategy (str): which strategy to use. Choices are ["simple", "short", "feat"]
+            strategy (str): which strategy to use. Choices are ["auto", "simple", "short", "feat", "limited"]
             verbose (bool, optional): verbose mode. Defaults to False.
 
         Keyword Args:
@@ -182,7 +191,7 @@ class SingularityCutter(SurfaceMeshCutter):
             cut_mesh (SurfaceMesh): a copy of the mesh where specified edges have been cut
         """
         super().__init__(mesh, verbose, name="SingularityCutter")
-        self._strategy = SingularityCutter.Strategy.from_string(strategy)
+        self._strategy = SingularityCutter.Strategy.from_string(strategy)            
         self._debug : bool = kwargs.get("debug", False)
 
         if isinstance(singularities, list):
@@ -193,14 +202,36 @@ class SingularityCutter(SurfaceMeshCutter):
             self.singu_set = set(singularities)
 
         self._feat_detector : "FeatureEdgeDetector" = kwargs.get("features", None)
+        
         if self._strategy == SingularityCutter.Strategy.FEATURES and self._feat_detector is None:
-            self.warn("Please provide a FeatureEdgeDetector object to run the 'feature' cutting stragegy. Switching back to 'simple' strategy.")
-            self._strategy = SingularityCutter.Strategy.SIMPLE
+            self.warn("Please provide a FeatureEdgeDetector object to run the 'feature' cutting stragegy. Changing strategy.")
+            self._strategy = SingularityCutter.Strategy.AUTO
+        if self._strategy == SingularityCutter.Strategy.AUTO:
+            self._strategy = self._choose_auto_strategy()
         self.log("Strategy:", self._strategy.to_string())
 
     def cut(self):
         self.run()
     
+    def _choose_auto_strategy(self):
+        if (self._feat_detector is not None 
+            and not self._feat_detector.only_border 
+            and len(self._feat_detector.feature_edges)>len(self.mesh.boundary_edges)):
+            # If we have featur edges, we run the feature following heuristic
+            return SingularityCutter.Strategy.FEATURES
+        
+        n_singus = len(self.singularities)
+        if n_singus <= 10:
+            # When the number of singularities is small, we can afford to compute all n(n-1)/2 shortest paths
+            return SingularityCutter.Strategy.SHORTEST_PATHS
+        
+        if len(self.singularities)>100:
+            # If the number of singularities is too large, we do not use a heuristic for performance purposes
+            return SingularityCutter.Strategy.SIMPLE
+        
+        # otherwise, the limited heuristic is a good compromise
+        return SingularityCutter.Strategy.SHORTEST_LIMITED
+
     def run(self):
         """
         Runs the cutting process
@@ -212,9 +243,10 @@ class SingularityCutter(SurfaceMeshCutter):
             edge_flag = Attribute(bool) # False by default for all edges
             regions = None # no features
         
-        elif self._strategy == SingularityCutter.Strategy.SHORTEST_PATHS:
+        elif self._strategy in (SingularityCutter.Strategy.SHORTEST_PATHS, SingularityCutter.Strategy.SHORTEST_LIMITED):
             self.log("Run heuristic spanning tree to flag candidate seams")
-            edge_flag = self._heuristic_flag_edges_shortest_path()
+            limited = self._strategy == SingularityCutter.Strategy.SHORTEST_LIMITED
+            edge_flag = self._heuristic_flag_edges_shortest_path(limited)
             regions = None # no features 
     
         elif self._strategy == SingularityCutter.Strategy.FEATURES:
@@ -238,11 +270,14 @@ class SingularityCutter(SurfaceMeshCutter):
         self.log("Building cut mesh")
         super().run(seam_edges)
  
-    def _heuristic_flag_edges_shortest_path(self) -> Attribute:
+    def _heuristic_flag_edges_shortest_path(self, limited) -> Attribute:
         # With the shortest path strategy, we first compute all shortest paths between pairs of singularities and restrain the cut graph to be a spanning tree on this path graph
 
         mesh_has_border = len(self.input_mesh.boundary_vertices)>0
-        edge_lengths = attributes.edge_length(self.input_mesh, persistent=False)
+        if self.input_mesh.edges.has_attribute("length"):
+            edge_lengths = self.input_mesh.edges.get_attribute("length")
+        else:
+            edge_lengths = attributes.edge_length(self.input_mesh)
 
         BORDER = -1 # the index of border (>0 are vertices)
         singul = self.singularities + [BORDER] if mesh_has_border else self.singularities
@@ -256,19 +291,20 @@ class SingularityCutter(SurfaceMeshCutter):
         # Compute all edge paths between singularities (and border)
         path_btw_singus = dict()
         for i,a in enumerate(self.singularities):
-            paths_a = shortest_path(self.input_mesh, a, set(self.singularities[i:]), weights=edge_lengths)
+            if limited:
+                paths_a = closest_n_vertices(self.input_mesh, a, 5, set(self.singularities),weights=edge_lengths)
+            else:
+                paths_a = shortest_path(self.input_mesh, a, set(self.singularities[i:]), weights=edge_lengths)
             for b in paths_a:
-                path_btw_singus[keyify(a,b)] = paths_a[b]
-            if mesh_has_border:
+                e = keyify(a,b)
+                if e in path_btw_singus: continue
+                path_btw_singus[e] = paths_a[b]
+            if mesh_has_border and not limited:
                 path_btw_singus[(BORDER,a)] = shortest_path_to_border(self.input_mesh, a, weights=edge_lengths)
 
-        # Compute path lengths
-        def compute_path_length(path): # utility function for readability
-            l = 0
-            for A,B in consecutive_pairs(path):
-                l += edge_lengths[self.input_mesh.connectivity.edge_id(A,B)]
-            return l
-        
+        # Compute path lengths utility function
+        compute_path_length = lambda path : sum([edge_lengths[self.input_mesh.connectivity.edge_id(A,B)] for A,B in consecutive_pairs(path)])
+
         path_lengths = []
         for k in path_btw_singus:
             path_lengths.append((compute_path_length(path_btw_singus[k]), k))
@@ -286,8 +322,7 @@ class SingularityCutter(SurfaceMeshCutter):
         # Flag edges
         for (a,b) in selected:
             path_ab = path_btw_singus[(a,b)]
-            for i in range(1, len(path_ab)):
-                u,v = path_ab[i-1], path_ab[i]
+            for u,v in consecutive_pairs(path_ab):
                 edge_flags[ self.input_mesh.connectivity.edge_id(u,v) ] = True
         return edge_flags
 

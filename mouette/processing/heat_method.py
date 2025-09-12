@@ -50,6 +50,7 @@ class HeatMethodDistance(Logger):
         self.initialized : bool = False
 
         self._diffuse_solve = None
+        self._M = None # area diagonal matrix
         self._lap_op = None # laplacian on the surface
         self._grad_op = None # gradient operator on the surface (vertices scalars -> faces vectors)
         self._div_op = None # divergence operator (faces vectors -> vertices scalars)
@@ -62,9 +63,9 @@ class HeatMethodDistance(Logger):
 
         # Computes Laplacian and precomputes Cholesky decomposition for sparse solve
         self._lap_op = laplacian(self.mesh)
-        M = area_weight_matrix(self.mesh)
+        self._M = area_weight_matrix(self.mesh)/2
         t = self.diffuse_coeff * mean_edge_length(self.mesh)**2
-        self._diffuse_solve = sp.linalg.factorized(- M - t*self._lap_op)
+        self._diffuse_solve = sp.linalg.factorized(-self._M - t*self._lap_op)
         self._grad_op = gradient(self.mesh, self.conn).tocsc() # gradient operator
         self._div_op = self._grad_op.conjugate().transpose() #@ area_weight_matrix_faces(self.mesh)
         self.initialized = True
@@ -95,8 +96,9 @@ class HeatMethodDistance(Logger):
         self.log("Integrate gradients via a Poisson problem")
         freeInds = [x for x in self.mesh.id_vertices if x not in set(source_points)]   
         lapI = self._lap_op[freeInds,:][:,freeInds]
+        MI = self._M[freeInds,:][:,freeInds]
         distance = np.zeros(len(self.mesh.vertices))
-        distance[freeInds] = sp.linalg.spsolve(lapI, np.real(self._div_op @ gradients)[freeInds])
+        distance[freeInds] = sp.linalg.spsolve(lapI, MI @ np.real(self._div_op @ gradients)[freeInds])
         if return_gradients:
             return distance, gradients
         return distance

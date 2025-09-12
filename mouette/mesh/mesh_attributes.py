@@ -226,6 +226,9 @@ class Attribute(_BaseAttribute):
                 raise Attribute.TypeNotMatchingError(value, datatype, self.type)
             self._data[key] = value
 
+    def __delitem__(self, key):
+        del self._data[key]
+
     def _expand(self, n : int):
         """Expands the storage capacity of the attributes. Adds `n` to self.n_elem
         Parameters:
@@ -317,6 +320,9 @@ class ArrayAttribute(_BaseAttribute):
             if not self._can_be_casted(data_attr_type, self.type):
                 raise Attribute.TypeNotMatchingError(value, datatype, self.type)
             self._data[key] = value
+
+    def __delitem__(self, key):
+        self._data[key] = np.full(self.elem_size, self.default_value, dtype=self.type.dtype)
 
     def _expand(self, n : int):
         """Expands the storage capacity of the attributes. Adds `n` to self.n_elem

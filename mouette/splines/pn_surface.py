@@ -127,14 +127,14 @@ class P2Triangulation(_PnTriangulation):
             F.append((A,B,C, nV+eAB, nV+eBC, nV+eCA))
         return cls(np.array(V),np.array(F))
 
-    def rasterize(self, res:int = 10, only_curves: bool = False):
+    def rasterize(self, res:int = 4, only_curves: bool = False):
         """
         Rasterize a P2 mesh as a P1 mesh for lazy rendering 
             
         Args:
             V (np.ndarray): Array of vertex positions (size Nx3)
             F (np.ndarray): Array of face indices (size Mx6). Faces are indexed in order (A,B,C,AB,BC,CA)
-            res (int, optional): Resolution of each P2 element. Defaults to 10.
+            res (int, optional): Resolution of each P2 element. Defaults to 4.
             only_curves (bool, optional): if set to True, will only rasterize edges as Bezier curve and not draw the surface. Defaults to False.
 
         Returns:
@@ -146,7 +146,7 @@ class P2Triangulation(_PnTriangulation):
             return self._rasterize_as_surface(res)
         
     
-    def _rasterize_as_surface(self, res=10):
+    def _rasterize_as_surface(self, res=4):
         out = RawMeshData()
 
         def ij_to_p(i,j):
@@ -312,12 +312,10 @@ class P3Triangulation(_PnTriangulation):
             V[iABC] = e + (e-b)/2 
         return cls(V,F)
 
-    def rasterize(self, res: int = 10, only_curves: bool = False):
+    def rasterize(self, res: int = 7, only_curves: bool = False):
         """
         Args:
-            V (np.ndarray): Array of vertex positions (size Nx3)
-            F (np.ndarray): Array of face indices (size Mx10)
-            res (int, optional): Resolution of each P3 element. Defaults to 10.
+            res (int, optional): Resolution of each P3 element. Defaults to 7.
             only_curves (bool, optional): if set to True, will only rasterize edges as Bezier curve and not draw the surface. Defaults to False.
             
         Returns:
@@ -328,7 +326,7 @@ class P3Triangulation(_PnTriangulation):
         else:
             return self._rasterize_as_surface(res)
 
-    def _rasterize_as_surface(self, res: int = 10):
+    def _rasterize_as_surface(self, res: int = 7):
         out = RawMeshData()
 
         def ij_to_p(i,j):

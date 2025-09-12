@@ -54,7 +54,7 @@ def face_normals(mesh : SurfaceMesh, name="normals", persistent:bool=True, dense
         Attribute: 3 floats per faces
     """
     if persistent :
-        normals = mesh.faces.create_attribute(name, float, 3)
+        normals = mesh.faces.create_attribute(name, float, 3, dense=dense)
     else:
         normals = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
     for iT,T in enumerate(mesh.faces):
@@ -77,7 +77,7 @@ def face_barycenter(mesh : SurfaceMesh, name="barycenter", persistent:bool = Tru
         Attribute: one 3D vector per face
     """
     if persistent :
-        bary = mesh.faces.create_attribute(name, float, 3)
+        bary = mesh.faces.create_attribute(name, float, 3, dense=dense)
     else:
         bary = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
     for iT,T in enumerate(mesh.faces):
@@ -102,7 +102,7 @@ def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=T
         Exception: fails if a face of the mesh is not a triangle
     """
     if persistent :
-        circum = mesh.faces.create_attribute(name, float, 3)
+        circum = mesh.faces.create_attribute(name, float, 3, dense=dense)
     else:
         circum = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
     for iF,F in enumerate(mesh.faces):
@@ -161,7 +161,7 @@ def triangle_aspect_ratio(mesh : SurfaceMesh, name : str="aspect_ratio", persist
         Attribute: One float per face.
     """
     if persistent :
-        ratio = mesh.faces.create_attribute(name, float)
+        ratio = mesh.faces.create_attribute(name, float, dense=dense)
     else:
         ratio = ArrayAttribute(float, len(mesh.faces)) if dense else Attribute(float)
     for iF,F in enumerate(mesh.faces):
@@ -184,7 +184,7 @@ def parallel_transport_curvature(mesh : SurfaceMesh, PT:"SurfaceConnectionVertic
         Attribute: One float per face.
     """
     if persistent :
-        curv = mesh.faces.create_attribute(name, float)
+        curv = mesh.faces.create_attribute(name, float, dense=dense)
     else:
         curv = ArrayAttribute(float, len(mesh.faces)) if dense else Attribute(float)
     for iF, (A,B,C) in enumerate(mesh.faces):

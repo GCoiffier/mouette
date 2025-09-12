@@ -57,7 +57,7 @@ class ConformalConeParametrization(BaseParametrization):
         self._scale_factor : np.ndarray = None
         self._frames : np.ndarray = None
         self._conn : SurfaceConnectionFaces = None
-        self._cutter : SingularityCutter
+        self._cutter : SingularityCutter = None
     
     def _check_singularity_validity(self):
         total_defect = 0
@@ -127,7 +127,7 @@ class ConformalConeParametrization(BaseParametrization):
 
         self.log("Compute scaled edges in parameter space")
         scale_edges = np.zeros(2*len(self.cut_mesh.edges), dtype=float)
-        cot = attributes.cotan_weights(self.cut_mesh, dense=True, persistent=False)
+        cot = attributes.cotan_weights(self.cut_mesh, dense=True, persistent=False) # cotan of the cut mesh (previously cotan weights of the original mesh)
         for e,(A,B) in enumerate(self.cut_mesh.edges):
             rA,rB = self._cutter.ref_vertex(A), self._cutter.ref_vertex(B)
             E = self.mesh.vertices[rB] - self.mesh.vertices[rA]

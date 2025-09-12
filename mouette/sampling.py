@@ -149,6 +149,9 @@ def sample_surface(
         return_point_cloud (bool, optional): whether to compile the points in a PointCloud object or return the raw numpy array. Defaults to False.
         return_normals (bool, optional): wether to assign the normal of the faces to sampled points. Only has effect if return_point_cloud is set to True. Defaults to False.
 
+    Raises:
+        AssertionError: the mesh is not a triangular mesh
+
     Returns:
         PointCloud | np.ndarray: a sampled point cloud of `n_pts` points
         np.ndarray : the associated normals (if sample_normals was set to True)
@@ -182,3 +185,38 @@ def sample_surface(
         if return_normals:
             return sampled_pts,sampled_normals
         return sampled_pts
+    
+
+@allowed_mesh_types(SurfaceMesh)
+def sample_surface_barycentric(
+    mesh : SurfaceMesh, 
+    n_pts : int
+    ):
+    """
+    Sample a point cloud uniformly at random from a surface mesh, but computes face ids and barycentric coordinates instead of point coordinates.
+
+    This function returns two arrays F and B such that:
+    F[i] = f and B[i] = a,b,c means that the i-th point is defined as a*pA + b*pB + c*pC where (pA,pB,pC) are the vertices of face f.
+
+    Args:
+        mesh (SurfaceMesh): input mesh
+        n_pts (int): number of points to sample
+
+    Raises:
+        AssertionError: the mesh is not a triangular mesh
+    
+    Returns:
+        np.ndarray: the index of the face in which each point belong
+        np.ndarray: the associated barycentric coordinates of the vertex
+    """
+    assert mesh.is_triangular()
+    NF = len(mesh.faces)
+    areas = face_area(mesh, persistent=False).as_array()
+    areas /= np.sum(areas)
+    sampled_faces = choice(NF, size=n_pts, p=areas) # faces on which we take the points (probability weighted by area)
+    u1 = random(n_pts)
+    u2 = random(n_pts)
+    r1 = 1-np.sqrt(u1)
+    r2 = u2*(1-r1)
+    sampled_bary = np.vstack((1-r1-r2, r1, r2)).T
+    return sampled_faces, sampled_bary

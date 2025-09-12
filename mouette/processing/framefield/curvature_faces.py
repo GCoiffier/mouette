@@ -48,7 +48,6 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
         self.initialized = True
 
     def optimize(self):
-
         self.log("Computing curvature via SVD")
         confidence = self.mesh.faces.create_attribute("confidence", float, dense=True)
         eigs = self.mesh.faces.create_attribute("eigs", float, 3, dense=True)
@@ -81,7 +80,8 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
             A = operators.area_weight_matrix_faces(self.mesh)
             fixedInds,freeInds = [],[]
             for T in self.mesh.id_faces:
-                if confidence[T] < self.confidence_threshold:
+                near_feature = any([e in self.feat.feature_edges for e in self.mesh.connectivity.face_to_edges(T)])
+                if confidence[T] < self.confidence_threshold and not near_feature:
                     freeInds.append(T)
                 else:
                     fixedInds.append(T)
@@ -136,6 +136,4 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
                     valI2 = alpha * A.dot(self.var)
                     self.var = solve(-valI2)
                     self.normalize()
-
-            
         self.smoothed = True

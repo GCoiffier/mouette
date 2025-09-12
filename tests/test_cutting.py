@@ -57,8 +57,10 @@ def test_cutting_edges_to_boundary(mesh : M.mesh.SurfaceMesh, singus):
 @pytest.mark.parametrize("mesh,singus,strategy",[
     (surf_spot(),[796, 978, 995],"simple"),
     (surf_spot(),[796, 978, 995],"shortest"),
+    (surf_spot(),[796, 978, 995],"limited"),
     (surf_cube_subdiv(),[100, 141, 59, 68], "simple"),
     (surf_cube_subdiv(),[100, 141, 59, 68], "shortest"),
+    (surf_cube_subdiv(),[100, 141, 59, 68], "limited"),
     (surf_cube_subdiv(),[100, 141, 59, 68], "features"),
     (surf_torus(),[],"shortest")
 ])

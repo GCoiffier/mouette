@@ -5,18 +5,17 @@ import numpy as np
 
 mesh = M.mesh.load(sys.argv[1])
 
-# ff = M.framefield.SurfaceFrameField(mesh, "faces", verbose=True, features=False, n_smooth=0)
-ff = M.framefield.PrincipalDirections(mesh, "faces", verbose=True, features=False)
+ff = M.framefield.SurfaceFrameField(mesh, "faces", verbose=True, features=False, n_smooth=1)
+# ff = M.framefield.PrincipalDirections(mesh, "faces", verbose=True, features=False)
 ff_param = M.parametrization.FrameFieldIntegration(ff, scaling=10., verbose=True)
 ff_param.run()
-# ff_param.quantize()
 
 # ps.init()
 # ps.set_ground_plane_mode("none")
 
 # ps_surf = ps.register_surface_mesh("surf", np.asarray(mesh.vertices), np.asarray(mesh.faces))
 # ps.register_curve_network("seams", np.asarray(ff_param.cut_graph.vertices), np.asarray(ff_param.cut_graph.edges), material="flat", color=[1,0,0], radius=0.001)
-# ps_surf.add_parameterization_quantity("uv", ff_param.uvs.as_array(len(mesh.face_corners)), defined_on="corners", enabled=True)
+# ps_surf.add_parameterization_quantity("uv", ff_param.uvs.as_array(len(mesh.face_corners)), defined_on="corners", checker_size=0.5, enabled=True)
 
 # ps.show()
 

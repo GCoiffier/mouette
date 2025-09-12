@@ -99,13 +99,13 @@ class _BaseFrameField2DFaces(FrameField) :
             singul_attr_name (str, optional): Name of the singularity attribute created. Defaults to "singuls".
         """
         self._check_init()
-        ZERO_THRESHOLD = 1e-3
+        ZERO_THRESHOLD = 1e-2
 
         if self.mesh.edges.has_attribute("angles"):
             edge_rot = self.mesh.edges.get_attribute("angles")
             edge_rot.clear()
         else:
-            edge_rot = self.mesh.edges.create_attribute("angles", float, 1, dense=True)
+            edge_rot = self.mesh.edges.create_attribute("angles", float, dense=True)
             # the rotation induced by the frame field on every edge
             # if edge is uv, positive orientation is from T(uv) to T(vu)
 
@@ -132,15 +132,17 @@ class _BaseFrameField2DFaces(FrameField) :
             singuls = self.mesh.vertices.get_attribute(singul_attr_name)
             singuls.clear()
         else:
-            singuls = self.mesh.vertices.create_attribute(singul_attr_name, float)
+            singuls = self.mesh.vertices.create_attribute(singul_attr_name, int)
         
         for v in self.mesh.id_vertices:
             angle = self.defect[v]
             for e in self.mesh.connectivity.vertex_to_edges(v):
                 u = self.mesh.connectivity.other_edge_end(e,v)
                 angle += edge_rot[e] if u<v else -edge_rot[e]
-            if abs(angle)>ZERO_THRESHOLD:
-                singuls[v] = angle*2/pi
+            if angle>ZERO_THRESHOLD:
+                singuls[v] = 1
+            elif angle<-ZERO_THRESHOLD:
+                singuls[v] = -1
 
     def export_as_mesh(self) -> PolyLine:
         """
@@ -263,14 +265,37 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, 
         supporting_mesh : SurfaceMesh, 
-        singus_indices : Attribute, 
+        singus_indices : Attribute,
+        free_boundary : bool = True,
         order : int = 4, 
         verbose : bool=True,
-        **kwargs):
+        **kwargs
+    ):
         super().__init__(supporting_mesh, order, feature_edges=False, verbose=verbose, **kwargs)
+        self.free_bnd : bool = free_boundary
         self.singus = singus_indices
         self.rotations : np.ndarray = None
 
+    @classmethod
+    def without_singularities(cls,
+        supporting_mesh : SurfaceMesh,
+        order : int = 4,
+        verbose : bool = True,
+        **kwargs
+    ):
+        """Initializes a frame field with a free boundary and with no singularities. This only makes sense if the mesh has disk topology.
+
+        Args:
+            supporting_mesh (SurfaceMesh): the input mesh
+            order (int, optional): order of the frame (number of branches). Defaults to 4.
+            verbose (bool, optional): verbose mode. Defaults to True.
+
+        Returns:
+            TrivialConnectionFaces : the frame field (not initialized nor smoothed)
+        """
+        singuls = Attribute(float)
+        return cls(supporting_mesh, singuls, free_boundary=True, order=order, verbose=verbose, **kwargs)
+    
     def initialize(self):
         self._initialize_attributes() # /!\ may change mesh combinatorics near boundary
         self.var = np.zeros(len(self.mesh.faces), dtype=complex)
@@ -291,13 +316,14 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
             CstX[r] = self.defect[v] - self.singus[v] * 2 * pi / self.order
             r += 1
 
-        for v in self.mesh.boundary_vertices:
-            for v2 in self.mesh.connectivity.vertex_to_vertices(v):
-                if self.mesh.is_edge_on_border(v,v2): continue
-                e = self.mesh.connectivity.edge_id(v,v2)
-                CstMat[r,e] = 1 if v<v2 else -1
-            CstX[r] = self.defect[v] - (2 - self.feat.corners[v]) * 2 * pi / self.order
-            r += 1
+        if not self.free_bnd:
+            for v in self.mesh.boundary_vertices:
+                for v2 in self.mesh.connectivity.vertex_to_vertices(v):
+                    if self.mesh.is_edge_on_border(v,v2): continue
+                    e = self.mesh.connectivity.edge_id(v,v2)
+                    CstMat[r,e] = 1 if v<v2 else -1
+                CstX[r] = self.defect[v] - (2 - self.feat.corners[v]) * 2 * pi / self.order
+                r += 1
         
         instance = OSQP()
         instance.setup(P = sp.eye(n_rot,format="csc"), q=None, A=CstMat.tocsc(), l=CstX, u=CstX, verbose=self.verbose)

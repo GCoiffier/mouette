@@ -40,30 +40,29 @@ def SurfaceFrameField(
         elements (str): "vertices", "faces" or "edges". The mesh elements onto which the frames live.
     
     Keyword Args:
-        order (int, optional): Order of the frame field (number of branches). Defaults to 4.
+        order (int, optional): Order of the frame field (number of branches). Defaults to 4.  
         
         features (bool, optional): Whether to consider feature edges or not. 
             If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to False.
         
-        n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 3.
+        n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 3.  
         
         smooth_attach_weight (float, optional): Custom attach weight to previous solution during smoothing steps. 
-            If not provided, will be estimated automatically during optimization. Defaults to None.
+            If not provided, will be estimated automatically during optimization. Defaults to None.  
 
-        use_cotan (bool, optional): whether to use cotan for a better approximation of the Laplace-Beltrami operator. 
-            If False, will use a simple adjacency laplacian operator (See the _operators_ module). Defaults to True.
+        use_cotan (bool, optional): whether to use cotan for a better approximation of the Laplace-Beltrami operator.  
+            If False, will use a simple adjacency laplacian operator (See the _operators_ module). Defaults to True.  
 
         cad_correction (bool, optional): Whether to modify the parallel transport as in [2] to prevent singularities to appear close to pointy areas. 
-            Will overwrite any connection provided with the 'custom_connection' argument. Defaults to True.
+            Will overwrite any connection provided with the 'custom_connection' argument. Defaults to True.  
 
-        smooth_normals : Whether to initialize the frame field as a mean of adjacent feature edges (True), or following one of the edges (False). has no effect for frame field on faces. Defaults to True.
-
-        verbose (bool, optional): verbose mode. Defaults to False.
+        smooth_normals : Whether to initialize the frame field as a mean of adjacent feature edges (True), or following one of the edges (False). has no effect for frame field on faces. Defaults to True.  
+        verbose (bool, optional): verbose mode. Defaults to False.  
         
         singularity_indices (Attribute, optional): custom singularity indices for the frame field. If provided, will use the algorithm described in [3] to get the smoothest frame field with these singularities.
-            If elements is "vertices", the attribute should be indexed by the faces (where singularities appear)
-            If elements is "faces", the attribute should be indexed by the vertices
-            /!\\ Indices should respect the Poincarré-Hopf theorem. Defaults to None.
+            If elements is "vertices", the attribute should be indexed by the faces (where singularities appear)  
+            If elements is "faces", the attribute should be indexed by the vertices  
+            /!\\ Indices should respect the Poincarré-Hopf theorem. Defaults to None.  
         
         custom_connection (SurfaceConnection, optional): custom connection object to be used for parallel transport. If not provided, a connection will be automatically computed (see SurfaceConnection class). Defaults to None.
         
@@ -111,7 +110,7 @@ def SurfaceFrameField(
 
     elif elements=="faces":
         if singularity_indices is not None:
-            return TrivialConnectionFaces(mesh, singularity_indices, order=order, verbose=verbose, custom_connection=custom_connection, custom_features=custom_features)
+            return TrivialConnectionFaces(mesh, singularity_indices, free_boundary=False, order=order, verbose=verbose, custom_connection=custom_connection, custom_features=custom_features)
         return FrameField2DFaces(mesh, order, features, verbose, n_smooth=n_smooth, smooth_attach_weight=smooth_attach_weight,use_cotan=use_cotan,custom_connection=custom_connection,custom_features=custom_features)
 
     elif elements=="edges":
@@ -135,30 +134,30 @@ def PrincipalDirections(
     custom_connection : SurfaceConnection = None,
     custom_features : FeatureEdgeDetector = None) -> FrameField:
     """
-    Args:
-        mesh (SurfaceMesh): the supporting mesh onto which the framefield is based
+    Args:  
+        mesh (SurfaceMesh): the supporting mesh onto which the framefield is based  
 
-        elements (str): "vertices" or "faces", the mesh elements onto which the frames live.
+        elements (str): "vertices" or "faces", the mesh elements onto which the frames live.  
     
-    Keyword Args:
-        features (bool, optional): Whether to consider feature edges or not. 
-            If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to False.
+    Keyword Args:  
+        features (bool, optional): Whether to consider feature edges or not.  
+            If no 'custom_features' argument is provided, features will be automatically detected (see the FeatureEdgeDetector class). Defaults to False.  
 
-        verbose (bool, optional): verbose mode. Defaults to False.
+        verbose (bool, optional): verbose mode. Defaults to False.  
 
-        n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 1.
+        n_smooth (int, optional): Number of smoothing steps to perform. Defaults to 1.  
         
-        smooth_attach_weight (float, optional): Custom attach weight to previous solution during smoothing steps. If not provided, will be estimated at 1 for vertex version and 1e-3 for faces version. Defaults to None.
+        smooth_attach_weight (float, optional): Custom attach weight to previous solution during smoothing steps. If not provided, will be estimated at 1 for vertex version and 1e-3 for faces version. Defaults to None.  
         
-        patch_size (int, optional): On vertices only. Radius (in nubmer of edges) of the neighboring patch to be considered to approximate the shape operator. Defaults to 2.
+        patch_size (int, optional): On vertices only. Radius (in nubmer of edges) of the neighboring patch to be considered to approximate the shape operator. Defaults to 2.  
         
-        confidence_threshold (float, optional): Threshold on the anisotropy of the shape operator. Great anisotropy values (between 0 and 1) give good confidence on the principal directions. If the confidence is smaller than the threshold, eigenvectors will not be extracted and will instead be harmonically filled in. Defaults to 0.5.
+        confidence_threshold (float, optional): Threshold on the anisotropy of the shape operator. Great anisotropy values (between 0 and 1) give good confidence on the principal directions. If the confidence is smaller than the threshold, eigenvectors will not be extracted and will instead be harmonically filled in. Defaults to 0.5.  
         
-        smooth_threshold (float, optional): Threshold on the anisotropy of the shape operator. Points with a confidence value higher than the threshold will be considered fixed during smoothing. Ignored is n_smooth is 0. Defaults to 0.7.
+        smooth_threshold (float, optional): Threshold on the anisotropy of the shape operator. Points with a confidence value higher than the threshold will be considered fixed during smoothing. Ignored is n_smooth is 0. Defaults to 0.7.  
 
-        custom_connection (SurfaceConnection, optional): custom connection object to be used for parallel transport. If not provided, a connection will be automatically computed (see SurfaceConnection class). Defaults to None.
+        custom_connection (SurfaceConnection, optional): custom connection object to be used for parallel transport. If not provided, a connection will be automatically computed (see SurfaceConnection class). Defaults to None.  
         
-        custom_features (FeatureEdgeDetector, optional): custom feature edges to be used in frame field optimization. If not provided, feature edges will be automatically detected. If the 'features' flag is set to False, features of this object are ignored. Defaults to None.
+        custom_features (FeatureEdgeDetector, optional): custom feature edges to be used in frame field optimization. If not provided, feature edges will be automatically detected. If the 'features' flag is set to False, features of this object are ignored. Defaults to None.  
 
     Returns:
         Framefield : a frame field object representing the curvature directions
