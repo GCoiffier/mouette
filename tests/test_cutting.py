@@ -58,11 +58,14 @@ def test_cutting_edges_to_boundary(mesh : M.mesh.SurfaceMesh, singus):
     (surf_spot(),[796, 978, 995],"simple"),
     (surf_spot(),[796, 978, 995],"shortest"),
     (surf_spot(),[796, 978, 995],"limited"),
+    (surf_spot(),[796, 978, 995],"auto"),
     (surf_cube_subdiv(),[100, 141, 59, 68], "simple"),
     (surf_cube_subdiv(),[100, 141, 59, 68], "shortest"),
     (surf_cube_subdiv(),[100, 141, 59, 68], "limited"),
     (surf_cube_subdiv(),[100, 141, 59, 68], "features"),
-    (surf_torus(),[],"shortest")
+    (surf_cube_subdiv(),[100, 141, 59, 68], "auto"),
+    (surf_torus(),[],"shortest"),
+    (surf_torus(),[],"auto"),
 ])
 def test_singularity_cutting(mesh : M.mesh.SurfaceMesh, singus, strategy):
     if strategy=="features":

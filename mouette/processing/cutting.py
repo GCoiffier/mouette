@@ -216,7 +216,7 @@ class SingularityCutter(SurfaceMeshCutter):
     def _choose_auto_strategy(self):
         if (self._feat_detector is not None 
             and not self._feat_detector.only_border 
-            and len(self._feat_detector.feature_edges)>len(self.mesh.boundary_edges)):
+            and len(self._feat_detector.feature_edges)>len(self.input_mesh.boundary_edges)):
             # If we have featur edges, we run the feature following heuristic
             return SingularityCutter.Strategy.FEATURES
         
