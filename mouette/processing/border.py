@@ -100,10 +100,10 @@ def extract_boundary_of_surface(mesh : SurfaceMesh) -> PolyLine :
 
 @allowed_mesh_types(VolumeMesh)
 def extract_boundary_of_volume(mesh : VolumeMesh) -> SurfaceMesh :
-    """_summary_
+    """Returns the boundary of a volume mesh as a surface mesh
 
     Args:
-        mesh (VolumeMesh): _description_
+        mesh (VolumeMesh): input mesh
 
     Returns:
         SurfaceMesh: the boundary as a SurfaceMesh

@@ -1,6 +1,5 @@
 ---
 title: "Mesh Subdivision"
-weight: 8
 ---
 
 Due to the connectivity data attached to the meshes data structures, subdividing meshes by hand is unsafe and can lead to faulty results. To correctly apply subdivisions, one needs to first convert back the mesh to a [`RawMeshData`](mouette.mesh.mesh_data.RawMeshData), apply the combinatorial functions, and rebuild a correct mesh. This is handled by the `SurfaceSubdivision` and the `VolumeSubdivision` classes, which are designed to be used in a `with` block:

@@ -89,6 +89,7 @@ nav:
     - "manipulating_data/procedural.md"
     - "manipulating_data/transforms.md"
     - "manipulating_data/sampling.md"
+    - "manipulating_data/boundary_extraction.md"
     - "manipulating_data/subdivision.md"
 
   - Attributes:

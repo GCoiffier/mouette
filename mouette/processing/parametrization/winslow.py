@@ -77,7 +77,7 @@ def untangle(
     Minimizes the regularized Winslow functional to untangle a 2D triangulation.
 
     Args:
-        points (np.ndarray[float]): Initial position of points in 2D. Should be of shape (2*V,)
+        points (np.ndarray[float]): Initial position of points in 2D. Should be of shape (V,2) or (2V,)
         locked (np.ndarray[bool]): Which points have a fixed position. Should be of shape (V,)
         triangles (np.ndarray[int]): Indices of triangles. Should be of shape (T,3)
         ref_jacs (np.ndarray[float]): Perfect element to consider for Jacobian computation for each triangle. Should be of shape (T,2,2).
@@ -90,9 +90,13 @@ def untangle(
         iter_max (int, optional): Maximum number of iterations in the L-BFGS solver. Defaults to 10000.
         n_eps_update (int, optional): number of updates of the regularization's epsilon. Defaults to 10.
         stop_if_positive (bool, optional): enable early stopping as soon as all dets are positive. Defaults to False.
+        num_threads (int, optional): number of parallel threads for energy computation. Defaults to 2.
 
     Returns:
         np.ndarray[float]: final positions of points in 2D, in shape (2V,)
+
+    Raises:
+        Exception: fails if the provided points are not of shape (V,2) or (2V,) 
 
     References:
         [1] _Foldover-free maps in 50 lines of code_, Garanzha et al., ACM ToG 2021
@@ -103,8 +107,13 @@ def untangle(
     bfgs_iter_max = kwargs.get("iter_max", 10_000)
     stop_if_pos = kwargs.get("stop_if_positive",False)
     areas = kwargs.get("areas", None)
-    set_num_threads(2)
-        
+    set_num_threads(kwargs.get("num_threads", 2))
+    
+    if len(points.shape)>1:
+        if points.shape[1]!=2:
+            raise Exception("Points should be 2-dimensionnal. Please provide a numpy array of shape (N,2).")
+        points = points.reshape(-1)
+    
     if areas is None:
         areas = np.ones(triangles.shape[0])
 

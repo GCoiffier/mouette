@@ -1,6 +1,5 @@
 ---
 title: "Procedural Generation"
-weight: 7
 ---
 
 The `mouette.procedural` module implements various functions to generate surface meshes or various shapes directly from code

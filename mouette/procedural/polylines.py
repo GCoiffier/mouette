@@ -55,4 +55,5 @@ def vector_field(origins: np.ndarray, vectors: np.ndarray, length_mult: float = 
         end_i = origins[i] + length_mult*vectors[i]
         pl.vertices += [origins[i], end_i]
         pl.edges.append((2*i,2*i+1))
+    pl.vertices.register_array_as_attribute("orig", np.array([i%2==0 for i in pl.id_vertices]))
     return PolyLine(pl)

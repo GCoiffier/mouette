@@ -1,6 +1,5 @@
 ---
 title: "Point Sampling"
-weight: 6
 ---
 
 ::: mouette.sampling

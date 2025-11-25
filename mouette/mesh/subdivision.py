@@ -187,6 +187,23 @@ class SurfaceSubdivision(Logger):
                 newMeshData.faces.append(new_face)
         self.mesh = newMeshData
 
+
+@allowed_mesh_types(SurfaceMesh)
+def triangulate(mesh : SurfaceMesh) -> SurfaceMesh:      
+    """Triangulates all faces of a mesh.
+
+    Args:
+        mesh (SurfaceMesh): input surface mesh
+
+    Returns:
+        SurfaceMesh: a mesh with the same vertices but where all faces are triangles
+    """
+    if mesh.is_triangular(): return mesh
+    with SurfaceSubdivision(mesh) as subdiv:
+        subdiv.triangulate()
+    return mesh
+
+
 @allowed_mesh_types(SurfaceMesh)
 def split_double_boundary_edges_triangles(mesh : SurfaceMesh) -> SurfaceMesh:
     """

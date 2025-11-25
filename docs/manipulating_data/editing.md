@@ -1,6 +1,5 @@
 ---
 title: "Edition and Manual Creation"
-weight: 1
 ---
 
 Alongside loading and saving various file formats, `mouette` allows to create datastructures from scratch. This can be done using the `RawMeshData` class. This class possesses all possible data containers available in mouette but no connectivity or functionnality: it is purely a storage class. The user can append its data to the corresponding containers:
@@ -23,14 +22,23 @@ surface = M.mesh.SurfaceMesh(data)
 ```
 
 !!! Warning
-    Do not work directly append elements to containers of a `SurfaceMesh` or `VolumeMesh`, as this can create connectivity issues. `PointCloud` and `Polyline` are usually safe but using `RawMeshData` in all cases is the recommanded approach.
+    Do not directly append elements to containers of a `SurfaceMesh` or `VolumeMesh`, as this can create connectivity issues. `PointCloud` and `Polyline` are usually safe but using `RawMeshData` in all cases is the recommanded approach.
     
+    For example, this code will create connectivity issues as the corresponding face corners will not be generated:
     ```python
     surface = M.mesh.SurfaceMesh()
     surface.vertices += [[0,0,0],[1,2,3],[1,-1,0],[0,1,-2]]
     surface.faces.append((0,1,2))
     surface.faces.append((0,1,3)) # This does not generate face corners correctly 
-    # /!\ Connectivity won't work here!
+    ```
+
+    While this is correct
+    ```python
+    raw_surface = M.mesh.RawMeshData()
+    raw_surface.vertices += [[0,0,0],[1,2,3],[1,-1,0],[0,1,-2]]
+    raw_surface.faces.append((0,1,2))
+    raw_surface.faces.append((0,1,3)) 
+    surface = M.mesh.SurfaceMesh(raw_surface) # This will create everything
     ```
 
 ## RawMeshData
