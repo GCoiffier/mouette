@@ -72,10 +72,10 @@ def unit_grid(nu: int, nv: int, triangulate: bool = False, generate_uvs: bool=Fa
             # generate faces
             if i<nu-1 and j<nv-1:
                 if triangulate: # add two triangles
-                    out.faces.append((i*nu+j, i*nu+j+1, (i+1)*nu+j))
-                    out.faces.append((i*nu+j+1, (i+1)*nu+j+1, (i+1)*nu+j))
+                    out.faces.append((i*nv+j, i*nv+j+1, (i+1)*nv+j))
+                    out.faces.append((i*nv+j+1, (i+1)*nv+j+1, (i+1)*nv+j))
                 else: # add a quad
-                    out.faces.append((i*nu+j, i*nu+j+1, (i+1)*nu+j+1, (i+1)*nu+j))
+                    out.faces.append((i*nv+j, i*nv+j+1, (i+1)*nv+j+1, (i+1)*nv+j))
     return _instanciate_raw_mesh_data(out, 2)
 
 

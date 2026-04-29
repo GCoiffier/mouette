@@ -219,6 +219,7 @@ class AABB:
         pad = np.maximum(pad, 0)
         self._p1 -= pad
         self._p2 += pad
+        return self
 
     def contains_point(self, pt: Vec) -> bool:
         """Point - bounding box intersection predicate.

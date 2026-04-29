@@ -27,7 +27,7 @@ if __name__ == "__main__":
     dist_init = M.parametrization.ParamDistortion(mesh)()
     if dist_init.summary["det_min"]<0:
         for v in mesh.id_vertices:
-            uv_init[v] = [uv_init[v][0], -uv_init[v][1]]
+            uv_init[v] = [uv_init[v][0], uv_init[v][1]]
         M.attributes.scatter_vertices_to_corners(mesh, uv_init, uv_init_corners)
         dist_init = M.parametrization.ParamDistortion(mesh)()
 

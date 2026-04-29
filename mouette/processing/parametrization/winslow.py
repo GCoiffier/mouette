@@ -197,6 +197,7 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         self.ref_jacs = kwargs.get("ref_jacs", None)
         self._solver_verbose = kwargs.get("solver_verbose", False)
         self._areas = kwargs.get("areas", None)
+        self.n_eps_update = kwargs.get("n_eps_update", 10)
         
     def run(self):
         """
@@ -223,7 +224,7 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         triangles = np.array(self.mesh.faces)
         final_points = untangle(points, locked, triangles, ref_jacs,
             areas=self._areas, weight_angles=1., weight_areas=self.lmbd, 
-            verbose=self.verbose, stop_if_positive = self.stop_if_pos, iter_max=self.iter_max)
+            verbose=self.verbose, stop_if_positive = self.stop_if_pos, iter_max=self.iter_max, n_eps_update=self.n_eps_update)
         final_points /= scale
 
         # Retrieve uvs and write them in attribute
