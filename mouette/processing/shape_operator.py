@@ -8,7 +8,7 @@ from ..mesh.mesh_attributes import ArrayAttribute
 from ..operators import adjacency_matrix
 from .. import geometry as geom
 from ..geometry import Vec
-from ..attributes import face_area, interpolate_faces_to_vertices
+from .. import attributes
 
 class ShapeOperator(Worker):
 
@@ -36,6 +36,7 @@ class ShapeOperator(Worker):
         self._mean_curv : ArrayAttribute = None
         self._patches : list = None
         self._varea : ArrayAttribute = None
+        self.vertex_normals : ArrayAttribute  = attributes.vertex_normals(self.mesh, persistent=False)
 
     def run(self, patch_size : int = 3):
         """Runs the computation of the shape operator for each vertex.
@@ -60,6 +61,10 @@ class ShapeOperator(Worker):
         for v in itr:
             self.shape_op[v] = self._handle_vertex(v)
 
+    def __getitem__(self, key):
+        if self.shape_op is None: return None
+        return self.shape_op[key, :, :]
+
     def _handle_vertex(self, id_v):
         ### Find local best tangent plane
         P = self.mesh.vertices[id_v]
@@ -70,6 +75,7 @@ class ShapeOperator(Worker):
         
         ### Build local coordinate system
         N = svd[0][:, -1]
+        if np.dot(N, self.vertex_normals[id_v])<0: N *= -1
         X = P-center
         X = Vec.normalized(X - np.dot(X, N)*N)
         Y = geom.cross(X,N)
@@ -100,11 +106,11 @@ class ShapeOperator(Worker):
     @property
     def vertex_area(self):
         if self._varea is None:
-            face_area = face_area(self.mesh, persistent=False)
+            f_area = attributes.face_area(self.mesh, persistent=False)
             self._varea = ArrayAttribute(float, len(self.mesh.vertices))
-            interpolate_faces_to_vertices(self.mesh, face_area, self._varea)
+            attributes.interpolate_faces_to_vertices(self.mesh, f_area, self._varea)
         return self._varea
-
+    
     @property
     def gaussian_curvature(self) -> ArrayAttribute:
         """Gaussian curvature estimator at each vertex. Defined as the determinant of the shape operator. The values are weighted by the local areas around each vertex.

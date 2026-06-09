@@ -1,12 +1,9 @@
 import polyscope as ps
 import sys
 import numpy as np
-import scipy.sparse as sp
 
 import mouette as M
-from mouette.mesh.datatypes import *
-from mouette.mesh.mesh_attributes import ArrayAttribute
-from tqdm import trange
+from mouette.processing import ShapeOperator
 
 if __name__ == "__main__":
     input_mesh = M.mesh.load(sys.argv[1])

@@ -104,6 +104,7 @@ nav:
     - "algorithms/feature_detection.md"
     - "algorithms/parametrization/surface_cutting.md"
     - "algorithms/normal_estimation.md"
+    - "algorithms/shape_operator.md"
 
     - Frame fields: 
       - "algorithms/frame_fields/index.md"
