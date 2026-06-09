@@ -1,0 +1,30 @@
+/* Emphasise sections of nav on left hand side */
+nav.md-nav {
+  padding-left: 10px;
+}
+
+nav.md-nav--secondary {
+    border-left: revert !important;
+}
+
+
+/* Decrease spacing on the left side nav bar */
+.md-nav__link {
+  margin-top: 0.25rem;
+  text-align: left;
+}
+
+/* Make the headings in the left side nav bar darker */
+.md-nav__item--section > .md-nav__link[for] {
+	color: #222;
+}
+.md-nav__title {
+	color: #222;
+}
+
+
+/* Darker hlines */
+[data-md-color-scheme="default"] .md-typeset hr {
+    border-bottom-color: rgb(0, 0, 0);
+    border-bottom-width: 1pt;
+}
