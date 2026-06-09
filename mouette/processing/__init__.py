@@ -7,6 +7,7 @@ from .misc import smooth
 from .cutting import SurfaceMeshCutter, SingularityCutter
 from .features import FeatureEdgeDetector
 from .expmap import DiscreteExponentialMap
+from .shape_operator import ShapeOperator
 
 from .paths import shortest_path, shortest_path_to_border, shortest_path_to_vertex_set, closest_n_vertices
 from .border import extract_border_cycle, extract_border_cycle_all, extract_boundary_of_surface, extract_boundary_of_volume
