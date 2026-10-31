@@ -1,9 +1,14 @@
 from .vector import Vec
-from ..utils import check_argument
+
 import numpy as np
+from numpy import dot
+from numpy.linalg import norm
+
+from numba import njit
 import math
 from typing import Union
 
+@njit
 def sign0(x: float):
     """
     $$\\text{sign0}(x)=\\begin{cases} 
@@ -20,6 +25,7 @@ def sign0(x: float):
     if x>=0: return 1
     return -1
 
+@njit
 def sign(x: float):
     """
     $$\\text{sign}(x)=\\begin{cases} 
@@ -38,61 +44,34 @@ def sign(x: float):
     elif x<0 : return -1
     return 0
 
-def norm(x: np.ndarray, which="l2") -> float:
-    """Vector norm. Three norms are implemented, the Euclidean l2 norm, the l1 norm or the l-infinite norm:
 
-    l2: $ \\sqrt{ \\sum_i v[i]^2 } $
-
-    l1: $ \\sum_i |v[i]| $
-
-    linf: $ \\max_i |v[i]| $
+@njit
+def distance2(A: Vec, B: Vec) -> float:
+    """Squared euclidean distance between points A and B.
 
     Args:
-        x (np.ndarray): vector from which we compute the norm. Will be flattened if it has more than one dimension.
-        which (str, optional): which norm to compute. Choices are "l2", "l1" and "linf". Defaults to "l2".
+        A (Vec): first vector
+        B (Vec): second point
 
     Returns:
-        float: the vector's norm
+        float : distance squared.
     """
-    check_argument("which", which, str, ["l2", "l1", "linf"])
-    if which=="l2":
-        return np.sqrt(np.dot(x.flatten(), x.flatten()))
-    elif which=="l1":
-        return np.sum(np.abs(x))
-    elif which=="linf":
-        return np.max(np.abs(x))
+    return dot(B-A, B-A)
 
-def dot(A: np.ndarray, B: np.ndarray) -> float:
-    """dot product $A^TB$ between two vectors
-
-    Args:
-        A (np.ndarray): first vector
-        B (np.ndarray): second vector
-
-    Returns:
-        float: dot product
-    """
-    return np.dot(A,B)
-
-def distance(A: Vec, B: Vec, which="l2") -> float:
-    """Distance between A and B. Three distances are implemented, the Euclidean distance l2, the Manhattan l1 distance of the l-infinity distance:
-     
-    l2: $\\sqrt{(B-A)^T(B-A)} = \\sqrt{\\sum_i (A_i - B_i)^2}$
-
-    l1: $\\sum_i |A_i - B_i|$
-
-    linf: $\\max_i |A_i - B_i|$
+@njit
+def distance(A: Vec, B: Vec) -> float:
+    """Distance between A and B.
 
     Args:
         A (Vec): first point
         B (Vec): second point
-        which (str, optional): which norm to compute. Choices are "l2", "l1" and "linf". Defaults to "l2".
         
     Returns:
         float: distance
     """
-    return norm(B-A, which)
+    return norm(B-A)
 
+@njit
 def cross(A: Vec, B: Vec) -> Vec:
     """Cross product of vectors A and B
 
@@ -103,12 +82,13 @@ def cross(A: Vec, B: Vec) -> Vec:
     Returns:
         Vec: cross product AxB
     """
-    return Vec(
+    return np.array((
         A[1]*B[2] - A[2] * B[1],
         B[0]*A[2] - B[2] * A[0],
         A[0]*B[1] - A[1] * B[0]
-    )
+    ))
 
+@njit
 def cotan(A: Vec, B: Vec, C: Vec) -> float:
     """cotangent of the angle $\\hat{ABC}$
     
@@ -120,13 +100,15 @@ def cotan(A: Vec, B: Vec, C: Vec) -> float:
     Returns:
         float: the cotangent
     """
-    A, B, C = Vec(A), Vec(B), Vec(C)
-    BA = Vec.normalized(A-B)
-    BC = Vec.normalized(C-B)
-    cosine = np.dot(BA,BC)
+    BA = A-B
+    BC = C-B
+    BA /= norm(BA)
+    BC /= norm(BC)
+    cosine = dot(BA,BC)
     sine = norm(cross(BA,BC))
     return cosine/sine
 
+@njit
 def angle_3pts(A: Vec, B: Vec, C: Vec) -> float:
     """Angle ABC between three points
 
@@ -138,13 +120,13 @@ def angle_3pts(A: Vec, B: Vec, C: Vec) -> float:
     Returns:
         float: the angle
     """
-    BA = Vec(A)-Vec(B)
-    BC = Vec(C)-Vec(B)
-    s = cross(BA,BC).norm()
+    BA = A-B
+    BC = C-B
+    s = np.linalg.norm(cross(BA,BC))
     c = dot(BA,BC)
     return math.atan2(s, c)
 
-
+@njit
 def signed_angle_2vec3D(V1: Vec, V2: Vec, N: Vec) -> float:
     """Signed angle between two vectors with orientation given by normal N
 
@@ -157,10 +139,11 @@ def signed_angle_2vec3D(V1: Vec, V2: Vec, N: Vec) -> float:
         float: the angle
     """
     S = cross(V1,V2)
-    s = S.norm()
+    s = np.linalg.norm(S)
     c = dot(V1,V2)
     return sign0(dot(S,N)) * math.atan2(s, c)
 
+@njit
 def signed_angle_3pts(A:Vec, B:Vec, C:Vec, N:Vec) -> float:
     """Signed angle between three points ABC with orientation givne by normal N
 
@@ -175,6 +158,7 @@ def signed_angle_3pts(A:Vec, B:Vec, C:Vec, N:Vec) -> float:
     """
     return signed_angle_2vec3D(A-B, C-B, N)
 
+@njit
 def angle_2vec2D(V1:Vec, V2:Vec) -> float:
     """Angle between two **2D** vectors
 
@@ -187,6 +171,7 @@ def angle_2vec2D(V1:Vec, V2:Vec) -> float:
     """
     return math.atan2(V2[1], V2[0]) - math.atan2(V1[1], V1[0])
 
+@njit
 def angle_2vec3D(V1:Vec, V2:Vec) -> float:
     """Angle between two **3D** vectors
 
@@ -198,7 +183,7 @@ def angle_2vec3D(V1:Vec, V2:Vec) -> float:
         float: the angle
     """
     C = cross(V1,V2)
-    return math.atan2(C.norm(), dot(V1,V2))
+    return math.atan2(norm(C), dot(V1,V2))
 
 def face_basis(*f):
     """
@@ -218,6 +203,7 @@ def face_basis(*f):
     Y = Vec.normalized(cross(Z,X))
     return X,Y,Z
 
+@njit(inline="always")
 def triangle_area(A: Vec, B: Vec, C: Vec) -> float:
     """Area of 3D triangle ABC
 
@@ -229,8 +215,9 @@ def triangle_area(A: Vec, B: Vec, C: Vec) -> float:
     Returns:
         float: area
     """
-    return cross(B-A,C-A).norm()/2
+    return norm(cross(B-A,C-A))/2
 
+@njit(inline="always")
 def triangle_area_2D(A: Vec, B: Vec, C: Vec) -> float:
     """Area of 2D triangle ABC
 
@@ -244,6 +231,7 @@ def triangle_area_2D(A: Vec, B: Vec, C: Vec) -> float:
     """
     return abs(det_2x2(B-A,C-A)/2)
 
+@njit
 def quad_area(A:Vec, B:Vec, C:Vec, D:Vec) -> float:
     """Area of the quad ABCD
 
@@ -258,6 +246,7 @@ def quad_area(A:Vec, B:Vec, C:Vec, D:Vec) -> float:
     """
     return (triangle_area(A,B,C) + triangle_area(A,C,D) + triangle_area(B,C,D) + triangle_area(B,D,A))/2
 
+@njit
 def det_2x2(A:Union[complex,np.ndarray], B:Union[complex,np.ndarray]) -> float:
     """Computes a 2x2 determinant
 
@@ -301,6 +290,7 @@ def det_3x3(*args) -> float:
         mat[0,2] * mat[1,1] * mat[2,0]
     return d
 
+@njit
 def intersect_2lines2D(p1 : Vec, d1 : Vec, p2: Vec, d2 : Vec) -> Vec:
     """Computes the intersection of two lines in the plane
 
@@ -313,11 +303,12 @@ def intersect_2lines2D(p1 : Vec, d1 : Vec, p2: Vec, d2 : Vec) -> Vec:
     Returns:
         Vec: the intersection point. None if lines are parallel
     """
-    p1,d1,p2,d2 = (u[:2] for u in (p1,d1,p2,d2))
+    p1,d1,p2,d2 = p1[:2], d1[:2], p2[:2], d2[:2]
     if abs(det_2x2(d1,d2))<1e-12 : return None #parallel lines
-    n2 = Vec(d2.y, -d2.x)
+    n2 = np.array((d2[1], -d2[0]))
     t = dot(p2-p1,n2)/dot(d1,n2)
     return p1+t*d1
+
 
 def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
     """Circumcenter of the triangle formed by three points
@@ -334,16 +325,17 @@ def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
         Vec: coordinates of the circumcenter
     """
     X,Y,_ = face_basis(v1,v2,v3)
-    v1,v2,v3 = (Vec(dot(X,v), dot(Y,v)) for v in (v1,v2,v3)) # projet into basis of the triangle
+    v1,v2,v3 = (np.array((dot(X,v), dot(Y,v))) for v in (v1,v2,v3)) # projet into basis of the triangle
     p1 = (v1+v2)/2
     p2 = (v1+v3)/2
     d1 = v2-v1
     d2 = v3-v1
-    d1 = Vec(d1[1], -d1[0])
-    d2 = Vec(d2[1], -d2[0])
+    d1 = np.array((d1[1], -d1[0]))
+    d2 = np.array((d2[1], -d2[0]))
     S = intersect_2lines2D(p1, d1, p2, d2)
-    return X*S.x + Y*S.y
+    return X*S[0] + Y*S[1]
 
+@njit
 def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
     """
     Computes the aspect ratio of triangle ABC, defined as the ratio between the circumradius to twice the inradius.
@@ -367,29 +359,45 @@ def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
     return ab*bc*ca/(8*(s-ab)*(s-bc)*(s-ca))
 
 
-def distance_to_segment2D(P : Vec, A : Vec, B : Vec) -> float:
+@njit(inline="always", fast_math=True)
+def closest_point_on_segment(P: Vec, A: Vec, B: Vec):
     """
-    Computes, **in the plane**, the distance of point P to the segment [A;B]
+    Computes the closest point from p on segment [A;B]
+    
+    Args:
+        P (Vec): Query point
+        A (Vec): First segment extremity
+        B (Vec): Second segment extremity
+
+    Returns:
+        Vec: the point Q on [A;B] that minimizes its distance with P.
+    """
+    ab = B - A
+    l2 = dot(ab, ab)
+    t = 0.
+    if l2 > 0.:
+        t = min(max(dot(P - A, ab) / l2, 0.), 1.)
+    return A + t * ab
+
+
+@njit
+def distance_to_segment(P, A, B):
+    """
+    Computes the distance of point P to the segment [A;B]
 
     Args:
-        P (Vec): Query point in 2D
+        P (Vec): Query point
         A (Vec): First segment extremity
         B (Vec): Second segment extremity
 
     Returns:
         float: the euclidean distance from P to [A;B]
     """
-    P,A,B = P[:2], A[:2], B[:2]
-    seg = B-A
-    seg_length_sq = dot(seg,seg)
-    if seg_length_sq<1e-12: 
-        # segment is a single point
-        return distance(P,A)
-    t = max(0, min(1, dot(P-A, seg)/seg_length_sq))
-    proj = A + t*seg
-    return distance(P, proj)
+    return distance(P, closest_point_on_segment(P, A, B))
 
 
+
+@njit
 def project_to_plane(P : Vec, N : Vec, orig : Vec) -> Vec:
     """Projects vector P onto the plane of normal N and passing through point 'orig'
 

@@ -113,7 +113,7 @@ class LSCM(BaseParametrization):
         locked1, locked2 = self.mesh.edges[e]
         locked1, locked2 = min(locked1, locked2), max(locked1, locked2)
 
-        instance = OSQP(algebra="mkl")
+        instance = OSQP()
         Q = A.transpose() @ A
         Cst = sp.lil_matrix((4,2*n))
         Cst[0, 2*locked1] = 1
@@ -125,7 +125,7 @@ class LSCM(BaseParametrization):
         
         self.log("Solving system...")
         instance.setup(Q, q=None, A=Cst, l=Cst_rhs, u=Cst_rhs, eps_abs=0., verbose=verbose)
-        res = instance.solve()
+        res = instance.solve(raise_error=False)
         self.log(f"System solved in {res.info.run_time} s")
         self.residual = res.info.obj_val
         self.log(f"Residual: {self.residual}")

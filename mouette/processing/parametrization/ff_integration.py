@@ -284,7 +284,7 @@ class FrameFieldIntegration(BaseParametrization):
         instance = OSQP()
         instance.setup(Qt @ self._Q, -Qt @ self._q, self._A, self._b, self._b, verbose=self.verbose,
                     eps_abs=1e-6, eps_rel=1e-6, max_iter=1000)
-        result = instance.solve()
+        result = instance.solve(raise_error=False)
         self._wm = result
         self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
         for cnr in self.mesh.id_corners:

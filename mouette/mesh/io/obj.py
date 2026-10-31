@@ -1,3 +1,4 @@
+import meshio
 from ..mesh_data import RawMeshData
 from ...geometry import Vec
 from ... import config
@@ -8,7 +9,6 @@ def import_obj(path : str):
     Parameters:
         path (str): the input file path
     """
-
     with open(path, 'r' ) as objf:
         output = parse_obj_data(objf.readlines())
     return output

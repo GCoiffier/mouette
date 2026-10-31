@@ -234,7 +234,7 @@ class LevenbergMarquardt(Logger):
                     eps_abs=1e-6, eps_rel=1e-6,
                     max_iter=100, check_termination=10, 
                     adaptive_rho=True)
-                s = osqp_instance.solve().x # computed increment
+                s = osqp_instance.solve(raise_error=False).x # computed increment
 
                 if s[0] is not None:
                     ms = fx + Jx.dot(s)
@@ -300,7 +300,7 @@ class LevenbergMarquardt(Logger):
                     verbose=self.verbose_options.solver_verbose)
             else:
                 self._stop_criterion_instance.update(q=-2*G)
-            x = self._stop_criterion_instance.solve().x
+            x = self._stop_criterion_instance.solve(raise_error=False).x
             if x is None: return False, 0.
             xnorm = np.sqrt(np.dot(x,x))
         return xnorm<self.HP.MIN_GRAD_NORM, xnorm

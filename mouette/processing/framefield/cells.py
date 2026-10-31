@@ -223,7 +223,7 @@ class FrameField3DCells(FrameField):
         instance = OSQP()
         instance.setup(Q, None, A=cstrMat, l=cstrRHS, u=cstrRHS, verbose=self.verbose, polishing=True, check_termination=10, 
                         adaptive_rho=True)
-        res = instance.solve()
+        res = instance.solve(raise_error=False)
         self.var = res.x
 
         if self.n_smooth>0:
@@ -236,7 +236,7 @@ class FrameField3DCells(FrameField):
             for _ in range(self.n_smooth):
                 self.normalize()
                 instance.update(q = -alpha * self.var)
-                res = instance.solve()
+                res = instance.solve(raise_error=False)
                 self.var = res.x
 
         self.log(" | Final Normalize")

@@ -167,7 +167,7 @@ class FrameField3DVertices(FrameField):
         self.log(" | Initial solve of linear system")
         instance = OSQP(algebra="builtin")
         instance.setup(lap, None, A=cstrMat, l=cstrRHS, u=cstrRHS, verbose=self.verbose)
-        res = instance.solve()
+        res = instance.solve(raise_error=False)
         self.var = res.x
 
         if self.smooth_attach_weight is not None:
@@ -189,7 +189,7 @@ class FrameField3DVertices(FrameField):
             for _ in range(self.n_smooth):
                 self.normalize()
                 instance.update(q = -alpha * self.var)
-                res = instance.solve()
+                res = instance.solve(raise_error=False)
                 self.var = res.x
         self.normalize()
         self.smoothed = True

@@ -57,7 +57,7 @@ class SurfaceConnection(ABC):
     def bX(self) -> np.ndarray:
         """
         Returns:
-            np.ndarray: local X vectors of bases as a 2D numpy array
+            np.ndarray: local X vectors of bases as a 3D numpy array
         """
         return self._baseX.as_array()
     
@@ -65,7 +65,7 @@ class SurfaceConnection(ABC):
     def bY(self) -> np.ndarray:
         """
         Returns:
-            np.ndarray: local Y vectors of bases as a 2D numpy array
+            np.ndarray: local Y vectors of bases as a 3D numpy array
         """
         return self._baseY.as_array()
 
@@ -176,9 +176,27 @@ class FlatConnectionVertices(SurfaceConnection):
         # Same base everywhere
         return self._baseX, self._baseY
 
+    @property
+    def bX(self) -> np.ndarray:
+        """
+        Returns:
+            np.ndarray: local X vectors of bases as a 2D numpy array
+        """
+        return np.tile(self._baseX, len(self.mesh.vertices)).reshape((len(self.mesh.vertices), 3))
+    
+    @property
+    def bY(self) -> np.ndarray:
+        """
+        Returns:
+            np.ndarray: local Y vectors of bases as a 2D numpy array
+        """
+        return np.tile(self._baseY, len(self.mesh.vertices)).reshape((len(self.mesh.vertices), 3))
+    
     def project(self, V:Vec, i:int):
         # projection does not depend on the considered vertex i
         return Vec(self._baseX.dot(V), self._baseY.dot(V))
+
+
 
 class SurfaceConnectionFaces(SurfaceConnection):
     """

@@ -32,9 +32,9 @@ class Chunk:
             if "vertices" in txt: return cls.VERTICES
             if "edges" in txt : return cls.EDGES
             if "facet_corners" in txt : return cls.FACE_CORNERS
+            if "cell_facets" in txt : return cls.CELL_FACETS # before "facets"
             if "facets" in txt : return cls.FACES
             if "cell_corners" in txt : return cls.CELL_CORNERS
-            if "cell_facets" in txt : return cls.CELL_FACETS
             if "cells" in txt : return cls.CELLS
 
         def to_string(self):
@@ -321,14 +321,16 @@ def export_geogram_ascii(mesh : RawMeshData, path):
                 attr = mesh.cell_corners.get_attribute(attr_key)
                 export_attribute(f, n_corners, "GEO::Mesh::cell_corners", attr, attr_key)
                    
-            # Cell faces
+            # Cell facets
             n_cell_faces = sum([len(c) for c in mesh.cells])
-            cell_adj = mesh.cell_faces.get_attribute("adjacent_cell")
-            f.write("[ATTR]\n\"GEO::Mesh::cell_corners\"\n\"GEO::Mesh::cell_faces::adjacent_cell\"\n\"index_t\"\n4\n1\n")
-            for x in cell_adj:
-                f.write(f"{x}\n")
+            f.write(f"[ATTS]\n\"GEO::Mesh::cell_facets\"\n{n_cell_faces}\n")
+            if mesh.cell_faces.has_attribute("adjacent_cell"):
+                cell_adj = mesh.cell_faces.get_attribute("adjacent_cell")
+                f.write("[ATTR]\n\"GEO::Mesh::cell_facets\"\n\"GEO::Mesh::cell_facets::adjacent_cell\"\n\"index_t\"\n4\n1\n")
+                for i in range(n_cell_faces):
+                    f.write(f"{cell_adj[i]}\n")
 
             for attr_key in mesh.cell_faces.attributes:
                 if attr_key=="adjacent_cell" : continue
                 attr = mesh.cell_faces.get_attribute(attr_key)
-                export_attribute(f, n_cell_faces, "GEO::Mesh::cell_faces", attr, attr_key)
+                export_attribute(f, n_cell_faces, "GEO::Mesh::cell_facets", attr, attr_key)

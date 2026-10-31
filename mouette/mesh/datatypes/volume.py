@@ -1,8 +1,7 @@
 from ..mesh_data import RawMeshData
 from ..mesh_attributes import Attribute
 from .base import Mesh
-from .surface import PolyLine, SurfaceMesh
-from ...utils import keyify
+from .surface import SurfaceMesh
 from ...geometry.geometry import det_3x3
 from ... import config
 
@@ -302,7 +301,7 @@ class VolumeMesh(Mesh):
                 if len(C)==4: # tetrahedra : every subset of 3 elements is a face
                     for i in range(4):
                         # By convention, ith adjacent face does not contain vertex i of the tet
-                        F = C[:i] + C[i+1:]
+                        F = [C[j] for j in range(4) if j!=i]
                         iF = self.face_id(*F)
                         self._adjC2F[iC].append(iF)
                         self._adjF2C[iF].append(iC)                        

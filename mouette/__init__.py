@@ -3,6 +3,8 @@
 Maillages, Outils Et Traitement auTomatique de la géométriE
 (Meshes, Tools and Geometry Processing)
 """
+from importlib.metadata import version
+__version__ = version('mouette')
 
 from . import config
 from . import utils

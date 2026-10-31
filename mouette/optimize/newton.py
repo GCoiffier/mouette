@@ -168,7 +168,7 @@ class Newton(Logger):
                     eps_abs=1e-3, eps_rel=1e-3,
                     max_iter=100, polishing=True, check_termination=10, 
                     adaptive_rho=True)
-                s = osqp_instance.solve().x # computed increment
+                s = osqp_instance.solve(raise_error=False).x # computed increment
                 if s[0] is None: print(s)
 
                 ### Perform Linesearch
@@ -219,7 +219,7 @@ class Newton(Logger):
         instance.setup(sp.eye(nvar, format="csc"), q=-x_init, 
                     A=self._cstM, l=self._cstL, u=self._cstU, 
                     verbose=True)
-        x_proj = instance.solve().x
+        x_proj = instance.solve(raise_error=False).x
         return x_proj
 
     def _backtracking_linesearch(self, F, G, s):
@@ -247,7 +247,7 @@ class Newton(Logger):
                     verbose=self.verbose_options.solver_verbose)
             else:
                 self._stop_criterion_instance.update(q=-2*G)
-            x = self._stop_criterion_instance.solve().x
+            x = self._stop_criterion_instance.solve(raise_error=False).x
             if x is None: return False, 0.
             xnorm = np.sqrt(np.dot(x,x))
         return xnorm<self.HP.MIN_GRAD_NORM, xnorm

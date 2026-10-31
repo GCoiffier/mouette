@@ -11,14 +11,7 @@ def test_new():
 
 ### Io tests ###
 
-# @pytest.mark.parametrize("v", volumes)
-# def test_io_medit(v, tmp_path):
-#     build_test_io(v, tmp_path, "mesh", 3)
-
-# @pytest.mark.parametrize("v", volumes)
-# def test_io_geogram_ascii(v, tmp_path):
-#     build_test_io(v, tmp_path, "geogram_ascii", 3)
-
-# @pytest.mark.parametrize("v", volumes)
-# def test_io_tet(v, tmp_path):
-#     build_test_io(v, tmp_path, "tet", 3)
+@pytest.mark.parametrize("ext", ["mesh", "meshb", "geogram_ascii", "tet", "vtk", "vtu", "msh"])
+@pytest.mark.parametrize("v", volumes)
+def test_io(v, ext, tmp_path):
+    build_test_io(v, tmp_path, ext, 3)

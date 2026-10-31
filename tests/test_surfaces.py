@@ -10,25 +10,10 @@ def test_new():
 
 # ### Io tests ###
 
+@pytest.mark.parametrize("ext", ["obj", "geogram_ascii", "off", "mesh", "meshb", "stl", "ply", "vtk", "msh"])
 @pytest.mark.parametrize("s", surfaces)
-def test_io_obj(s, tmp_path):
-    build_test_io(s, tmp_path, "obj", 2)
-
-@pytest.mark.parametrize("s", surfaces)
-def test_io_geogram_ascii(s, tmp_path):
-    build_test_io(s, tmp_path, "geogram_ascii", 2)
-
-@pytest.mark.parametrize("s", surfaces)
-def test_io_off(s, tmp_path):
-    build_test_io(s, tmp_path, "off", 2)
-
-@pytest.mark.parametrize("s", surfaces)
-def test_io_medit(s, tmp_path):
-    build_test_io(s, tmp_path, "mesh", 2)
-
-# @pytest.mark.parametrize("s", surfaces)
-# def test_io_ply(s, tmp_path):
-#     build_test_io(s, tmp_path, "ply", 2)
+def test_io(s, ext, tmp_path):
+    build_test_io(s, tmp_path, ext, 2)
 
 ### connectivity Tests ###
 

@@ -271,7 +271,7 @@ class FrameField2DVertices(_BaseFrameField2DVertices):
         P = P.transpose().dot(P)
         osqp_instance = OSQP()
         osqp_instance.setup(P, b, A=Cstr.tocsc(), l=Rhs, u=Rhs, verbose=False)
-        res = osqp_instance.solve().x
+        res = osqp_instance.solve(raise_error=False).x
         for e,(A,B) in enumerate(self.mesh.edges):
             self.conn._transport[(A,B)] +=  res[e]/2
             self.conn._transport[(B,A)] -=  res[e]/2
@@ -372,7 +372,7 @@ class TrivialConnectionVertices(_BaseFrameField2DVertices):
         A = sp.eye(nvar, format="csc")
         instance = OSQP()
         instance.setup(P=A, q=None, A=CstM, u=CstX, l=CstX)
-        res = instance.solve()
+        res = instance.solve(raise_error=False)
         self.rotations = res.x
 
         tree = processing.trees.EdgeSpanningTree(self.mesh)()

@@ -19,11 +19,11 @@ def import_off(path : str):
         3 vm_1 vm_2 vm_3
         /////////////////
 
-        if surfacic, 3 is given at beginning of each simplex line (triangle), otherwise 4 (tetrahedron)
+        if the file represents a surface, 3 is given at beginning of each simplex line (triangles), otherwise 4 (tetrahedra)
+
     Parameters:
         path (str): the input file path
     """
-
     with open(path, 'r' ) as file:
         output = parse_off_data(file.readlines())
     return output

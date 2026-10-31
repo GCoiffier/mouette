@@ -92,6 +92,7 @@ def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
             raw_mesh.cell_faces.clear()
     write_by_extension(raw_mesh, filename)
 
+
 def from_arrays(
         V: np.ndarray, 
         E: np.ndarray = None, 

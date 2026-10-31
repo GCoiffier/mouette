@@ -64,14 +64,14 @@ def extract_border_cycle_all(mesh : SurfaceMesh) -> list:
     return borders
 
 @allowed_mesh_types(SurfaceMesh)
-def extract_boundary_of_surface(mesh : SurfaceMesh) -> PolyLine :
+def extract_boundary_of_surface(mesh : SurfaceMesh) -> PolyLine:
     """Returns the boundary of a surface mesh as a polyline
 
     Args:
         mesh (SurfaceMesh): input mesh
 
     Returns:
-        PolyLine: boundary curves of the mesh
+        PolyLine: boundary curves of the mesh  
         dict: maps a vertex id in the boundary to its corresponding id in the original mesh.
     """
     bound = PolyLine()

@@ -151,8 +151,12 @@ class BoundaryFirstFlattening(BaseParametrization):
         return phi[:self.NB] - self._Lib.transpose() @ a - self._Lbb @ U
 
     def _neumann_to_dirichlet(self, phi, h):
-        a = self._solve_L(phi - h)
-        return a[:self.NB]
+        # Neumann problem: L is singular (constants in its kernel). Center the rhs so the system is consistent,
+        # and fix the free additive constant (= global scale of the boundary) to zero mean on the boundary
+        rhs = phi - h
+        a = self._solve_L(rhs - rhs.mean())
+        u = a[:self.NB]
+        return u - u.mean()
     
     def _fit_boundary_curve(self):
         self._Blengths = np.zeros(len(self.mesh.boundary_edges))

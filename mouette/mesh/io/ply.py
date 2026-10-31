@@ -1,5 +1,6 @@
 from ..mesh_data import RawMeshData
 import pyminiply
+import meshio
 import numpy as np
 
 def import_ply(path : str):
@@ -15,7 +16,3 @@ def import_ply(path : str):
     if color.size>0:
         out.vertices.register_array_as_attribute("color", color)
     return out
-
-
-def export_ply(mesh, path : str):
-    raise NotImplementedError

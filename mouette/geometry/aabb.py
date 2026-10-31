@@ -20,8 +20,8 @@ class AABB:
         Raises:
             Exception: fails if p_min and p_max have different sizes (inconsistent dimension)
         """
-        self._p1 = Vec(p_min)
-        self._p2 = Vec(p_max)
+        self._p1 = Vec(p_min).astype(float)
+        self._p2 = Vec(p_max).astype(float)
         if self._p1.size != self._p2.size:
             raise Exception("AABB: received two initial arrays of a different dimension!")
     
