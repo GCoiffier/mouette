@@ -1,12 +1,13 @@
-from .vector import Vec
-
 import numpy as np
 from numpy import dot
 from numpy.linalg import norm
 
 from numba import njit
 import math
-from typing import Union
+from typing import Union, TypeAlias
+
+# A Vec type represents here a 1D numpy array
+Vec : TypeAlias = np.ndarray
 
 @njit
 def sign0(x: float):
@@ -185,22 +186,24 @@ def angle_2vec3D(V1:Vec, V2:Vec) -> float:
     C = cross(V1,V2)
     return math.atan2(norm(C), dot(V1,V2))
 
-def face_basis(*f):
+@njit
+def face_basis(A: Vec, B: Vec, C: Vec):
     """
     Orthonormal basis of face
     Given three points A,B,C, returns a basis such that the first vector is along direction AB and third vector is normal to the plane ABC
 
     Args:
-        *f: points of the face, either on a list or not
+        A, B, C (Vec): three points forming a triangle.
 
     Returns:
-        Vec,Vec,Vec: an orthonormal 3D basis of the face
+        Vec,Vec,Vec: an orthonormal 3D basis of the face ABC
     """
-    if len(f)==1: f = f[0]
-    pA,pB,pC = (x for x in f)
-    X = Vec.normalized(pB-pA)
-    Z = Vec.normalized(cross(X, pC-pA))
-    Y = Vec.normalized(cross(Z,X))
+    X = B-A
+    X /= norm(X)
+    Z = cross(X, C-A)
+    Z /= norm(Z)
+    Y = cross(Z,X)
+    Y /= norm(Y)
     return X,Y,Z
 
 @njit(inline="always")
@@ -250,7 +253,7 @@ def quad_area(A:Vec, B:Vec, C:Vec, D:Vec) -> float:
 def det_2x2(A:Union[complex,np.ndarray], B:Union[complex,np.ndarray]) -> float:
     """Computes a 2x2 determinant
 
-    Parameters:
+    Args:
         A (Union[complex,np.ndarray]): first column vector. Can also be a complex number
         B (Union[complex,np.ndarray]): second column vector. Can also be a complex number
 
@@ -267,28 +270,24 @@ def det_2x2(A:Union[complex,np.ndarray], B:Union[complex,np.ndarray]) -> float:
         bx,by = B[0], B[1]
     return ax*by - ay*bx
 
-def det_3x3(*args) -> float:
-    """Computes a 3x3 using the rule of Sarrus
+@njit
+def det_3x3(A: Vec, B: Vec, C:Vec) -> float:
+    """Computes a 3x3 determinant using the rule of Sarrus from three column vectors.
     
-    Parameters:
-        args: Either a 3x3 numpy array representing a matrix, or 3 3x1 numpy array representing three column vectors
+    Args:
+        A (Vec): first column
+        B (Vec): second column
+        C (Vec): third column
 
     Returns:
-        float: the determinant
+        float: the determinant of [A|B|C]
     """
-    if len(args)==1:
-        mat = args[0]
-        assert mat.shape == (3,3)
-    elif len(args)==3:
-        A,B,C = args[0], args[1], args[2]
-        mat = np.array([A,B,C])
-    d = mat[0,0] * mat[1,1] * mat[2,2] + \
-        mat[0,1] * mat[1,2] * mat[2,0] + \
-        mat[0,2] * mat[1,0] * mat[2,1] - \
-        mat[0,0] * mat[1,2] * mat[2,1] - \
-        mat[0,1] * mat[1,0] * mat[2,2] - \
-        mat[0,2] * mat[1,1] * mat[2,0]
-    return d
+    return A[0] * B[1] * C[2] + \
+           B[0] * C[1] * A[2] + \
+           C[0] * A[1] * B[2] - \
+           A[0] * C[1] * B[2] - \
+           B[0] * A[1] * C[2] - \
+           C[0] * B[1] * A[2]
 
 @njit
 def intersect_2lines2D(p1 : Vec, d1 : Vec, p2: Vec, d2 : Vec) -> Vec:
@@ -310,6 +309,7 @@ def intersect_2lines2D(p1 : Vec, d1 : Vec, p2: Vec, d2 : Vec) -> Vec:
     return p1+t*d1
 
 
+@njit
 def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
     """Circumcenter of the triangle formed by three points
 
@@ -325,7 +325,8 @@ def circumcenter(v1 : Vec, v2 : Vec, v3: Vec) -> Vec:
         Vec: coordinates of the circumcenter
     """
     X,Y,_ = face_basis(v1,v2,v3)
-    v1,v2,v3 = (np.array((dot(X,v), dot(Y,v))) for v in (v1,v2,v3)) # projet into basis of the triangle
+    # project into basis of the triangle
+    v1, v2, v3 = np.array((dot(X,v1), dot(Y,v1))), np.array((dot(X,v2), dot(Y,v2))), np.array((dot(X,v3), dot(Y,v3)))
     p1 = (v1+v2)/2
     p2 = (v1+v3)/2
     d1 = v2-v1
@@ -359,10 +360,10 @@ def aspect_ratio(A : Vec, B : Vec, C : Vec) -> float:
     return ab*bc*ca/(8*(s-ab)*(s-bc)*(s-ca))
 
 
-@njit(inline="always", fast_math=True)
+@njit(inline="always", fastmath=True)
 def closest_point_on_segment(P: Vec, A: Vec, B: Vec):
     """
-    Computes the closest point from p on segment [A;B]
+    Computes the closest point from p on segment [A;B], and the feature of the segment on which it lies.
     
     Args:
         P (Vec): Query point
@@ -371,19 +372,23 @@ def closest_point_on_segment(P: Vec, A: Vec, B: Vec):
 
     Returns:
         Vec: the point Q on [A;B] that minimizes its distance with P.
+        int: the feature of the segment on which Q lies: 0 if Q is in the interior of the segment, 1 if Q is the extremity A, 2 if Q is the extremity B.
     """
     ab = B - A
     l2 = dot(ab, ab)
     t = 0.
     if l2 > 0.:
-        t = min(max(dot(P - A, ab) / l2, 0.), 1.)
-    return A + t * ab
+        t = dot(P - A, ab) / l2
+    if t <= 0.: return A.copy(), 1
+    if t >= 1.: return B.copy(), 2
+    return A + t * ab, 0
 
 
 @njit
 def distance_to_segment(P, A, B):
     """
-    Computes the distance of point P to the segment [A;B]
+    Computes the distance of point P to the segment [A;B].
+    Alias for `distance(P, closest_point_on_segment(P,A,B)[0])`
 
     Args:
         P (Vec): Query point
@@ -393,19 +398,107 @@ def distance_to_segment(P, A, B):
     Returns:
         float: the euclidean distance from P to [A;B]
     """
-    return distance(P, closest_point_on_segment(P, A, B))
+    return distance(P, closest_point_on_segment(P, A, B)[0])
 
+
+@njit(inline="always", fastmath=True)
+def closest_point_on_triangle(P: Vec, A: Vec, B: Vec, C: Vec):
+    """
+    Computes the closest point from point p to triangle ABC, and the feature of the triangle on which it lies.
+    Uses the Voronoi region tests from Ericson, Real-Time Collision Detection, section 5.1.5.
+
+    Args:
+        P (Vec): Query point
+        A,B,C (Vec): vertices of the triangle
+
+    Returns:
+        Vec: the point Q in triangle ABC that minimizes its distance with P.
+        int: the feature of the triangle on which Q lies: 
+            0 if Q is in the interior of the face, 
+            1, 2 or 3 if Q is the vertex A, B or C respectively, 
+            4, 5 or 6 if Q is in the interior of the edge AB, BC or CA respectively.
+    """
+    ab, ac, ap = B - A, C - A, P - A
+    nx = ab[1] * ac[2] - ab[2] * ac[1]
+    ny = ab[2] * ac[0] - ab[0] * ac[2]
+    nz = ab[0] * ac[1] - ab[1] * ac[0]
+    if nx * nx + ny * ny + nz * nz <= 1e-12 * np.dot(ab, ab) * np.dot(ac, ac):
+        # degenerate (zero area) triangle: region tests are unreliable, take the closest of the three edges
+        q_ab, f_ab = closest_point_on_segment(P, A, B)
+        q_bc, f_bc = closest_point_on_segment(P, B, C)
+        q_ca, f_ca = closest_point_on_segment(P, C, A)
+        d_ab, d_bc, d_ca = distance2(P, q_ab), distance2(P, q_bc), distance2(P, q_ca)
+        # convert the segment features (0: interior, 1: first extremity, 2: second extremity) into triangle features
+        if d_ab <= d_bc and d_ab <= d_ca: return q_ab, (4, 1, 2)[f_ab]
+        elif d_bc <= d_ca: return q_bc, (5, 2, 3)[f_bc]
+        else: return q_ca, (6, 3, 1)[f_ca]
+    d1, d2 = np.dot(ab, ap), np.dot(ac, ap)
+    if d1 <= 0. and d2 <= 0.: return A.copy(), 1 # vertex region A
+    bp, cp = P - B, P - C
+    d3, d4 = np.dot(ab, bp), np.dot(ac, bp)
+    if d3 >= 0. and d4 <= d3: return B.copy(), 2 # vertex region B
+    d5, d6 = np.dot(ab, cp), np.dot(ac, cp)
+    if d6 >= 0. and d5 <= d6: return C.copy(), 3 # vertex region C
+    vc = d1 * d4 - d3 * d2
+    if vc <= 0. and d1 >= 0. and d3 <= 0.: # edge region AB
+        return A + (d1 / (d1 - d3)) * ab, 4
+    vb = d5 * d2 - d1 * d6
+    if vb <= 0. and d2 >= 0. and d6 <= 0.: # edge region CA
+        return A + (d2 / (d2 - d6)) * ac, 6
+    va = d3 * d6 - d5 * d4
+    if va <= 0. and d4 >= d3 and d5 >= d6: # edge region BC
+        return B + ((d4 - d3) / ((d4 - d3) + (d5 - d6))) * (C - B), 5
+    # inside the face. Denominators above are squared edge lengths and squared double area, all nonzero since the triangle is not degenerate
+    denom = va + vb + vc
+    return A + (vb / denom) * ab + (vc / denom) * ac, 0
 
 
 @njit
-def project_to_plane(P : Vec, N : Vec, orig : Vec) -> Vec:
+def distance_to_triangle(P:Vec, A:Vec, B:Vec, C:Vec) -> float:
+    """
+    Computes the distance of point P to the triangle ABC.
+    Alias for `distance(P, closest_point_on_triangle(P,A,B,C)[0])`
+
+    Args:
+        P (Vec): query point
+        A,B,C (Vec): vertices of the triangle.
+
+    Returns:
+        float: float: the euclidean distance from P to triangle ABC.
+    """
+    return distance(P, closest_point_on_triangle(P, A, B, C)[0])
+
+
+@njit(inline="always", fastmath=True)
+def closest_point_on_plane(P : Vec, orig : Vec, N: Vec) -> Vec:
     """Projects vector P onto the plane of normal N and passing through point 'orig'
 
     Args:
         P (Vec): query position to project
+        orig (Vec): a point belonging to the plane
         N (Vec): normal vector of the plane
 
     Returns:
         Vec: P projected onto the plane
     """
     return P - dot(P-orig,N)/dot(N,N)*N
+
+@njit(inline="always", fastmath=True)
+def distance_to_plane(P: Vec, orig:Vec, N:Vec) -> float:
+    """
+    Computes the distance of point P to the plane of normal N passing through point `orig`.
+
+    Args:
+        P (Vec): query position to project
+        orig (Vec): a point belonging to the plane
+        N (Vec): normal vector of the plane. Does not need to be normalized.
+
+    Raises:
+        ValueError: if the norm of N is smaller than 1e-10.
+
+    Returns:
+        float: the euclidean distance from P to the plane.
+    """
+    nN = norm(N)
+    if nN < 1e-10: raise ValueError("distance_to_plane: the normal vector of the plane has a norm smaller than 1e-10")
+    return np.abs(dot(P-orig, N)) / nN

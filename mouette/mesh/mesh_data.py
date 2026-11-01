@@ -128,6 +128,7 @@ class RawMeshData:
         if config.complete_edges_from_faces : 
             self._complete_edges_from_faces() 
 
+        self._compute_dimensionality()
         self._prepare_vertices()
         self._prepare_edges()
         self._prepare_faces()
@@ -135,7 +136,6 @@ class RawMeshData:
         self._prepare_cells()
         self._generate_cell_corners()
         self._generate_cell_faces()
-        self._compute_dimensionality()
         self._prepared = True
 
     def _prepare_vertices(self):
@@ -162,7 +162,7 @@ class RawMeshData:
             for ie in self.id_edges:
                 a,b = self.edges[ie]
                 if is_valid(a,b):
-                    new_edges.append(utils.keyify(a,b))
+                    new_edges.append((a,b))
                     for name in new_attrs:
                         if ie in old_attrs[name]: # keep sparsity of the attribute
                             new_attrs[name][n] = old_attrs[name][ie]

@@ -2,7 +2,7 @@
 title: "Data Management"
 ---
 
-`mouette` is architectured around the concept of _data containers_, which are containers dedicated to the storage of one type of elements in a mesh and all of its attributes. Data structures in mouette are then defined as collections of specific data containers:
+`mouette` is architectured around the concept of **data containers**, which are containers dedicated to the storage of one type of elements in a mesh and all of its attributes. Data structures in mouette are then defined as collections of specific data containers:
 
 - A [`PointCloud`](./PointClouds.md) object only has one container named `vertices` such that `object.vertices[i]` is a 3D vector containing the position of vertex `i` in space.
 

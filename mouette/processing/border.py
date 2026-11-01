@@ -1,12 +1,12 @@
 from ..mesh.mesh_data import RawMeshData
-from ..utils import keyify
+from ..utils import cyclic_pairs
 from ..mesh.datatypes import *
 from ..mesh.mesh_attributes import Attribute
 
 @allowed_mesh_types(SurfaceMesh)
 def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
     """
-    Extracts a list of vertices that are on the border of the mesh.
+    Extracts a list of vertices that are on the border of the mesh and form an edge loop.
 
     Parameters:
         mesh (Mesh): The mesh
@@ -14,7 +14,6 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
     
     Returns:
         (list): list of vertices on border in order
-        (list): list of edges on border in order
 
     Raises:
         Exception: Fails if 'starting_point' not on the border
@@ -25,7 +24,7 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
     if not mesh.is_vertex_on_border(starting_point) : 
         raise Exception("Starting point (vertex {}) is not on mesh border".format(starting_point))
 
-    vborder, eborder = [starting_point], []
+    vborder  = [starting_point]
     point1, point2 = starting_point, mesh.connectivity.vertex_to_vertices(starting_point)[0]
     nvisited = 0
     MAX_VISITED = len(mesh.vertices)
@@ -33,14 +32,12 @@ def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
     while point2 != starting_point and nvisited < MAX_VISITED:
         # while we have not come back to origin
         vborder.append(point2)
-        eborder.append(mesh.connectivity.edge_id(point1, point2))
         for v in mesh.connectivity.vertex_to_vertices(point2):
             if mesh.is_vertex_on_border(v) and v!=point1:
                 point1, point2 = point2, v
                 break
         nvisited += 1
-    eborder.append(mesh.connectivity.edge_id(point1, point2)) # add last edge to close the cycle
-    return vborder, eborder
+    return vborder
 
 @allowed_mesh_types(SurfaceMesh)
 def extract_border_cycle_all(mesh : SurfaceMesh) -> list:
@@ -57,7 +54,7 @@ def extract_border_cycle_all(mesh : SurfaceMesh) -> list:
     borders = []
     for v in mesh.boundary_vertices:
         if not visited[v]:
-            border_v, _ = extract_border_cycle(mesh, v)
+            border_v = extract_border_cycle(mesh, v)
             for v2 in border_v:
                 visited[v2] = True
             borders.append(border_v)
@@ -83,8 +80,8 @@ def extract_boundary_of_surface(mesh : SurfaceMesh) -> PolyLine:
     ind_vertex = 0
     for v in mesh.boundary_vertices:
         if not visited[v]:
-            cycle_v, cycle_e = extract_border_cycle(mesh, v)
-            bound.edges += [mesh.edges[e] for e in cycle_e]
+            cycle_v = extract_border_cycle(mesh, v)
+            bound.edges += [_e for _e in cyclic_pairs(cycle_v)]
             for v2 in cycle_v:
                 visited[v2] = True
                 map_v2v[v2] = ind_vertex
@@ -95,7 +92,7 @@ def extract_boundary_of_surface(mesh : SurfaceMesh) -> PolyLine:
 
     # re order edge indexes
     for e,(A,B) in enumerate(bound.edges):
-        bound.edges[e] = keyify(map_v2v[A], map_v2v[B])
+        bound.edges[e] = (map_v2v[A], map_v2v[B])
     return bound, map_v2v
 
 @allowed_mesh_types(VolumeMesh)

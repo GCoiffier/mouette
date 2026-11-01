@@ -1,7 +1,19 @@
 site_name: Mouette
 
 theme:
-  name: material
+  name: "alloy"
+  palette: 
+    # Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: lucide/sun
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: lucide/moon
+        name: Switch to light mode
 
   features:
     - navigation.instant
@@ -10,6 +22,10 @@ theme:
     - navigation.sections
     - navigation.indexes
     - toc.follow
+
+extra:
+  alloy:
+    accent_preset: violet
 
 plugins:
 - search
@@ -61,8 +77,6 @@ extra_javascript:
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
-extra_css:
-  - "custom_css.css"
 
 repo_url: https://github.com/GCoiffier/mouette
 repo_name: GCoiffier/mouette
@@ -126,8 +140,8 @@ nav:
       - "algorithms/parametrization/distortion.md"
 
     - Spatial queries:
-      - "algorithms/knn.md"
       - "utilities/AABB.md"
+      - "algorithms/bvh.md"
 
   - Numerical Optimization:
     - "optimization/index.md"
@@ -136,14 +150,11 @@ nav:
     - "optimization/newton.md"
 
   - Utilities:
-    - "utilities/utils.md"
+    - "utilities/geometry_utils.md"
     - "utilities/vectors.md"
     - "utilities/spherical_harmonics.md"
-    # - "utilities/AABB.md"
     - "utilities/priority_queue.md"
     - "utilities/union_find.md"
 
-  - Misc:
-    # - "visualizing.md"
-    - "operators.md"
-    - "config.md"
+  - "operators.md"
+  - "config.md"

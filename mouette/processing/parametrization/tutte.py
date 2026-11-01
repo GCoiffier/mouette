@@ -113,7 +113,7 @@ class TutteEmbedding(BaseParametrization):
             TutteEmbedding.BoundaryMode.XZ):
             bndInds = self.mesh.boundary_vertices
         else: # otherwise boundary should be sorted
-            bndInds, _ = extract_border_cycle(self.mesh)
+            bndInds = extract_border_cycle(self.mesh)
 
         LI = lap[freeInds, :][:, freeInds]
         LB = lap[freeInds, :][:, bndInds]

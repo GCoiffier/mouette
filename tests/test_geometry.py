@@ -78,8 +78,10 @@ def test_face_basis():
     B = M.Vec.random(3)
     C = M.Vec.random(3)
     X,Y,Z = geom.face_basis(A,B,C)
-    X,Y,Z = geom.face_basis((A,B,C))
-    assert True
+    # orthonormal basis, X along AB and Z normal to ABC
+    assert np.allclose(np.array([X,Y,Z]) @ np.array([X,Y,Z]).T, np.eye(3))
+    assert np.allclose(geom.cross(X, B-A), 0.)
+    assert abs(geom.dot(Z, B-A)) < 1e-10 and abs(geom.dot(Z, C-A)) < 1e-10
 
 def test_triangle_area():
     A = M.Vec.random(3)

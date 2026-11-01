@@ -4,7 +4,7 @@ title: "Dependencies"
 
 #### Numpy and Scipy
 
-Mouette makes use of [numpy](https://numpy.org/) arrays for storing data, as well as the [scipy's sparse module]()
+Mouette makes use of [numpy](https://numpy.org/) arrays for storing data, as well as [scipy](https://scipy.org/) for sparse arrays and matrices.
 
 #### Numba
 
@@ -16,9 +16,7 @@ Mouette makes use of [numpy](https://numpy.org/) arrays for storing data, as wel
 
 #### IO libraries
 
-- [stl-reader](https://pypi.org/project/stl-reader/)
-- [pyminiply](https://pypi.org/project/pyminiply/)
-
+- [meshio](https://pypi.org/project/meshio/)
 
 #### Misc
 

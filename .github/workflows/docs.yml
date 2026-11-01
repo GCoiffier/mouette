@@ -3,23 +3,20 @@ on:
   push:
     branches:
       - main
+permissions:
+  contents: write
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
-      - uses: actions/cache@v4
-        with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: .cache
-          restore-keys: |
-            mkdocs-material-
-      - run: pip3 install mkdocs-material mkdocstrings mkdocstrings[python] mkdocs-nav-weight
-      - run: pip3 install --editable .
-      - run: echo `mkdocs --version`
-      - run: mkdocs gh-deploy --force
+          - uses: actions/checkout@v4
+          - uses: actions/setup-python@v5
+            with:
+              python-version: 3.13
+          - run: pip3 install zensical zensical-alloy mkdocstrings mkdocstrings-python ghp-import
+          - run: pip3 install --editable .
+          - run: zensical --version
+          - run: zensical build --clean
+          - run: ghp-import --no-jekyll --push --force site
+
 

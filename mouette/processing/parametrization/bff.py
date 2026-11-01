@@ -5,6 +5,7 @@ from ...mesh.mesh import reorder_vertices
 
 from ... import attributes
 from ... import geometry as geom
+from ...utils import cyclic_pairs
 from ...operators import laplacian
 from ..border import extract_border_cycle
 from ...attributes.glob import euler_characteristic
@@ -140,11 +141,11 @@ class BoundaryFirstFlattening(BaseParametrization):
         return self.mesh
 
     def _reorder_vertices(self):
-        v_border, _ = extract_border_cycle(self.mesh)
+        v_border = extract_border_cycle(self.mesh)
         self._vertex_permutation = v_border + self.mesh.interior_vertices
         self.mesh = reorder_vertices(self.mesh, self._vertex_permutation)
-        _, e_border = extract_border_cycle(self.mesh)
-        return e_border
+        v_border = extract_border_cycle(self.mesh)
+        return [self.mesh.connectivity.edge_id(*_e) for _e in cyclic_pairs(v_border)]
 
     def _dirichlet_to_neumann(self, phi, U):
         a = self._solve_Lii(phi[self.NB:] - self._Lib @ U)
