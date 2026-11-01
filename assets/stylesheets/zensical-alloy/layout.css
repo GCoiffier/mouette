@@ -1,0 +1,222 @@
+/* ============================================================================
+ * Layout proportions - thin header, compact rails, and a centered reading
+ * column with quiet structure.
+ * ============================================================================ */
+
+.md-grid {
+  max-width: 78rem;          /* 1248px */
+}
+
+/* Thin header. */
+.md-header {
+  height: auto;
+}
+.md-header__inner {
+  padding-block: 0;
+}
+
+/* Material's "ellipsis" wrapper - center title + balance height. */
+.md-header__title {
+  font-size: 0.9375rem;
+  margin-left: 0.5rem;
+}
+
+/* Main content padding & measure. */
+.md-main__inner {
+  display: flex;
+  gap: 0.625rem;
+  margin-top: 1rem;
+  max-width: min(100%, 78rem);
+}
+
+.md-content {
+  flex: 1 1 auto;
+  max-width: none;
+  min-width: 0;
+  order: 1;
+  position: relative;
+}
+/* Flush-left next to the sidebar - no auto-centering, otherwise content
+ * floats in the middle of its grid column with a fat left gap. */
+.md-content__inner {
+  max-width: 100%;
+  min-width: 0;
+  padding: 1.25rem 2rem 4rem 1.5rem;
+  margin: 0;
+}
+.md-content__inner::before {
+  display: none;
+}
+
+/* Sidebar - narrower, flush. Scoped to desktop so Material's mobile drawer
+ * defaults (`position: fixed; width: 12.1rem; height: calc(100% - .8rem)`)
+ * win on phones - otherwise our `position: relative` collapses the drawer
+ * to the height of its content. */
+@media (min-width: 76.25em) {
+  .md-sidebar {
+    flex: 0 0 var(--sidebar-width);
+    width: var(--sidebar-width);
+    padding: 1rem 0;
+    position: relative;
+  }
+  .md-sidebar,
+  .md-header--lifted ~ .md-container .md-sidebar {
+    align-self: flex-start;
+    position: sticky;
+    top: calc(var(--header-height) + 1rem);
+  }
+  body:has(.md-tabs) .md-sidebar,
+  body:has(.md-tabs) .md-header--lifted ~ .md-container .md-sidebar {
+    top: calc(var(--header-height) + 2.75rem);
+  }
+}
+.md-sidebar--secondary {
+  flex-basis: var(--toc-width);
+  order: 2;
+  width: var(--toc-width);
+}
+.md-sidebar--primary {
+  order: 0;
+}
+
+.md-sidebar__scrollwrap {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.md-sidebar--primary
+  .md-sidebar__scrollwrap--can-scroll.md-sidebar__scrollwrap--at-top:not(.md-sidebar__scrollwrap--at-bottom) {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - 1.75rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - 1.75rem),
+    transparent 100%
+  );
+}
+.md-sidebar--primary
+  .md-sidebar__scrollwrap--can-scroll.md-sidebar__scrollwrap--at-bottom:not(.md-sidebar__scrollwrap--at-top) {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 1.75rem,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 1.75rem,
+    #000 100%
+  );
+}
+.md-sidebar--primary
+  .md-sidebar__scrollwrap--can-scroll:not(.md-sidebar__scrollwrap--at-top):not(.md-sidebar__scrollwrap--at-bottom) {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 1.75rem,
+    #000 calc(100% - 1.75rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 1.75rem,
+    #000 calc(100% - 1.75rem),
+    transparent 100%
+  );
+}
+.md-sidebar__scrollwrap::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.md-sidebar__scrollwrap::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.md-sidebar--primary {
+  border-right: 0;
+}
+.md-sidebar--secondary {
+  border: 0;
+}
+
+@media (min-width: 76.25em) {
+  .md-sidebar--primary {
+    padding-right: 0.625rem;
+    min-height: calc(100vh - var(--header-height) - 2rem);
+  }
+
+  .md-sidebar--secondary {
+    padding-left: 1.125rem;
+    min-height: calc(100vh - var(--header-height) - 2rem);
+  }
+
+  .md-sidebar--primary::after,
+  .md-sidebar--secondary::before {
+    content: "";
+    position: absolute;
+    top: 0.75rem;
+    bottom: 2.5rem;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0,
+      var(--rail) 1.5rem,
+      var(--rail) calc(100% - 1.5rem),
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  .md-sidebar--primary::after {
+    right: 0.125rem;
+  }
+
+  .md-sidebar--secondary::before {
+    left: 0.125rem;
+  }
+}
+
+/* Footer - quiet single-line meta strip, no dark slab. */
+.md-footer {
+  background: var(--background);
+  color: var(--muted-foreground);
+  border-top: 0;
+}
+.md-footer-meta {
+  background: transparent;
+  font-size: 0.8125rem;
+}
+.md-footer-nav {
+  background: transparent;
+  border-top: 0;
+  box-shadow: none;
+}
+.md-footer__link {
+  opacity: 0.85;
+}
+.md-footer__title {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+/* Skip-to-content + overlay */
+.md-skip {
+  background: var(--foreground);
+  color: var(--background);
+  border-radius: var(--radius);
+}
+.md-overlay {
+  background: oklch(0 0 0 / 0.4);
+}

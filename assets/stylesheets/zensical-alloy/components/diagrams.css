@@ -1,0 +1,105 @@
+/* ============================================================================
+ * Diagram surfaces (Mermaid, plus generic embedded SVG/figures).
+ *
+ * Material exposes a small set of CSS variables that the Mermaid runtime
+ * reads when laying out a diagram. We map those onto Alloy tokens so node
+ * fills, edge colors, label text, and cluster surfaces feel native to the
+ * theme in both light and dark schemes. Direct SVG fallbacks below cover
+ * anything Mermaid does not pull through the CSS-variable path.
+ * ============================================================================ */
+
+:root > * {
+  --md-mermaid-font-family: var(--font-sans);
+  --md-mermaid-edge-color: var(--muted-foreground);
+  --md-mermaid-node-bg-color: var(--muted);
+  --md-mermaid-node-fg-color: var(--foreground);
+  --md-mermaid-label-bg-color: var(--background);
+  --md-mermaid-label-fg-color: var(--foreground);
+  --md-mermaid-sequence-actor-bg-color: var(--surface);
+  --md-mermaid-sequence-actor-line-color: var(--muted-foreground);
+  --md-mermaid-sequence-loopline-color: var(--rail);
+}
+
+/* Diagram container - quiet card to separate the figure from prose. */
+.mermaid {
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-block: 1.5rem;
+  overflow-x: auto;
+}
+
+/* SVG-level fallbacks. Mermaid sometimes inlines fills/strokes ahead of the
+ * CSS variables; explicitly mapping these to Alloy tokens keeps unrelated
+ * diagrams (sequence, gantt, classDiagram) consistent. */
+.mermaid svg {
+  background: transparent;
+  font-family: var(--font-sans);
+  color: var(--foreground);
+}
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon,
+.mermaid .node path {
+  fill: var(--muted);
+  stroke: var(--border);
+}
+.mermaid .node .label,
+.mermaid .nodeLabel,
+.mermaid .edgeLabel,
+.mermaid text {
+  fill: var(--foreground);
+  color: var(--foreground);
+}
+.mermaid .edgeLabel rect,
+.mermaid .edgeLabel foreignObject {
+  background: var(--background);
+}
+.mermaid .edgePath .path,
+.mermaid .flowchart-link {
+  stroke: var(--muted-foreground);
+  fill: none;
+}
+.mermaid .arrowheadPath {
+  fill: var(--muted-foreground);
+  stroke: var(--muted-foreground);
+}
+.mermaid .cluster rect {
+  fill: color-mix(in oklch, var(--surface) 60%, var(--background));
+  stroke: var(--border-subtle);
+}
+.mermaid .cluster text {
+  fill: var(--muted-foreground);
+}
+
+/* Sequence diagram polish. */
+.mermaid .actor {
+  fill: var(--surface);
+  stroke: var(--border);
+}
+.mermaid .actor-line {
+  stroke: var(--rail);
+}
+.mermaid .messageText,
+.mermaid .loopText > tspan,
+.mermaid .noteText {
+  fill: var(--foreground);
+  stroke: none;
+}
+.mermaid .note {
+  fill: color-mix(in oklch, var(--warning) 20%, var(--background));
+  stroke: color-mix(in oklch, var(--warning) 45%, transparent);
+}
+
+/* First-series highlight uses the brand accent so diagrams pick up the
+ * configured theme color without overriding the rest of the palette. */
+.mermaid .node.alloy-accent rect,
+.mermaid .node.alloy-accent circle,
+.mermaid .node.alloy-accent ellipse,
+.mermaid .node.alloy-accent polygon,
+.mermaid .node.alloy-accent path {
+  fill: color-mix(in oklch, var(--brand-accent) 18%, var(--background));
+  stroke: color-mix(in oklch, var(--brand-accent) 55%, transparent);
+}

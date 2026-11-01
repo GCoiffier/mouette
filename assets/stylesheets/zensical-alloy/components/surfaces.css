@@ -1,0 +1,7 @@
+/* ============================================================================
+ * Compatibility manifest for rich Material/Zensical surfaces.
+ *
+ * The implementation was split into focused component files so future fixes land
+ * near the surface they affect. Keep this file as a signpost for anyone looking
+ * for the old catch-all stylesheet. The actual import order lives in main.css.
+ * ============================================================================ */

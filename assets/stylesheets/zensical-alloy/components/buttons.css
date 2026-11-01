@@ -1,0 +1,141 @@
+/* ============================================================================
+ * Prose buttons and heading anchor controls.
+ * ============================================================================ */
+
+/* Buttons inside prose. `a.button` and `.md-button` share the same Alloy
+ * control system while preserving Material's primary/default class split. */
+.md-typeset :is(.button, .md-button, input[type="button"]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-height);
+  gap: 0.375rem;
+  padding-inline: 0.625rem;
+  background-clip: padding-box;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  vertical-align: middle;
+  transition: color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out, box-shadow 150ms ease-out, transform 80ms ease-out;
+}
+
+.md-typeset a.button {
+  border-bottom: 1px solid transparent;
+}
+
+.md-typeset :is(.button, input[type="button"]):not(.secondary):not(.outline):not(.destructive):not(.ghost):not(.link),
+.md-typeset :is(.button.primary, .md-button--primary) {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.md-typeset :is(.button, input[type="button"]):not(.secondary):not(.outline):not(.destructive):not(.ghost):not(.link):hover,
+.md-typeset :is(.button.primary, .md-button--primary):hover {
+  background: color-mix(in oklch, var(--primary) 80%, transparent);
+  color: var(--primary-foreground);
+}
+
+.md-typeset .md-button:not(.md-button--primary):not(.secondary):not(.outline):not(.destructive):not(.ghost):not(.link),
+.md-typeset :is(.button.outline, .md-button.outline) {
+  background: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.md-typeset .md-button:not(.md-button--primary):not(.secondary):not(.outline):not(.destructive):not(.ghost):not(.link):hover,
+.md-typeset :is(.button.outline, .md-button.outline):hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.md-typeset :is(.button.secondary, .md-button.secondary) {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.md-typeset :is(.button.secondary, .md-button.secondary):hover {
+  background: color-mix(in oklch, var(--secondary) 80%, transparent);
+}
+
+.md-typeset :is(.button.ghost, .md-button.ghost) {
+  background: transparent;
+  color: var(--foreground);
+}
+.md-typeset :is(.button.ghost, .md-button.ghost):hover {
+  background: var(--muted);
+}
+
+.md-typeset :is(.button.destructive, .md-button.destructive) {
+  background: color-mix(in oklch, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+}
+.md-typeset :is(.button.destructive, .md-button.destructive):hover {
+  background: color-mix(in oklch, var(--destructive) 20%, transparent);
+}
+
+.md-typeset :is(.button.link, .md-button.link) {
+  height: auto;
+  padding-inline: 0;
+  background: transparent;
+  color: var(--foreground);
+  border-color: transparent;
+  border-radius: 0;
+  text-underline-offset: 4px;
+}
+.md-typeset :is(.button.link, .md-button.link):hover {
+  text-decoration: underline;
+}
+
+.md-typeset :is(.button, .md-button).xs {
+  height: var(--control-height-xs);
+  gap: 0.25rem;
+  border-radius: min(var(--radius-md), 10px);
+  padding-inline: 0.5rem;
+  font-size: 0.75rem;
+}
+.md-typeset :is(.button, .md-button).sm {
+  height: var(--control-height-sm);
+  gap: 0.25rem;
+  border-radius: min(var(--radius-md), 12px);
+  padding-inline: 0.625rem;
+  font-size: 0.8rem;
+}
+.md-typeset :is(.button, .md-button).lg {
+  height: var(--control-height-lg);
+  gap: 0.375rem;
+  padding-inline: 0.625rem;
+}
+.md-typeset :is(.button, .md-button).icon {
+  aspect-ratio: 1;
+  padding: 0;
+}
+.md-typeset :is(.button, .md-button):active {
+  transform: translateY(1px);
+}
+.md-typeset :is(.button, .md-button):focus-visible,
+.md-typeset input[type="button"]:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);
+}
+.md-typeset :is(.button, .md-button) svg:not([class*="size-"]) {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Heading anchors should feel like controls, not stray blue links. */
+.md-typeset .headerlink {
+  border: 0;
+  color: var(--muted-foreground);
+  opacity: 0;
+  padding-inline-start: 0.25rem;
+  transition: opacity 120ms ease-out, color 120ms ease-out;
+}
+.md-typeset :is(h1, h2, h3, h4, h5, h6):hover .headerlink,
+.md-typeset .headerlink:focus-visible {
+  opacity: 1;
+}
+.md-typeset .headerlink:hover {
+  color: var(--foreground);
+}

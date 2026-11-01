@@ -1,0 +1,389 @@
+/* ============================================================================
+ * Alloy semantic tokens (OKLCH).
+ *
+ * Material/Zensical's runtime palette CSS (modern/palette.min.css) sets
+ * --md-* vars on `[data-md-color-scheme=...]` selectors. We use the same
+ * selectors here AND load after, so equal specificity means we win.
+ * Where Material also generates `[data-md-color-primary=...]` rules, we
+ * use compound selectors to outrank them.
+ * ============================================================================ */
+
+:root {
+  --spacing:           0.25rem;
+  --radius:            0.625rem;
+  --radius-sm:         calc(var(--radius) - 4px);
+  --radius-md:         calc(var(--radius) - 2px);
+  --radius-lg:         var(--radius);
+  --radius-xl:         0.75rem;
+  --content-width:     46rem;
+  --sidebar-width:     clamp(10rem, 18vw, 14.5rem);
+  --toc-width:         clamp(9rem, 15vw, 13rem);
+  --header-height:     3.5rem;
+  --control-height-xs: 1.5rem;
+  --control-height-sm: 1.75rem;
+  --control-height:    1.875rem;
+  --control-height-lg: 2.125rem;
+  --control-radius:    var(--radius-sm);
+
+  --shadow-sm:         0 1px 2px 0 oklch(0 0 0 / 0.05);
+  --shadow:            0 1px 3px 0 oklch(0 0 0 / 0.08),
+                       0 1px 2px -1px oklch(0 0 0 / 0.06);
+  --shadow-lg:         0 10px 30px -8px oklch(0 0 0 / 0.18);
+
+  /* Defaults match the families Material's font plugin loads via
+     mkdocs_theme.yml. To use Geist or another custom family, load the font
+     yourself and override --font-sans / --font-mono through
+     [project.extra.alloy] in your config. */
+  --font-sans:  "Inter", ui-sans-serif, system-ui,
+                -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:  "JetBrains Mono", ui-monospace,
+                "SF Mono", Menlo, monospace;
+
+  --brand-accent:       oklch(0.56 0.155 46);
+  --brand-accent-soft:  color-mix(in oklch, var(--brand-accent) 12%, transparent);
+  --brand-accent-contrast: oklch(0.985 0 0);
+}
+
+/* ---------------------------------------------------------------------------
+ * Light scheme - alloy neutral.
+ * ------------------------------------------------------------------------- */
+[data-md-color-scheme="default"] {
+  --background:        oklch(1 0 0);
+  --foreground:        oklch(0.145 0 0);
+  --muted:             oklch(0.97 0 0);
+  --muted-foreground:  oklch(0.556 0 0);
+  --card:              oklch(1 0 0);
+  --card-foreground:   var(--foreground);
+  --popover:           oklch(1 0 0);
+  --popover-foreground:var(--foreground);
+  --primary:           oklch(0.205 0 0);
+  --primary-foreground:oklch(0.985 0 0);
+  --secondary:         oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --accent:            oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive:       oklch(0.577 0.245 27.325);
+  --border:            oklch(0.922 0 0);
+  --input:             oklch(0.922 0 0);
+  --ring:              oklch(0.708 0 0);
+  --brand-accent:      oklch(0.56 0.155 46);
+  --brand-accent-soft: color-mix(in oklch, var(--brand-accent) 12%, var(--background));
+  --brand-accent-contrast: oklch(0.985 0 0);
+  --link:              var(--brand-accent);
+  --top-nav-hover-bg:  color-mix(in oklch, var(--muted) 72%, transparent);
+  --top-nav-active-bg: color-mix(in oklch, var(--muted) 78%, transparent);
+  --top-nav-active-fg: var(--foreground);
+  --top-nav-active-border: color-mix(in oklch, var(--border) 82%, transparent);
+  --surface:           oklch(0.98 0 0);
+  --surface-raised:    oklch(0.992 0 0);
+  --surface-foreground:var(--foreground);
+  --border-subtle:     color-mix(in oklch, var(--border) 58%, transparent);
+  --rail:              color-mix(in oklch, var(--border) 68%, transparent);
+  --warning:           oklch(0.84 0.16 84);
+  --warning-foreground:oklch(0.28 0.07 46);
+  --code:              var(--surface);
+  --code-foreground:   var(--surface-foreground);
+  --code-highlight:    oklch(0.96 0 0);
+  --code-number:       oklch(0.56 0 0);
+  --selection:         var(--foreground);
+  --selection-foreground: var(--background);
+
+  --md-default-bg-color:           var(--background);
+  --md-default-bg-color--light:    var(--background);
+  --md-default-bg-color--lighter:  color-mix(in oklch, var(--background) 40%, transparent);
+  --md-default-bg-color--lightest: color-mix(in oklch, var(--background) 10%, transparent);
+  --md-default-fg-color:           var(--foreground);
+  --md-default-fg-color--light:    var(--muted-foreground);
+  --md-default-fg-color--lighter:  oklch(0.6 0 0);
+  --md-default-fg-color--lightest: var(--muted);
+
+  /* Intentionally do not remap --md-primary-*: Material exposes those as the
+   * saturated brand color (e.g. teal, deep-purple) for the header / tab bar
+   * surfaces. Alloy paints its own header and tabs directly via component
+   * CSS, so the remap was never needed for our visual layer - and remapping
+   * them to var(--foreground) breaks downstream custom CSS that uses
+   * --md-primary-fg-color as a branded background color (the text on the
+   * surface then inherits foreground and disappears). Let Material's
+   * defaults pass through. */
+
+  --md-accent-fg-color:            var(--brand-accent);
+  --md-accent-fg-color--transparent: color-mix(in oklch, var(--brand-accent) 16%, transparent);
+  --md-accent-bg-color:            var(--background);
+
+  --md-typeset-color:              var(--foreground);
+  --md-typeset-a-color:            var(--link);
+
+  --md-code-bg-color:              var(--code);
+  --md-code-fg-color:              var(--code-foreground);
+
+  --md-footer-bg-color:            var(--muted);
+  --md-footer-bg-color--dark:      oklch(0.95 0 0);
+  --md-footer-fg-color:            var(--foreground);
+  --md-footer-fg-color--light:     var(--muted-foreground);
+  --md-footer-fg-color--lighter:   oklch(0.6 0 0);
+}
+
+/* Outrank Material's `[data-md-color-primary=...]` link-color rules. The
+ * --md-primary-* remap was removed deliberately (see comment above); keep
+ * the link-color override at the outranking specificity. */
+[data-md-color-scheme="default"][data-md-color-primary] {
+  --md-typeset-a-color:     var(--link);
+}
+
+/* ---------------------------------------------------------------------------
+ * Dark scheme - alloy zinc.
+ * ------------------------------------------------------------------------- */
+[data-md-color-scheme="slate"] {
+  --background:        oklch(0.145 0 0);
+  --foreground:        oklch(0.985 0 0);
+  --muted:             oklch(0.205 0 0);
+  --muted-foreground:  oklch(0.708 0 0);
+  --card:              oklch(0.205 0 0);
+  --card-foreground:   var(--foreground);
+  --popover:           oklch(0.269 0 0);
+  --popover-foreground:var(--foreground);
+  --primary:           oklch(0.922 0 0);
+  --primary-foreground:oklch(0.205 0 0);
+  --secondary:         oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --accent:            oklch(0.371 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive:       oklch(0.704 0.191 22.216);
+  --border:            oklch(1 0 0 / 0.1);
+  --input:             oklch(1 0 0 / 0.15);
+  --ring:              oklch(0.556 0 0);
+  --brand-accent:      oklch(0.72 0.14 56);
+  --brand-accent-soft: color-mix(in oklch, var(--brand-accent) 18%, var(--background));
+  --brand-accent-contrast: oklch(0.145 0 0);
+  --link:              var(--brand-accent);
+  --top-nav-hover-bg:  color-mix(in oklch, var(--muted) 72%, transparent);
+  --top-nav-active-bg: color-mix(in oklch, var(--muted) 78%, transparent);
+  --top-nav-active-fg: var(--foreground);
+  --top-nav-active-border: color-mix(in oklch, var(--border) 82%, transparent);
+  --surface:           oklch(0.2 0 0);
+  --surface-raised:    oklch(0.18 0 0);
+  --surface-foreground:oklch(0.708 0 0);
+  --border-subtle:     color-mix(in oklch, var(--border) 62%, transparent);
+  --rail:              color-mix(in oklch, var(--border) 72%, transparent);
+  --warning:           oklch(0.41 0.11 46);
+  --warning-foreground:oklch(0.99 0.02 95);
+  --code:              var(--surface);
+  --code-foreground:   var(--surface-foreground);
+  --code-highlight:    oklch(0.27 0 0);
+  --code-number:       oklch(0.72 0 0);
+  --selection:         var(--foreground);
+  --selection-foreground: var(--background);
+
+  --md-default-bg-color:           var(--background);
+  --md-default-bg-color--light:    var(--background);
+  --md-default-bg-color--lighter:  color-mix(in oklch, var(--background) 40%, transparent);
+  --md-default-bg-color--lightest: color-mix(in oklch, var(--background) 10%, transparent);
+  --md-default-fg-color:           var(--foreground);
+  --md-default-fg-color--light:    var(--muted-foreground);
+  --md-default-fg-color--lighter:  oklch(0.5 0 0);
+  --md-default-fg-color--lightest: var(--muted);
+
+  /* See light scheme comment - --md-primary-* intentionally not remapped. */
+
+  --md-accent-fg-color:            var(--brand-accent);
+  --md-accent-fg-color--transparent: color-mix(in oklch, var(--brand-accent) 22%, transparent);
+  --md-accent-bg-color:            var(--background);
+
+  --md-typeset-color:              var(--foreground);
+  --md-typeset-a-color:            var(--link);
+
+  --md-code-bg-color:              var(--code);
+  --md-code-fg-color:              var(--code-foreground);
+
+  --md-footer-bg-color:            var(--muted);
+  --md-footer-bg-color--dark:      oklch(0.18 0 0);
+  --md-footer-fg-color:            var(--foreground);
+  --md-footer-fg-color--light:     var(--muted-foreground);
+}
+
+[data-md-color-scheme="slate"][data-md-color-primary] {
+  --md-typeset-a-color:     var(--link);
+}
+
+/* Prose-scoped muted-foreground bump. Light scheme's chrome value sits right
+ * at the WCAG AA threshold against a white background, which is fine for
+ * sidebar items and other dense controls but borderline for paragraph-length
+ * text. Scoping the darker value to .md-typeset preserves the chrome tone
+ * while giving the lead paragraph, blockquotes, list markers, and default
+ * callout body text a comfortable contrast margin. Dark scheme already
+ * passes AA, so it is left at the chrome value. */
+[data-md-color-scheme="default"] .md-typeset {
+  --muted-foreground: oklch(0.49 0 0);
+}
+
+[data-md-color-accent="red"] {
+  --brand-accent: oklch(0.577 0.245 27.325);
+}
+[data-md-color-accent="pink"] {
+  --brand-accent: oklch(0.592 0.249 0.584);
+}
+[data-md-color-accent="purple"],
+[data-md-color-accent="deep-purple"] {
+  --brand-accent: oklch(0.558 0.288 302.321);
+}
+[data-md-color-accent="indigo"] {
+  --brand-accent: oklch(0.546 0.245 262.881);
+}
+[data-md-color-accent="blue"],
+[data-md-color-accent="light-blue"] {
+  --brand-accent: oklch(0.623 0.214 259.815);
+}
+[data-md-color-accent="cyan"],
+[data-md-color-accent="teal"] {
+  --brand-accent: oklch(0.704 0.14 182.503);
+}
+[data-md-color-accent="green"],
+[data-md-color-accent="light-green"] {
+  --brand-accent: oklch(0.627 0.194 149.214);
+}
+/* Warm families - use light-scheme-safe fallbacks, then lift lightness in
+ * dark mode. Lime, yellow, amber, orange, and deep-orange stay visually
+ * distinct while clearing WCAG AA on prose surfaces. Adopters who need a
+ * specific hex can still bypass with extra.alloy.accent_color (escape
+ * hatch documented in theming.md). */
+[data-md-color-accent="lime"] {
+  --brand-accent: oklch(0.55 0.14 130);
+}
+[data-md-color-accent="yellow"] {
+  --brand-accent: oklch(0.55 0.11 102);
+}
+[data-md-color-accent="amber"] {
+  --brand-accent: oklch(0.56 0.11 74);
+}
+[data-md-color-accent="orange"] {
+  --brand-accent: oklch(0.56 0.155 46);
+}
+[data-md-color-accent="deep-orange"] {
+  --brand-accent: oklch(0.55 0.18 35);
+}
+
+/* Lime / Yellow / Amber - darker on white for contrast, bright but tempered on dark. */
+[data-md-color-scheme="default"][data-md-color-accent="lime"] {
+  --brand-accent: oklch(0.55 0.14 130);
+}
+[data-md-color-scheme="default"][data-md-color-accent="yellow"] {
+  --brand-accent: oklch(0.55 0.11 102);
+}
+[data-md-color-scheme="default"][data-md-color-accent="amber"] {
+  --brand-accent: oklch(0.56 0.11 74);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="lime"] {
+  --brand-accent: oklch(0.82 0.14 128);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="yellow"] {
+  --brand-accent: oklch(0.84 0.13 98);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="amber"] {
+  --brand-accent: oklch(0.80 0.14 75);
+}
+
+/* Orange family - darker on white for prose links, softened slightly on dark. */
+[data-md-color-scheme="default"][data-md-color-accent="orange"] {
+  --brand-accent: oklch(0.56 0.155 46);
+}
+[data-md-color-scheme="default"][data-md-color-accent="deep-orange"] {
+  --brand-accent: oklch(0.55 0.18 35);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="orange"] {
+  --brand-accent: oklch(0.72 0.14 56);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="deep-orange"] {
+  --brand-accent: oklch(0.72 0.15 43);
+}
+
+/* Remaining hue families - lightness lifted on dark scheme so accents read
+ * vibrantly against the near-black background. Light-scheme values stay
+ * around L=0.55-0.6 for AA contrast against white. */
+
+/* Red */
+[data-md-color-scheme="default"][data-md-color-accent="red"] {
+  --brand-accent: oklch(0.55 0.22 27);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="red"] {
+  --brand-accent: oklch(0.78 0.17 22);
+}
+
+/* Pink */
+[data-md-color-scheme="default"][data-md-color-accent="pink"] {
+  --brand-accent: oklch(0.58 0.23 0);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="pink"] {
+  --brand-accent: oklch(0.78 0.18 5);
+}
+
+/* Purple family */
+[data-md-color-scheme="default"][data-md-color-accent="purple"],
+[data-md-color-scheme="default"][data-md-color-accent="deep-purple"] {
+  --brand-accent: oklch(0.55 0.22 302);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="purple"],
+[data-md-color-scheme="slate"][data-md-color-accent="deep-purple"] {
+  --brand-accent: oklch(0.78 0.16 300);
+}
+
+/* Indigo */
+[data-md-color-scheme="default"][data-md-color-accent="indigo"] {
+  --brand-accent: oklch(0.55 0.18 268);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="indigo"] {
+  --brand-accent: oklch(0.78 0.15 265);
+}
+
+/* Blue family */
+[data-md-color-scheme="default"][data-md-color-accent="blue"],
+[data-md-color-scheme="default"][data-md-color-accent="light-blue"] {
+  --brand-accent: oklch(0.58 0.18 245);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="blue"],
+[data-md-color-scheme="slate"][data-md-color-accent="light-blue"] {
+  --brand-accent: oklch(0.78 0.14 240);
+}
+
+/* Cyan / Teal */
+[data-md-color-scheme="default"][data-md-color-accent="cyan"],
+[data-md-color-scheme="default"][data-md-color-accent="teal"] {
+  --brand-accent: oklch(0.6 0.13 200);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="cyan"],
+[data-md-color-scheme="slate"][data-md-color-accent="teal"] {
+  --brand-accent: oklch(0.82 0.13 195);
+}
+
+/* Green family */
+[data-md-color-scheme="default"][data-md-color-accent="green"],
+[data-md-color-scheme="default"][data-md-color-accent="light-green"] {
+  --brand-accent: oklch(0.58 0.18 145);
+}
+[data-md-color-scheme="slate"][data-md-color-accent="green"],
+[data-md-color-scheme="slate"][data-md-color-accent="light-green"] {
+  --brand-accent: oklch(0.78 0.16 140);
+}
+
+/* Font + base body - applies regardless of palette. */
+body,
+.md-typeset {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: var(--selection);
+  color: var(--selection-foreground);
+}
+
+code, kbd, pre, samp,
+.md-typeset code,
+.md-typeset pre,
+.md-typeset kbd {
+  font-family: var(--font-mono);
+}

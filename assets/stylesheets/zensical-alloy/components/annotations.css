@@ -1,0 +1,102 @@
+/* ============================================================================
+ * Code annotation markers and runtime popover compatibility.
+ * ============================================================================ */
+
+/* Code annotations. */
+.md-annotation {
+  color: var(--link);
+}
+
+.md-typeset .highlight:has(.md-annotation),
+.md-typeset .highlight:has(.md-annotation__index) {
+  overflow: visible;
+  margin-bottom: 3.5rem;
+}
+
+.md-typeset .highlight:has(.md-annotation) pre,
+.md-typeset .highlight:has(.md-annotation__index) pre,
+.md-typeset .highlight:has(.md-annotation) code,
+.md-typeset .highlight:has(.md-annotation__index) code {
+  overflow: visible;
+}
+
+.md-typeset .highlight:has(.md-annotation) .highlighttable,
+.md-typeset .highlight:has(.md-annotation__index) .highlighttable,
+.md-typeset .highlight:has(.md-annotation) .highlighttable :is(tbody, tr, td, th),
+.md-typeset .highlight:has(.md-annotation__index) .highlighttable :is(tbody, tr, td, th),
+.md-typeset .highlight:has(.md-annotation) .highlighttable .code > div,
+.md-typeset .highlight:has(.md-annotation__index) .highlighttable .code > div {
+  overflow: visible;
+}
+
+.md-typeset .highlight:has(.md-annotation) .highlighttable .code pre,
+.md-typeset .highlight:has(.md-annotation__index) .highlighttable .code pre {
+  overflow-x: visible;
+}
+
+.md-typeset .highlight:has(.md-annotation) + :is(h2, h3, h4, h5, h6),
+.md-typeset .highlight:has(.md-annotation__index) + :is(h2, h3, h4, h5, h6) {
+  margin-top: 2.5rem;
+}
+
+.md-tooltip,
+.md-annotation__tooltip,
+.md-annotation__content {
+  z-index: 30;
+  max-width: min(28rem, calc(100vw - 2rem));
+  max-height: min(18rem, 60vh);
+  overflow: auto;
+}
+
+.md-tooltip__inner {
+  max-height: inherit;
+  overflow: auto;
+}
+
+.md-tooltip2 {
+  z-index: 30;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+}
+
+.md-tooltip2--active {
+  z-index: 40;
+}
+
+.md-tooltip2__inner {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans);
+  max-width: min(32rem, calc(100vw - 2rem));
+  max-height: min(24rem, calc(100vh - 6rem));
+  overflow: auto;
+}
+
+.md-tooltip2--top::before {
+  border-top-color: var(--popover);
+}
+
+.md-tooltip2--bottom::before {
+  border-bottom-color: var(--popover);
+}
+
+.md-annotation__index {
+  background: var(--muted);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  box-shadow: none;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: visible;
+}
+.md-annotation__index:hover {
+  background: var(--background);
+  border-color: color-mix(in oklch, var(--ring) 45%, var(--border));
+}

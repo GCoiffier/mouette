@@ -1,0 +1,71 @@
+/* ============================================================================
+ * Runtime UI: progress, top button, dialogs, banners, consent, and feedback.
+ * ============================================================================ */
+
+/* Runtime UI: progress, top button, dialogs, announcements and consent. */
+.md-progress {
+  background: var(--link);
+  height: 2px;
+}
+.md-top {
+  background: var(--popover);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.md-top:hover {
+  background: var(--accent);
+}
+.md-dialog {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: inherit;
+  padding: 0;
+}
+.md-dialog__inner:not(:empty) {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  padding: 0.625rem 0.875rem;
+}
+.md-banner {
+  background: var(--muted);
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+}
+.md-banner--warning {
+  background: color-mix(in oklch, var(--callout-warning) 12%, var(--background));
+  border-bottom-color: color-mix(in oklch, var(--callout-warning) 45%, var(--border));
+}
+.md-banner__button {
+  color: var(--muted-foreground);
+  border-radius: var(--radius-sm);
+}
+.md-banner__button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+.md-consent__overlay {
+  background: oklch(0 0 0 / 0.45);
+  backdrop-filter: blur(4px);
+}
+.md-consent__inner {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Feedback widget hooks from rich docs. */
+.md-feedback__note {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+}

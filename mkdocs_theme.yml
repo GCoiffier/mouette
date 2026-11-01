@@ -1,0 +1,26 @@
+# Inherit the full Material/Zensical engine: every feature (instant nav,
+# search, code annotations, footnote tooltips, etc.) stays available.
+extends: material
+
+# Default opinions. Users can override any of these in their own config.
+language: en
+
+font:
+  text: Inter
+  code: JetBrains Mono
+
+palette:
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
+    primary: white
+    accent: orange
+    toggle:
+      icon: lucide/sun
+      name: Switch to dark mode
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: black
+    accent: orange
+    toggle:
+      icon: lucide/moon
+      name: Switch to light mode

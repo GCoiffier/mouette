@@ -1,0 +1,227 @@
+/* ============================================================================
+ * Admonitions - semantic accent stripes on restrained surfaces.
+ * ============================================================================ */
+
+.md-typeset .admonition,
+.md-typeset details {
+  --callout-note: oklch(0.66 0.16 238);
+  --callout-tip: oklch(0.66 0.16 150);
+  --callout-warning: oklch(0.72 0.16 72);
+  --callout-danger: oklch(0.64 0.22 25);
+  --callout-example: oklch(0.62 0.18 300);
+  --callout-color: var(--muted-foreground);
+  --callout-bg-mix: 8%;
+  --callout-border-mix: 52%;
+  --callout-code-border-mix: 26%;
+  width: auto;
+  margin-block: 1.5rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--callout-color) var(--callout-border-mix), transparent);
+  border-left-width: 1px;
+  border-radius: var(--radius-xl);
+  background: color-mix(in oklch, var(--callout-color) var(--callout-bg-mix), var(--background));
+  color: color-mix(in oklch, var(--card-foreground) 80%, transparent);
+  box-shadow: none;
+  font-size: 1em;
+  line-height: 1.65;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition,
+[data-md-color-scheme="slate"] .md-typeset details {
+  --callout-bg-mix: 13%;
+  --callout-border-mix: 58%;
+  --callout-code-border-mix: 34%;
+}
+
+.md-typeset .admonition > .admonition-title,
+.md-typeset details > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 1.5rem;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 1em;
+  font-weight: 700;
+  line-height: 1.4;
+  position: relative;
+  overflow: visible;
+  list-style: none;
+}
+
+.md-typeset details > summary {
+  cursor: pointer;
+  padding-inline-start: 0;
+  padding-inline-end: 1.75rem;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-indent: 0;
+}
+
+[dir="ltr"] .md-typeset details > summary {
+  padding-left: 0;
+  padding-right: 1.75rem;
+}
+
+[dir="rtl"] .md-typeset details > summary {
+  padding-right: 0;
+  padding-left: 1.75rem;
+}
+
+.md-typeset details:not([open]) {
+  padding-block: 0.75rem;
+}
+
+.md-typeset details:not([open]) > summary {
+  margin-bottom: 0;
+}
+
+.md-typeset details > summary:focus,
+.md-typeset details > summary:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+
+.md-typeset details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.md-typeset .admonition > .admonition-title::before,
+.md-typeset details > summary::before {
+  content: "";
+  position: static;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  background-color: var(--callout-color);
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+[dir] .md-typeset details > summary::before {
+  inset: auto;
+  margin: 0;
+}
+
+.md-typeset details > summary::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  background-color: currentColor;
+  transform: translateY(-50%);
+  transform-origin: center;
+  color: var(--callout-color);
+  opacity: 0.85;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+[dir="ltr"] .md-typeset details > summary::after {
+  right: 0;
+  left: auto;
+}
+
+[dir="rtl"] .md-typeset details > summary::after {
+  left: 0;
+  right: auto;
+}
+
+.md-typeset details[open] > summary::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.md-typeset .admonition > p:first-child,
+.md-typeset .admonition > .admonition-title + p,
+.md-typeset details > summary + p {
+  margin-top: 0;
+}
+
+.md-typeset .admonition > p:last-child,
+.md-typeset details > p:last-child {
+  margin-bottom: 0;
+}
+
+.md-typeset .admonition code,
+.md-typeset details code {
+  border: 1px solid color-mix(in srgb, var(--callout-color) var(--callout-code-border-mix), transparent);
+  background: transparent;
+}
+
+.md-typeset .admonition .highlight,
+.md-typeset details .highlight {
+  background: color-mix(in oklch, var(--background) 40%, transparent);
+}
+
+.md-typeset .admonition.note,
+.md-typeset details.note,
+.md-typeset .admonition.info,
+.md-typeset details.info,
+.md-typeset .admonition.abstract,
+.md-typeset details.abstract {
+  --callout-color: var(--callout-note);
+}
+
+.md-typeset .admonition.tip,
+.md-typeset details.tip,
+.md-typeset .admonition.success,
+.md-typeset details.success,
+.md-typeset .admonition.question,
+.md-typeset details.question {
+  --callout-color: var(--callout-tip);
+}
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning,
+.md-typeset .admonition.warn,
+.md-typeset details.warn,
+.md-typeset .admonition.attention,
+.md-typeset details.attention,
+.md-typeset .admonition.caution,
+.md-typeset details.caution {
+  --callout-color: var(--callout-warning);
+  --callout-bg-mix: 10%;
+}
+
+.md-typeset .admonition.danger,
+.md-typeset details.danger,
+.md-typeset .admonition.failure,
+.md-typeset details.failure,
+.md-typeset .admonition.bug,
+.md-typeset details.bug,
+.md-typeset .admonition.error,
+.md-typeset details.error {
+  --callout-color: var(--callout-danger);
+  --callout-bg-mix: 9%;
+}
+
+.md-typeset .admonition.example,
+.md-typeset details.example,
+.md-typeset .admonition.quote,
+.md-typeset details.quote {
+  --callout-color: var(--muted-foreground);
+  --callout-bg-mix: 8%;
+}
+
+.md-typeset .admonition.example,
+.md-typeset details.example {
+  --callout-color: var(--callout-example);
+}

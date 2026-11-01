@@ -1,0 +1,130 @@
+/* ============================================================================
+ * Property tables - opinionated table preset for reference docs.
+ *
+ * Apply by adding the `alloy-properties` class to a regular Markdown table:
+ *
+ *   <table class="alloy-properties" markdown>
+ *
+ *   | Name   | Type   | Default | Description           |
+ *   | ------ | ------ | ------- | --------------------- |
+ *   | size   | int    | 16      | Diameter in pixels    |
+ *
+ *   </table>
+ *
+ * The preset tightens the name column, monospaces the type and default
+ * columns, lets the description column flow, and uses zebra row tinting so
+ * dense reference rows stay scannable.
+ * ============================================================================ */
+
+.md-typeset table.alloy-properties:not([class*="not-alloy"]) {
+  table-layout: auto;
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  font-size: 0.875em;
+  background: color-mix(in oklch, var(--surface-raised) 80%, var(--background));
+  margin-block: 1.5rem;
+}
+
+.md-typeset table.alloy-properties th,
+.md-typeset table.alloy-properties td {
+  padding: 0.5rem 0.75rem;
+  text-align: start;
+  vertical-align: top;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.md-typeset table.alloy-properties thead th {
+  background: color-mix(in oklch, var(--muted) 62%, transparent);
+  font-weight: 500;
+  color: var(--foreground);
+  font-size: 0.8125em;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.md-typeset table.alloy-properties tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.md-typeset table.alloy-properties tbody tr:nth-child(even) td {
+  background: color-mix(in oklch, var(--muted) 22%, transparent);
+}
+
+.md-typeset table.alloy-properties tbody tr:hover td {
+  background: color-mix(in oklch, var(--muted) 40%, transparent);
+}
+
+/* First column - the property name. Tighten and emphasize. */
+.md-typeset table.alloy-properties tbody td:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--foreground);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Second column - the type. Muted monospace. */
+.md-typeset table.alloy-properties tbody td:nth-child(2) {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+/* Third column - default value. Same muted mono. If only 3 columns the
+ * description takes the third column instead; rule still reads OK because
+ * monospace defaults look intentional. */
+.md-typeset table.alloy-properties tbody td:nth-child(3) {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+/* Fourth column - description. Flow as normal prose. */
+.md-typeset table.alloy-properties tbody td:nth-child(4),
+.md-typeset table.alloy-properties tbody td:last-child:nth-child(n+4) {
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  white-space: normal;
+  line-height: 1.55;
+}
+
+/* Inline code inside descriptions should match the page's prose code style,
+ * not the muted mono override. */
+.md-typeset table.alloy-properties tbody td code {
+  font-size: 0.85em;
+}
+
+/* Required / optional pills - opt-in via inline markup like
+ *   <span class="alloy-prop-required">required</span>
+ * or just bare text in the type column; useful when name + type collapse. */
+.alloy-prop-required,
+.alloy-prop-optional {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 0.75em;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+.alloy-prop-required {
+  color: var(--callout-danger, oklch(0.64 0.22 25));
+  background: color-mix(in oklch, oklch(0.64 0.22 25) 10%, transparent);
+  border: 1px solid color-mix(in oklch, oklch(0.64 0.22 25) 35%, transparent);
+}
+.alloy-prop-optional {
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border: 1px solid var(--border-subtle);
+}

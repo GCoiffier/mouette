@@ -1,0 +1,17 @@
+/* ============================================================================
+ * Accessibility and focus states shared across Material/Zensical controls.
+ * ============================================================================ */
+
+/* Consistent keyboard focus. */
+.md-typeset a:focus-visible,
+.md-typeset button:focus-visible,
+.md-typeset label:focus-visible,
+.md-typeset input:focus-visible,
+.md-nav__link:focus-visible,
+.md-header__button:focus-visible,
+.md-source:focus-visible,
+.md-top:focus-visible,
+.md-footer__link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 28%, transparent);
+}

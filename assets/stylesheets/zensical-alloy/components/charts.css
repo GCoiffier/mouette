@@ -1,0 +1,81 @@
+/* ============================================================================
+ * Optional Apache ECharts blocks rendered from fenced `echarts` JSON.
+ * ============================================================================ */
+
+.zensical-alloy-chart {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  margin: 1.5rem 0;
+  padding: 0.875rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--surface-raised) 82%, var(--background));
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--background) 68%, transparent);
+  overflow: hidden;
+}
+
+.zensical-alloy-chart__canvas {
+  width: 100%;
+  min-height: 20rem;
+}
+
+.zensical-alloy-chart[data-chart-state="empty"] .zensical-alloy-chart__canvas,
+.zensical-alloy-chart[data-chart-state="error"] .zensical-alloy-chart__canvas {
+  display: none;
+}
+
+.zensical-alloy-chart[data-chart-state="loading"] .zensical-alloy-chart__canvas {
+  opacity: 0.18;
+}
+
+.zensical-alloy-chart__status {
+  display: grid;
+  min-height: 12rem;
+  place-items: center;
+  border: 1px dashed color-mix(in oklch, var(--border) 82%, transparent);
+  border-radius: calc(var(--radius-lg) - 0.25rem);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--muted) 52%, transparent),
+      color-mix(in oklch, var(--background) 82%, transparent)
+    );
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.zensical-alloy-chart[data-chart-state="loading"] .zensical-alloy-chart__status {
+  position: absolute;
+  inset: 0.875rem;
+  min-height: 0;
+  pointer-events: none;
+  color: color-mix(in oklch, var(--muted-foreground) 86%, var(--foreground));
+}
+
+.zensical-alloy-chart[data-chart-state="error"] .zensical-alloy-chart__status {
+  color: var(--destructive);
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 44.984em) {
+  .zensical-alloy-chart {
+    padding: 0.5rem;
+  }
+
+  .zensical-alloy-chart__canvas {
+    min-height: 16rem;
+  }
+
+  .zensical-alloy-chart__status {
+    min-height: 10rem;
+  }
+
+  .zensical-alloy-chart[data-chart-state="loading"] .zensical-alloy-chart__status {
+    inset: 0.5rem;
+  }
+}

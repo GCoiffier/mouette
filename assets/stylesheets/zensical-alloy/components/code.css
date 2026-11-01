@@ -1,0 +1,390 @@
+/* ============================================================================
+ * Code - alloy surface, subtle border, soft radius.
+ *
+ * Three structures Material can render:
+ *   1) Plain fenced block:
+ *      <div class="highlight"><pre><code>...</code></pre></div>
+ *   2) With filename ("title="..."):
+ *      <div class="highlight"><span class="filename">...</span><pre><code/></pre></div>
+ *   3) With line numbers ("linenums="1""):
+ *      <div class="highlight"><table class="highlighttable"><tbody><tr>
+ *        <td class="linenos"><div class="linenodiv"><pre>1\n2\n3</pre></div></td>
+ *        <td class="code"><div><pre><code>...</code></pre></div></td>
+ *      </tr></tbody></table></div>
+ *
+ * We put the visible border on the outermost wrapper only - never both
+ * `.highlight` AND inner pre - otherwise we get nested boxes.
+ * ============================================================================ */
+
+/* Inline code */
+.md-typeset code {
+  background: var(--muted);
+  color: var(--foreground);
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 0.2rem 0.3rem;
+  font-size: 0.875em;
+  font-weight: 500;
+}
+
+/* Code inside any fenced block - strip the inline-code chrome. */
+.md-typeset pre > code,
+.md-typeset .highlight code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-weight: 400;
+  font-size: 0.875em;
+}
+
+/* The bordered card around fenced blocks. Always the outermost `.highlight`. */
+.md-typeset .highlight {
+  background: var(--code);
+  color: var(--code-foreground);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: none;
+  max-width: min(100%, var(--content-width));
+  min-width: 0;
+  overflow: hidden;
+  margin-inline: 0;
+  margin-block: 1.35rem 1.1rem;
+  position: relative;
+}
+
+[data-md-color-scheme="default"] .md-typeset .highlight {
+  background: color-mix(in oklch, var(--surface) 82%, var(--background));
+}
+
+[data-md-color-scheme="slate"] .md-typeset .highlight {
+  background: color-mix(in oklch, var(--surface) 86%, var(--background));
+}
+
+/* Reset everything inside .highlight that could draw a second border or
+ * its own background. */
+.md-typeset .highlight pre,
+.md-typeset .highlight code,
+.md-typeset .highlight .codehilite,
+.md-typeset .highlight > pre {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* The actual code <pre> gets the padding so the text breathes. */
+.md-typeset .highlight > pre,
+.md-typeset .highlight > pre > code {
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 1rem 3rem 1rem 1rem;
+  font-size: 0.875em;
+  line-height: 1.5;
+  border-radius: inherit;
+}
+.md-typeset .highlight > pre > code {
+  padding: 0;        /* code inside pre - pre already has the padding */
+  display: block;
+  /* max-width: none + width: max-content + min-width: 100% lets the code
+   * box grow to its widest line, which is what makes pre's scrollWidth
+   * track the actual content and engage in-block horizontal scroll. */
+  width: max-content;
+  max-width: none;
+  min-width: 100%;
+}
+
+.md-typeset .highlight pre > span:empty {
+  display: none;
+}
+
+/* Per-line spans need width: max-content + min-width: 100% so the span box
+ * tracks actual content width. Without this, `display: block` makes each
+ * span take parent width regardless of content, so the pre's scrollWidth
+ * never sees long lines and the in-block horizontal scroll never engages.
+ * The visible text then spills past the span and gets clipped by the
+ * parent .highlight's overflow: hidden, which looks like a bug. */
+.md-typeset .highlight code > span[id^="__span"] {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  min-height: 1.5em;
+  line-height: 1.5;
+  border-radius: 0;
+  padding-inline: 0.375rem 3.5rem;
+}
+
+.md-typeset .highlight .hll,
+.md-typeset .highlight code > span[id^="__span"].hll {
+  display: block;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: color-mix(in oklch, var(--ring) 12%, transparent);
+}
+
+.md-typeset .highlight code > span[id^="__span"].hll {
+  padding-inline: 0.375rem 3.5rem;
+}
+
+.md-typeset .highlight code[data-md-copying] .hll {
+  display: block;
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+ * Variant: line-numbered code block (.highlighttable).
+ * Material wraps it in a <table> with linenos column + code column.
+ * ------------------------------------------------------------------------- */
+.md-typeset .highlight .highlighttable {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  border-spacing: 0;
+  margin: 0;
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+}
+.md-typeset .highlight .highlighttable tbody,
+.md-typeset .highlight .highlighttable tr {
+  background: transparent;
+  border: 0;
+}
+
+.md-typeset .highlight .highlighttable .linenos {
+  background: transparent;
+  color: var(--muted-foreground);
+  border: 0;
+  padding: 1rem 0.5rem 1rem 0.875rem;
+  user-select: none;
+  text-align: right;
+  width: 2rem;
+  min-width: 2rem;
+  vertical-align: top;
+  font-size: 0.875em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.md-typeset .highlight .highlighttable .linenos pre,
+.md-typeset .highlight .highlighttable .linenos .linenodiv {
+  background: transparent;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font-size: 1em;
+  line-height: inherit;
+}
+.md-typeset .highlight .highlighttable .linenos span,
+.md-typeset .highlight .highlighttable .linenos a {
+  display: inline;
+  min-height: 0;
+  line-height: inherit;
+  color: inherit;
+  border: 0;
+  border-bottom: 0;
+  box-shadow: none;
+  text-decoration: none;
+}
+.md-typeset .highlight .highlighttable .linenos span:first-child:empty {
+  display: none;
+}
+
+.md-typeset .highlight .highlighttable .code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  vertical-align: top;
+  width: calc(100% - 2rem);
+  min-width: 0;
+}
+.md-typeset .highlight .highlighttable .code > div,
+.md-typeset .highlight .highlighttable .code pre {
+  background: transparent;
+  border: 0;
+  margin: 0;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+}
+.md-typeset .highlight .highlighttable .code pre > code {
+  display: block;
+  width: max-content;
+  max-width: none;
+  min-width: 100%;
+  padding: 1rem 3.5rem 1rem 0.875rem;
+  font-size: 0.875em;
+  line-height: 1.5;
+}
+.md-typeset .highlight .highlighttable .code code > span[id^="__span"] {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  min-height: 1.5em;
+  line-height: 1.5;
+  border-radius: 0;
+  padding-inline: 0.375rem 3.5rem;
+}
+
+/* Standalone <pre> with no .highlight wrapper (rare - pure indent block). */
+.md-typeset > pre {
+  background: var(--code);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 1rem;
+  margin-block: 1.5rem 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Filename strip above a block ("title=..."). Sits flush at the top of
+ * `.highlight`, separated from the code by a hairline.
+ * ------------------------------------------------------------------------- */
+.md-typeset .highlight .highlighttable th.filename {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: table-cell;
+  padding: 0;
+  min-width: 0;
+}
+
+.md-typeset .highlight > .filename,
+.md-typeset .highlight span.filename,
+.md-typeset .highlight .highlighttable th.filename > .filename {
+  background: color-mix(in oklch, var(--background) 22%, transparent);
+  color: var(--muted-foreground);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  box-shadow: none;
+  font-weight: 500;
+  font-size: 0.8125em;
+  font-family: var(--font-mono);
+  padding: 0.625rem 3.5rem 0.5rem 1.25rem;
+  margin: 0;
+  display: block;
+}
+
+.md-typeset .highlight .highlighttable tr:has(> th.filename) {
+  background: transparent;
+  border: 0;
+}
+
+.md-typeset .highlight .highlighttable tr:has(> th.filename) + tr > :is(td, th) {
+  border-top: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Copy button - Material positions it absolute in the top-right corner.
+ * ------------------------------------------------------------------------- */
+.md-clipboard {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  inset-inline-end: 0.5rem;
+  left: auto;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  background: color-mix(in oklch, var(--code) 82%, var(--background));
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition: opacity 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.md-typeset .highlight .md-clipboard,
+.md-typeset .highlight [data-md-component="clipboard"] {
+  top: 0.5rem;
+  right: 0.5rem;
+  inset-inline-end: 0.5rem;
+  left: auto;
+  transform: none;
+}
+
+.md-typeset .highlight .md-code__button,
+.md-typeset .highlight [data-md-component="clipboard"] {
+  z-index: 6;
+}
+.md-typeset .highlight .md-code__content {
+  display: block;
+  min-width: 0;
+}
+.md-typeset .highlight .md-code__nav {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  inset-inline-end: 0.5rem;
+  left: auto;
+  z-index: 7;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+.md-typeset .highlight:hover .md-code__nav,
+.md-typeset .highlight .md-code__nav:focus-within,
+.md-typeset .highlight .md-code__button--active {
+  opacity: 1;
+}
+.md-typeset .highlight .md-code__nav:hover {
+  background: transparent;
+  border-color: transparent;
+}
+.md-typeset .highlight .md-code__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  background: color-mix(in oklch, var(--code) 82%, var(--background));
+  color: var(--muted-foreground);
+  transition: color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out;
+}
+.md-typeset .highlight .md-code__button:hover,
+.md-typeset .highlight .md-code__button--active {
+  background: var(--background);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+.md-typeset .highlight .md-code__button::after {
+  margin: 0;
+}
+.md-clipboard::before,
+.md-clipboard::after {
+  margin: 0;
+  width: 1rem;
+  height: 1rem;
+}
+.md-typeset .highlight:hover .md-clipboard,
+.md-typeset .highlight .md-clipboard:focus-visible {
+  opacity: 0.85;
+}
+.md-typeset .highlight .md-clipboard:hover {
+  background: var(--background);
+  border-color: var(--border);
+  color: var(--foreground);
+  opacity: 1;
+}
+
+/* Horizontal scroll for long lines - keep the scrollbar quiet. */
+.md-typeset .highlight pre,
+.md-typeset .highlight .highlighttable .code pre {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}

@@ -1,0 +1,137 @@
+/* ============================================================================
+ * Responsive adjustments for content, sidebars, and footer.
+ * ============================================================================ */
+
+@media (max-width: 76.234em) {
+  .md-main__inner {
+    display: block;
+    margin-top: 0.75rem;
+  }
+
+  .md-content__inner {
+    padding: 1rem 1.25rem 3rem;
+  }
+
+  .md-path {
+    padding-inline: 1.25rem;
+  }
+
+  /* Mobile drawer: Material gives it `border-radius: 0.8rem`, a z3 shadow,
+   * `backdrop-filter: blur(.4rem)`, and positions it at `top: .4rem`. We
+   * adjust three things:
+   *   - Disable the backdrop blur (our background is opaque; the filter
+   *     just creates a compositing layer that fuzzes text on some GPUs).
+   *   - Push the drawer top below the header (header z-index 50 occludes
+   *     drawer z-index 5, so the first nav item was hiding behind it).
+   *   - Trim height accordingly so the drawer still floats off the bottom. */
+  .md-sidebar--primary {
+    background: var(--background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    top: calc(var(--header-height) + 0.4rem);
+    height: calc(100vh - var(--header-height) - 0.8rem);
+  }
+
+  .md-sidebar--secondary,
+  .md-sidebar-button__wrapper {
+    display: none;
+  }
+
+  .md-sidebar__scrollwrap {
+    background: var(--background);
+  }
+
+  /* Touch-friendlier nav rows inside the drawer. Desktop sidebar items sit at
+   * 1.5rem (24px) which is fine to hover but tight to tap. Bump to 36px on
+   * mobile only; font matches body so labels read at distance. */
+  .md-sidebar--primary .md-nav__list {
+    padding: 0.25rem 0.625rem;
+    gap: 0.125rem;
+  }
+  .md-sidebar--primary .md-nav__link,
+  .md-sidebar--primary .md-nav label.md-nav__title,
+  .md-sidebar--primary .md-nav__container {
+    height: 2.25rem;
+    font-size: 0.8125rem;
+    padding-inline: 0.625rem;
+  }
+  .md-sidebar--primary .md-nav__container > label.md-nav__link {
+    flex: 0 0 2.25rem;
+    width: 2.25rem;
+  }
+  .md-sidebar--primary
+    .md-nav--primary
+    > .md-nav__list
+    > .md-nav__item--section
+    > .md-nav__title {
+    height: 2rem;
+    font-size: 0.75rem;
+    padding-inline: 0.625rem;
+  }
+
+  .md-footer__inner {
+    padding-inline: 1rem;
+  }
+}
+
+@media (max-width: 44.984em) {
+  .md-tabs {
+    top: var(--header-height);
+  }
+
+  .md-tabs .md-grid {
+    padding-inline: 0.75rem;
+  }
+
+  .md-tabs__list {
+    gap: 0.0625rem;
+  }
+
+  .md-tabs__link {
+    height: 1.5rem;
+    padding-inline: 0.5rem;
+    /* Match the desktop tabs font (slightly below body) so the hierarchy
+     * does not invert on mobile, where body is 0.8125rem. */
+    font-size: 0.71875rem;
+  }
+
+  .md-content__inner {
+    padding-inline: 1rem;
+  }
+
+  /* Long unbreakable lines (code, tables) make flex parents grow past the
+   * viewport on phones because intrinsic content width wins. Pinning
+   * min-width to 0 forces the flex chain to size by available width, then
+   * the .highlight's `overflow: hidden` clips and the inner pre's
+   * `overflow-x: auto` produces the in-block scroll. */
+  .md-content,
+  .md-typeset {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Desktop reserves 3.5rem of right padding per line for the absolute copy
+   * button; on phones that gutter eats roughly a quarter of the visible code
+   * width and lines get cut mid-token. Reclaim it - the copy button still
+   * sits in the highlight's top-right and does not need per-line space. */
+  .md-typeset .highlight code > span[id^="__span"],
+  .md-typeset .highlight .highlighttable .code code > span[id^="__span"] {
+    padding-inline-end: 0.625rem;
+  }
+  .md-typeset .highlight > pre,
+  .md-typeset .highlight > pre > code {
+    padding-right: 1rem;
+  }
+  .md-typeset .highlight .highlighttable .code pre > code {
+    padding-right: 1rem;
+  }
+
+  .md-footer__inner,
+  .md-footer-meta__inner {
+    padding-inline: 1rem;
+  }
+
+  .md-footer__link {
+    padding: 0.75rem;
+  }
+}

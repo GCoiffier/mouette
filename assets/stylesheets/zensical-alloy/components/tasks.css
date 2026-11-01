@@ -1,0 +1,14 @@
+/* ============================================================================
+ * Task list checkbox coloring and spacing.
+ * ============================================================================ */
+
+/* Task lists. */
+.md-typeset .task-list-item {
+  margin-block: 0.375rem;
+}
+.md-typeset .task-list-indicator::before {
+  background-color: var(--muted-foreground);
+}
+.md-typeset [type="checkbox"]:checked + .task-list-indicator::before {
+  background-color: var(--link);
+}

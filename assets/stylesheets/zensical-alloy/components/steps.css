@@ -1,0 +1,101 @@
+/* ============================================================================
+ * Steps - numbered procedure component.
+ *
+ * Opt-in by adding the `alloy-steps` class to an ordered list:
+ *
+ *   <ol class="alloy-steps" markdown>
+ *
+ *   1. First step copy
+ *   2. Second step copy
+ *
+ *   </ol>
+ *
+ * The list renders each item with a numbered circle in a rail and a
+ * vertical connector between steps. The pattern fits install guides,
+ * setup walkthroughs, and any flow where order is load-bearing.
+ * ============================================================================ */
+
+.md-typeset ol.alloy-steps {
+  counter-reset: alloy-step;
+  list-style: none;
+  padding-inline-start: 2.25rem;
+  margin-block: 1.5rem;
+  position: relative;
+}
+
+.md-typeset ol.alloy-steps > li {
+  counter-increment: alloy-step;
+  position: relative;
+  padding-inline-start: 0.5rem;
+  padding-block-end: 1.25rem;
+  margin: 0;
+}
+
+.md-typeset ol.alloy-steps > li::marker {
+  content: none;
+}
+
+/* Numbered circle in the rail. Slightly raised baseline so it sits visually
+ * centered with the first line of step text. */
+.md-typeset ol.alloy-steps > li::before {
+  content: counter(alloy-step);
+  position: absolute;
+  left: -2.25rem;
+  top: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-sizing: border-box;
+}
+
+/* Vertical connector between steps. Drops on the last item so the rail does
+ * not extend past the final number. */
+.md-typeset ol.alloy-steps > li::after {
+  content: "";
+  position: absolute;
+  left: -1.5rem;
+  top: 1.625rem;
+  bottom: 0.25rem;
+  width: 1px;
+  background: var(--border-subtle);
+}
+.md-typeset ol.alloy-steps > li:last-child::after {
+  display: none;
+}
+.md-typeset ol.alloy-steps > li:last-child {
+  padding-block-end: 0;
+}
+
+/* First-child margin reset so the connector lines up with the number. */
+.md-typeset ol.alloy-steps > li > :first-child {
+  margin-top: 0;
+}
+.md-typeset ol.alloy-steps > li > :last-child {
+  margin-bottom: 0;
+}
+
+/* Nested code, callouts, and grids in a step look better with a touch more
+ * breathing room from the rail. */
+.md-typeset ol.alloy-steps > li > :is(.highlight, .admonition, details, .grid) {
+  margin-block: 0.625rem;
+}
+
+/* Done state - opt-in via `class="alloy-steps alloy-steps--done"` on the list,
+ * or `class="done"` on individual items. Renders the circle in accent. */
+.md-typeset ol.alloy-steps.alloy-steps--done > li::before,
+.md-typeset ol.alloy-steps > li.done::before {
+  background: color-mix(in oklch, var(--brand-accent) 16%, var(--background));
+  border-color: color-mix(in oklch, var(--brand-accent) 45%, transparent);
+  color: var(--brand-accent);
+}

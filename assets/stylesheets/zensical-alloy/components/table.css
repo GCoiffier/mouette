@@ -1,0 +1,44 @@
+/* Tables - quiet row rules instead of boxed table cards. */
+
+.md-typeset table:not([class]) {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  border-collapse: collapse;
+  border-spacing: 0;
+  box-shadow: none;
+  font-size: 1em;
+  margin-block: 1.5rem;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--surface-raised) 80%, var(--background));
+}
+
+.md-typeset table:not([class]) th,
+.md-typeset table:not([class]) td {
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0.5rem;
+  text-align: start;
+  vertical-align: middle;
+}
+
+.md-typeset table:not([class]) tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.md-typeset table:not([class]) th {
+  height: 2.5rem;
+  background: color-mix(in oklch, var(--muted) 62%, transparent);
+  color: var(--foreground);
+  font-weight: 500;
+  font-size: 1em;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.md-typeset table:not([class]) tbody tr {
+  transition: background-color 120ms ease-out;
+}
+.md-typeset table:not([class]) tbody tr:hover {
+  background: color-mix(in oklch, var(--muted) 50%, transparent);
+}

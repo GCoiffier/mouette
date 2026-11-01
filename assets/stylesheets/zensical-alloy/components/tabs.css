@@ -1,0 +1,172 @@
+/* ============================================================================
+ * Content tabs and tabbed code/list surfaces.
+ *
+ * Material's .md-typeset .tabbed-* rules sit at (0,2,0) specificity (or
+ * (0,2,1) on pseudo-elements). Our rules use the same prefix and load after,
+ * so we win by cascade order without !important. The highest-specificity
+ * indicator pseudo-element, which Material paints via `.js .md-typeset
+ * .tabbed-labels:before` and recolors on focused inputs, is suppressed by
+ * matching those selector shapes and loading after Material.
+ * ============================================================================ */
+
+/* Content tabs - compact segmented controls. */
+.md-typeset .tabbed-set {
+  display: flex;
+  flex-flow: wrap;
+  margin: 1.25rem 0 1rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.md-typeset .highlight + .tabbed-set,
+.md-typeset .tabbed-set + .highlight {
+  margin-top: 1.25rem;
+}
+
+.md-typeset .tabbed-block {
+  min-width: 0;
+}
+
+.md-typeset .tabbed-block > .highlight,
+.md-typeset .tabbed-content > .highlight {
+  width: 100%;
+}
+.md-typeset .tabbed-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.125rem;
+  width: fit-content;
+  max-width: 100%;
+  background: color-mix(in oklch, var(--muted) 86%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  box-shadow: none;
+  padding: 0.125rem;
+}
+.md-typeset .tabbed-labels > label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  border: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  height: 1.625rem;
+  line-height: 1.2;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0.625rem;
+  transition: color 150ms ease-out, border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.md-typeset .tabbed-labels > label:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--brand-accent) 8%, var(--background));
+}
+.md-typeset .tabbed-content {
+  flex-basis: 100%;
+  border: 0;
+  box-shadow: none;
+  padding-top: 0.75rem;
+  overflow: visible;
+}
+.md-typeset .tabbed-content > :first-child {
+  margin-top: 0;
+}
+.md-typeset .tabbed-content > :last-child {
+  margin-bottom: 0;
+}
+.md-typeset .tabbed-block > .highlight:first-child,
+.md-typeset .tabbed-content > .highlight:first-child {
+  margin-top: 0;
+}
+.md-typeset .tabbed-block > :first-child {
+  margin-top: 0;
+}
+.md-typeset .tabbed-set > input:first-child:checked ~ .tabbed-labels > :first-child,
+.md-typeset .tabbed-set > input:nth-child(2):checked ~ .tabbed-labels > :nth-child(2),
+.md-typeset .tabbed-set > input:nth-child(3):checked ~ .tabbed-labels > :nth-child(3),
+.md-typeset .tabbed-set > input:nth-child(4):checked ~ .tabbed-labels > :nth-child(4),
+.md-typeset .tabbed-set > input:nth-child(5):checked ~ .tabbed-labels > :nth-child(5),
+.md-typeset .tabbed-set > input:nth-child(6):checked ~ .tabbed-labels > :nth-child(6),
+.md-typeset .tabbed-set > input:nth-child(7):checked ~ .tabbed-labels > :nth-child(7),
+.md-typeset .tabbed-set > input:nth-child(8):checked ~ .tabbed-labels > :nth-child(8) {
+  background: color-mix(in srgb, var(--brand-accent) 12%, var(--background));
+  color: var(--brand-accent);
+  border-color: color-mix(in srgb, var(--brand-accent) 28%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--brand-accent) 28%, transparent);
+  box-shadow: var(--shadow-sm);
+}
+
+.md-typeset .tabbed-labels > label code {
+  background: transparent;
+  color: inherit;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font: inherit;
+  letter-spacing: 0;
+  padding: 0;
+}
+
+/* The `content.tabs.link` feature wraps each tab label in an <a>. Our prose
+ * link style paints a 1px translucent-accent underline on every <a>, which
+ * leaks through as an orange line under each tab. Reset link decoration
+ * inside the labels - the active pill already carries the accent. */
+.md-typeset .tabbed-labels a {
+  border-bottom: 0;
+  text-decoration: none;
+  color: inherit;
+}
+.md-typeset .tabbed-labels a:hover {
+  border-bottom: 0;
+  color: inherit;
+}
+
+.md-typeset .tabbed-set > input:checked ~ .tabbed-labels > label,
+.md-typeset .tabbed-labels > label,
+.md-typeset .tabbed-labels > label:hover {
+  border-bottom-color: transparent;
+  text-decoration: none;
+}
+
+/* Suppress Material's indicator pseudo-elements. Match the upstream rules:
+ *   .js .md-typeset .tabbed-labels:before
+ *     { display: block; ... }  // (0,3,1)
+ *   .md-typeset .tabbed-set > input.focus-visible ~ .tabbed-labels:before
+ *     { background-color: var(--md-accent-fg-color) }  // (0,4,2)
+ * and the mobile `::after` spacer selectors so Material doesn't paint an
+ * underline or reserve extra scroll padding inside Alloy segmented tabs. */
+.js .md-typeset .tabbed-labels::before,
+.js .md-typeset .tabbed-labels::after,
+.js .md-typeset .tabbed-set > input.focus-visible ~ .tabbed-labels::before,
+.js .md-typeset .tabbed-set > input.focus-visible ~ .tabbed-labels::after,
+.md-content__inner > .tabbed-set .tabbed-labels::after,
+[dir="ltr"] .md-content__inner > .tabbed-set .tabbed-labels::after,
+[dir="rtl"] .md-content__inner > .tabbed-set .tabbed-labels::after,
+.md-typeset .tabbed-labels::before,
+.md-typeset .tabbed-labels::after {
+  display: none;
+  content: none;
+  width: 0;
+  height: 0;
+  padding: 0;
+  background: transparent;
+}
+.md-typeset .tabbed-control,
+.md-typeset .tabbed-labels > label::before,
+.md-typeset .tabbed-labels > label::after {
+  display: none;
+  content: none;
+}
