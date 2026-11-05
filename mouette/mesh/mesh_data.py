@@ -1,5 +1,5 @@
+import numpy as np
 from .data_container import DataContainer, CornerDataContainer
-from ..geometry import Vec
 from .. import utils
 from .. import config
 
@@ -99,24 +99,11 @@ class RawMeshData:
         """
         Prepares the data to have the correct format. This method is called by the constructors of data structures.
         
-        First generates explicitely the set of faces from cells and the set of edges from faces. 
-        This behavior can be controlled via the [`config.complete_faces_from_cells`][mouette.config.complete_faces_from_cells] and 
-        the [`config.complete_edges_from_faces`][mouette.config.complete_edges_from_faces] global config variables.
+        First generates explicitly the set of faces from cells and the set of edges from faces. 
+        This behavior can be controlled via the `config.complete_faces_from_cells` and 
+        the `config.complete_edges_from_faces` global config variables.
         
-        Then, treatments are applied on each DataContainer:
-
-        - On vertices : casts 3D vectors to [`mouette.Vec`](mouette.geometry.vector.Vec)
-        
-        - On edges : sorts edge tuples to satisfy edge convention (smallest index first)
-        
-        - On faces : nothing
-
-        - On face corners : generates the face_corners container if empty
-        
-        - On cells : nothing
-
-        - On cell corners : generates the cell_corners container if empty
-
+        Then, corner data containers are generated if needed.
         """
         if self._prepared : return
 
@@ -129,124 +116,73 @@ class RawMeshData:
             self._complete_edges_from_faces() 
 
         self._compute_dimensionality()
-        self._prepare_vertices()
-        self._prepare_edges()
-        self._prepare_faces()
         self._generate_face_corners()
-        self._prepare_cells()
         self._generate_cell_corners()
         self._generate_cell_faces()
         self._prepared = True
 
-    def _prepare_vertices(self):
-        for iv in self.id_vertices:
-            self.vertices[iv] = Vec(self.vertices[iv])
-
-    def _prepare_edges(self):
-        N = len(self.vertices)
-
-        def is_valid(a,b):
-            return a!=b and 0<=a<N and 0<=b<N
-
-        # Filter invalid edges (like (x,x)) and make the other immutable
-        edges_invalid = any((not is_valid(a,b) for a,b in self.edges))
-        if edges_invalid:
-            # Rebuild the edge container
-            new_edges = DataContainer(id="edges")
-            new_attrs = dict()
-            old_attrs = dict()
-            for attr_name in self.edges.attributes:
-                old_attrs[attr_name] = self.edges.get_attribute(attr_name)
-                new_attrs[attr_name] = new_edges.create_attribute(attr_name, old_attrs[attr_name].type, old_attrs[attr_name].elemsize)
-            n = 0
-            for ie in self.id_edges:
-                a,b = self.edges[ie]
-                if is_valid(a,b):
-                    new_edges.append((a,b))
-                    for name in new_attrs:
-                        if ie in old_attrs[name]: # keep sparsity of the attribute
-                            new_attrs[name][n] = old_attrs[name][ie]
-                    n+=1
-            self.edges = new_edges
-        else:
-            for ie in self.id_edges:
-                self.edges[ie] = utils.keyify(self.edges[ie])
-
-    def _prepare_faces(self):
-        pass
-
     def _generate_face_corners(self):
-        nc = len(self.face_corners)
-        nf = sum([len(f) for f in self.faces])
-        if nc == 0 or nc!= nf :
-            # corners were not or badly generated
-            self.face_corners._elem = []
-            self.face_corners._adj = []
-            for iF,F in enumerate(self.faces):
-                for v in F:
-                    self.face_corners.append(v,iF)
-
-    def _prepare_cells(self):
-        pass
+        if self.faces.empty(): return
+        if not self.face_corners.empty(): return
+        elem, adj = [], []
+        for iF,F in enumerate(self.faces):
+            for v in F:
+                elem.append(v)
+                adj.append(iF)
+        self.face_corners.set_data(elem, adj)
 
     def _generate_cell_corners(self):
-        nce = len(self.cell_corners._elem)
-        nca = len(self.cell_corners._adj)
-        if nce==0 or nca==0:
-            # corners were not or badly generated
-            if nca==0 and nce>0:
-                # build only adjacency
-                self.cell_corners._adj = []
-                for iC,C in enumerate(self.cells):
-                    self.cell_corners._elem += [iC]*len(C)
-            else:
-                # build both containers
-                self.cell_corners._elem = []
-                self.cell_corners._adj = []
-                for iC,C in enumerate(self.cells):
-                    for v in C:
-                        self.cell_corners.append(v,iC)
+        if self.cells.empty(): return
+        if not self.cell_corners.empty(): return
+        elem, adj = [], []
+        for iC,C in enumerate(self.cells):
+            for v in C:
+                elem.append(v)
+                adj.append(iC)
+        self.cell_corners.set_data(elem, adj)
+
 
     def _generate_cell_faces(self):
-        nce = len(self.cell_faces._elem)
-        nca = len(self.cell_faces._adj)
-        if nca==0 or nce==0:
-            # cell faces were not generated completely
+        if self.cells.empty(): return
+        if not self.cell_faces.empty(): return
 
-            face_id = dict() # first invert face indirection
-            for iF,F in enumerate(self.faces):
-                key = utils.keyify(F)
-                face_id[key] = iF
+        face_id = dict() # map a face tuple to a face id
+        for iF,F in enumerate(self.faces):
+            key = utils.keyify(F)
+            face_id[key] = iF
 
-            for iC,C in enumerate(self.cells):
-                if len(C)==4:
-                    # cell is tetrahedron
-                    v0,v1,v2,v3 = C
-                    # convention: face fi does not contain vertex vi
-                    faces_C = [(v1,v3,v2), (v0,v2,v3), (v3,v1,v0), (v0,v1,v2)]
-                elif len(C)==8:
-                    # cell is hexahedron : TODO
-                    v1,v2,v3,v4,v5,v6,v7,v8 = C
-                    faces_C = [
-                        (v1,v2,v3,v4),
-                        (v5,v6,v7,v8),
-                        (v1,v4,v8,v5),
-                        (v1,v2,v6,v5),
-                        (v2,v3,v7,v6),
-                        (v3,v4,v8,v7)
-                    ]
-                for face in faces_C:
-                    self.cell_faces._elem.append(face_id[utils.keyify(face)])
-                    if nca!=0: 
-                        self.cell_faces._adj.append(iC)
+        elem, adj = [], []
+        for iC,C in enumerate(self.cells):
+            if len(C)==4:
+                # cell is tetrahedron
+                v0,v1,v2,v3 = C
+                # convention: face fi does not contain vertex vi
+                faces_C = [(v1,v3,v2), (v0,v2,v3), (v3,v1,v0), (v0,v1,v2)]
+            elif len(C)==8:
+                v1,v2,v3,v4,v5,v6,v7,v8 = C
+                faces_C = [
+                    (v1,v2,v3,v4),
+                    (v5,v6,v7,v8),
+                    (v1,v4,v8,v5),
+                    (v1,v2,v6,v5),
+                    (v2,v3,v7,v6),
+                    (v3,v4,v8,v7)
+                ]
+            for face in faces_C:
+                elem.append(face_id[utils.keyify(face)])
+                adj.append(iC)
+        self.cell_faces.set_data(elem, adj)
+
 
     def _complete_edges_from_faces(self):
         if self.faces.empty() : return # nothing to do
         
         # Create hard edges attribute for already existing edges
-        hard_edges = self.edges.create_attribute("hard_edges", bool)
-        for e in self.id_edges: hard_edges[e] = True
-        
+        if not self.edges.empty():
+            hard_edges = self.edges.create_attribute("hard_edges", bool)
+            for e in self.id_edges: hard_edges[e] = True
+
+        new_edges = []
         edge_set = set([utils.keyify(e) for e in self.edges])
         for f in self.faces:
             nf = len(f)
@@ -254,13 +190,14 @@ class RawMeshData:
                 edge = utils.keyify(f[i], f[(i+1)%nf])
                 if edge not in edge_set:
                     edge_set.add(edge)
-                    self.edges.append(edge)
+                    new_edges.append(edge)
+        self.edges.add_data(new_edges)
 
     def _complete_faces_from_cells(self):
         if self.cells.empty() : return # nothing to do
-        face_set = set([utils.keyify(f) for f in self.faces])
+        face_set = set([utils.keyify(*f) for f in self.faces])
+        new_faces = []
         for C in self.cells:
-            faces_C = []
             if len(C)==8:
                 # hexahedron
                 v1,v2,v3,v4,v5,v6,v7,v8 = C
@@ -282,9 +219,12 @@ class RawMeshData:
                     (v3,v1,v0), 
                     (v0,v1,v2)
                 ]
-            
+            else:
+                raise Exception(f"Unrecognized cell format with {len(C)} vertices.")
             for face in faces_C:
                 face_key = utils.keyify(face)
                 if face_key not in face_set:
                     face_set.add(face_key)
-                    self.faces.append(face)
+                    new_faces.append(face)
+        self.faces.add_data(new_faces)
+

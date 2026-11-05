@@ -4,7 +4,7 @@ from ...mesh import copy, RawMeshData
 from ...mesh.datatypes import *
 
 from ...geometry import Vec
-from ...mesh.mesh_attributes import Attribute
+from ...mesh.mesh_attributes import SparseAttribute
 from ...attributes.glob import euler_characteristic
 from ...attributes import cotan_weights
 from ..paths import shortest_path
@@ -73,7 +73,7 @@ class OrbifoldTutteEmbedding(BaseParametrization):
         self.log("Orbifold type:", self.orbifold_type)
         self.cones = self._check_cone_validity(cones)
 
-        self.vertex_type : Attribute = None
+        self.vertex_type : SparseAttribute = None
         self._cutter : SurfaceMeshCutter = None
 
     def _check_cone_validity(self, cones):
@@ -147,7 +147,7 @@ class OrbifoldTutteEmbedding(BaseParametrization):
                 b = self.cut_mesh.face_corners[c_right]
                 bnd_vertex_pairs.add((a,b,singu))
 
-        weights = cotan_weights(self.mesh) if self._use_cotan else Attribute(float, default_value=1.)
+        weights = cotan_weights(self.mesh) if self._use_cotan else SparseAttribute(float, default_value=1.)
         get_weight = lambda a,b : weights[self.mesh.connectivity.edge_id(self._cutter.ref_vertex(a), self._cutter.ref_vertex(b))]
         
         ### Build system
@@ -237,7 +237,7 @@ class OrbifoldTutteEmbedding(BaseParametrization):
         self._cutter.cut(edges_to_cut)
     
 
-        weights = cotan_weights(self.mesh) if self._use_cotan else Attribute(float, default_value=1.)
+        weights = cotan_weights(self.mesh) if self._use_cotan else SparseAttribute(float, default_value=1.)
         get_weight = lambda a,b : weights[self.mesh.connectivity.edge_id(self._cutter.ref_vertex(a), self._cutter.ref_vertex(b))]
         
         ### Build system

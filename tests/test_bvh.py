@@ -67,8 +67,6 @@ def test_bvh_oriented_with_points():
     d_or, p_or = bvh.query_distance(Q, oriented=True)
     assert np.allclose(d_or, d) and np.allclose(p_or, p)
 
-closed_triangle_surfaces = [surf_cube_subdiv(), surf_spot(), surf_cube(), surf_tetrahedron(), surf_torus()]
-
 @pytest.mark.parametrize("leaf_size", [1, 4, 10, 32])
 @pytest.mark.parametrize("mesh", closed_triangle_surfaces)
 def test_bvh_triangles_oriented_vs_igl(mesh, leaf_size):

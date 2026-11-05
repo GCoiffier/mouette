@@ -1,5 +1,5 @@
 from .base import FrameField
-from ...mesh.mesh_attributes import ArrayAttribute, Attribute, Attribute
+from ...mesh.mesh_attributes import Attribute, SparseAttribute, SparseAttribute
 from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
 from ... import operators, utils, attributes, processing
@@ -43,11 +43,11 @@ class _BaseFrameField2DVertices(FrameField):
 
         self.smooth_normals : bool = kwargs.get("smooth_normals", True) # controls which direction to lock on features and boundary (average of features or first one)
 
-        self.vnormals : ArrayAttribute = None # local basis Z vector (normal)
+        self.vnormals : Attribute = None # local basis Z vector (normal)
 
-        self.angles : Attribute = None # angles of every triangle corner
-        self.defect : Attribute = None # sum of angles around a vertex (/!\ not 'real' defect which is 2*pi - this)
-        self.cot : Attribute = None
+        self.angles : SparseAttribute = None # angles of every triangle corner
+        self.defect : SparseAttribute = None # sum of angles around a vertex (/!\ not 'real' defect which is 2*pi - this)
+        self.cot : SparseAttribute = None
 
         self.var = np.zeros(len(self.mesh.vertices), dtype=complex)
 
@@ -56,7 +56,7 @@ class _BaseFrameField2DVertices(FrameField):
         self.cot = attributes.cotangent(self.mesh) # re-uses angle attribute
         self.vnormals = attributes.vertex_normals(self.mesh, interpolation="angle") # re-uses angle attribute
         # build defects from angles: 
-        self.defect = ArrayAttribute(float, len(self.mesh.vertices))
+        self.defect = Attribute(float, len(self.mesh.vertices))
         for iC, C in enumerate(self.mesh.face_corners):
             self.defect[C] = self.defect[C] + self.angles[iC]
         if self.feat is None:
@@ -344,7 +344,7 @@ class TrivialConnectionVertices(_BaseFrameField2DVertices):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, 
         supporting_mesh : SurfaceMesh, 
-        singus_indices:Attribute, 
+        singus_indices:SparseAttribute, 
         order:int = 4, 
         verbose:bool=True,
         **kwargs):

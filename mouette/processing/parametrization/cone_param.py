@@ -1,7 +1,7 @@
 from .base import BaseParametrization
 
 from ...mesh.datatypes import SurfaceMesh,PolyLine
-from ...mesh.mesh_attributes import Attribute
+from ...mesh.mesh_attributes import SparseAttribute
 from ...mesh.mesh import copy
 
 from ... import operators
@@ -34,7 +34,7 @@ class ConformalConeParametrization(BaseParametrization):
             message = f"Cone distribution does not satisfy the Poincarré-Hopf theorem! Got a total index of {dfct/(2*np.pi)} while it should be {target}. Aborting."
             super().__init__(message)
 
-    def __init__(self, mesh:SurfaceMesh, cones: Attribute, verbose:bool=False, **kwargs):
+    def __init__(self, mesh:SurfaceMesh, cones: SparseAttribute, verbose:bool=False, **kwargs):
         """
         Args:
             mesh (SurfaceMesh): Input mesh
@@ -49,9 +49,9 @@ class ConformalConeParametrization(BaseParametrization):
         self._use_cotan = kwargs.get("use_cotan", True)
         self._debug = kwargs.get("debug", False)
         self.save_on_corners = True
-        assert cones.elemsize == 1
-        assert cones.type == Attribute.Type.Float
-        self._singus : Attribute = cones
+        assert cones.elem_size == 1
+        assert cones.type == SparseAttribute.AttributeType.Float
+        self._singus : SparseAttribute = cones
         self._check_singularity_validity()
 
         self._scale_factor : np.ndarray = None

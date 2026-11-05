@@ -6,7 +6,7 @@ from numba import njit, prange
 from .base import BaseParametrization
 from ...mesh import copy
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import ArrayAttribute
+from ...mesh.mesh_attributes import Attribute
 from ... import geometry as geom
 from ...utils.argument_check import check_argument
 from ...attributes import euler_characteristic, cotangent
@@ -77,7 +77,7 @@ class CotanEmbedding(BaseParametrization):
     """
 
     @allowed_mesh_types(SurfaceMesh)
-    def __init__(self, mesh : SurfaceMesh, uv_init: ArrayAttribute, mode: str = "bfgs", verbose:bool=False, **kwargs):
+    def __init__(self, mesh : SurfaceMesh, uv_init: Attribute, mode: str = "bfgs", verbose:bool=False, **kwargs):
         """
         Args:
             mesh (SurfaceMesh): the supporting mesh.

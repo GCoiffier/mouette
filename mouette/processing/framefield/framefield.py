@@ -1,5 +1,5 @@
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import Attribute
+from ...mesh.mesh_attributes import SparseAttribute
 from ..features import FeatureEdgeDetector
 from ..connection import SurfaceConnection
 from ...utils.argument_check import *
@@ -27,7 +27,7 @@ def SurfaceFrameField(
     use_cotan : bool = True,
     cad_correction : bool = True,
     smooth_normals : bool = True,
-    singularity_indices : Attribute = None,
+    singularity_indices : SparseAttribute = None,
     custom_connection : SurfaceConnection = None,
     custom_features : FeatureEdgeDetector = None
 ) -> FrameField :

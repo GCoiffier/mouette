@@ -1,5 +1,4 @@
-from ..mesh_data import RawMeshData
-from ..mesh import PointCloud
+from ..mesh import PointCloud, RawMeshData
 import numpy as np
 
 def import_xyz(filepath : str) -> RawMeshData:
@@ -11,18 +10,19 @@ def import_xyz(filepath : str) -> RawMeshData:
     Returns:
         RawMeshData: parsed file
     """
-    obj = RawMeshData()
+    vertices = []
     nrmls = []
     with open(filepath, 'r') as f:
         for v in f.readlines():
             data = [float(x) for x in v.strip().split()]
             if len(data)==1: continue
-            obj.vertices.append(data[:3])
+            vertices.append(data[:3])
             if len(data)>=6:
                 nrmls.append(data[3:6])
-    if len(nrmls)==len(obj.vertices):
-        normals = obj.vertices.create_attribute("normals", float, 3, dense=True)
-        normals._data = np.array(nrmls)
+    obj = RawMeshData()
+    obj.vertices.set_data(np.ascontiguousarray(vertices))
+    if len(nrmls)==len(vertices):
+        obj.vertices.register_array_as_attribute("normals", np.ascontiguousarray(nrmls))
     return obj
 
 def export_xyz(mesh : PointCloud, filepath : str) -> None:

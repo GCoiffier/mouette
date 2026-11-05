@@ -1,5 +1,5 @@
 from .vertex2d import _BaseFrameField2DVertices
-from ...mesh.mesh_attributes import Attribute
+from ...mesh.mesh_attributes import SparseAttribute
 from ...mesh.datatypes import *
 from ...import attributes
 from ... import geometry as geom

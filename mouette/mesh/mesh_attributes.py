@@ -1,8 +1,65 @@
 import numpy as np
 from abc import abstractmethod, ABC
-
-from ..geometry import Vec
 from aenum import MultiValueEnum
+
+
+################ Typing ################
+class AttributeType(MultiValueEnum):
+    """
+    Typing module for attributes. The main goal of this class is to prevent automatic casting that usually happens in python.
+    """
+    Bool = bool, np.bool_
+    Int = int, np.int32, np.uint8, np.int64
+    Float = float, np.float32, np.float64, np.float128
+    Complex = complex, np.complex64, np.complex128
+
+    @classmethod
+    def from_string(cls, txt : str):
+        if txt in {"complex", "\"complex\""}:
+            return cls.Complex
+        if txt in {"double", "\"double\"", "float", "\"float\""}:
+            return cls.Float
+        if txt in {"index_t", "\"index_t\"", "int", "\"int\"", "\"signed_index_t\""}:
+            return cls.Int
+        if txt in {"bool", "\"bool\""}:
+            return cls.Bool
+        raise Exception(f"String '{txt}' corresponds to no attribute type")
+
+    def to_string(self):
+        if self.name.lower()=="float":
+            return "double"
+        return self.name.lower()
+
+    def byte_size(self):
+        return {
+            "Bool" : 1,
+            "Int" : 4,
+            "Float" : 8
+        }.get(self.name, None)
+
+    @property
+    def dtype(self):
+        return self.value
+
+    def default_value(self,size=1):
+        if size==1:
+            if self == AttributeType.Bool: return False
+            if self == AttributeType.Int: return int(0)
+            if self == AttributeType.Float: return float(0.)
+            if self == AttributeType.Complex : return complex(0.,0.)
+            raise _BaseAttribute.InvalidTypeError(self)
+        return np.full(size, fill_value=self.default_value(1))
+
+    @staticmethod
+    def can_be_casted(ta : "AttributeType", tb : "AttributeType"):
+        """ Check for type compatibility and casting """
+        if ta==tb : return True
+        casts = {(AttributeType.Bool, AttributeType.Int),
+                 (AttributeType.Bool, AttributeType.Float),
+                 (AttributeType.Int,AttributeType.Float)}
+        return (ta,tb) in casts
+
+
 
 class _BaseAttribute(ABC):
 
@@ -28,109 +85,59 @@ class _BaseAttribute(ABC):
             message = f"Default value '{dflt_val}' has type '{type(dflt_val)}'' while attribute has type '{typ}'"
             super().__init__(message)
 
-    class OutOfBoundsError(Exception):
-        def __init__(self,n, attr_size):
-            message = f"Index {n} is out of bounds for attribute with size {attr_size}"
-            super().__init__(message)
-
-    ################ Typing ################
-
-    SUPPORTED_TYPES = {
-        bool, np.bool_,
-        int, np.uint8, np.int32, np.int64, 
-        float, np.float32, np.float64, 
-        complex, 
-        str
-    }
-
-    class Type(MultiValueEnum):
-        Bool = bool, np.bool_
-        Int = int, np.int32, np.uint8, np.int64
-        Float = float, np.float32, np.float64
-        Complex = complex
-        String = str
-
-        @classmethod
-        def from_string(cls, txt : str):
-            if txt in {"complex", "\"complex\""}:
-                return cls.Complex
-            if txt in {"double", "\"double\"", "float", "\"float\""}:
-                return cls.Float
-            if txt in {"index_t", "\"index_t\"", "int", "\"int\"", "\"signed_index_t\""}:
-                return cls.Int
-            if txt in {"bool", "\"bool\""}:
-                return cls.Bool
-            if txt in {"str", "string"}:
-                return cls.String
-            raise Exception(f"String '{txt}' corresponds to no attribute type")
-
-        def to_string(self):
-            if self.name.lower()=="float":
-                return "double"
-            return self.name.lower()
-
-        def byte_size(self):
-            return {
-                "Bool" : 1,
-                "Int" : 4,
-                "Float" : 8
-            }.get(self.name, None)
-
-        @property
-        def dtype(self):
-            if self == Attribute.Type.String : 
-                return "<U32" # String are limited to 32 characters max
-            return self.value
-
-        def default_value(self,n=1):
-            if n==1:
-                if self == Attribute.Type.Bool: return False
-                if self == Attribute.Type.Int: return int(0)
-                if self == Attribute.Type.Float: return float(0.)
-                if self == Attribute.Type.Complex : return complex(0.,0.)
-                if self == Attribute.Type.String : return ""
-                raise Attribute.InvalidTypeError(self)
-            return Vec([self.default_value(1)]*n)
-
-    @staticmethod
-    def _can_be_casted(ta : Type, tb : Type):
-        """ Check for type compatibility and casting """
-        if ta==tb : return True
-        casts = {(Attribute.Type.Bool, Attribute.Type.Int),
-                 (Attribute.Type.Bool, Attribute.Type.Float),
-                 (Attribute.Type.Int, Attribute.Type.Float)}
-        return (ta,tb) in casts
-
+    
     ########################################
 
-    def __init__(self, elem_type, elem_size:int=1, default_value=None):
+    def __init__(self, elem_type: type, n_elem:int, elem_size:int, default_value, is_sparse:bool):
         """
-        __init__ method and the whole Attribute class are not supposed to be manipulated outside of the DataContainer class
+        the _BaseAttribute class is not supposed to be manipulated outside of the DataContainer class
 
         Parameters:
-            elem_type : the type of the attribute (bool, int, float, complex, string)
-
-            elem_size (int, optional): Number of elem_type objects to be stored per element. Defaults to 1.
+            elem_type (type): the type of the attribute (bool, int, float, complex)
             
-            default_value (optional) : the default value of the attribute is n_elem is not specified. 
+            n_elem (int): Total number of elements in the container. Should match the size of the DataContainer the attribute is stored in.
+
+            elem_size (int): Number of elem_type objects to be stored per element.
+            
+            default_value : the default value of the attribute is n_elem is not specified. 
                 If it is not specified either, it will correspond to the default value of the type provided in elem_type.
+
+            is_sparse (bool): whether the attribute is sparse (based on python dict) or dense (based on numpy array).
         """
-        self.type : Attribute.Type = Attribute.Type(elem_type)
-        self.elemsize : int = elem_size
+        self.type: AttributeType = AttributeType(elem_type)
+        self.n_elem: int = n_elem
+        self.elem_size : int = elem_size
         self._default_value = default_value
         self._check_default_value_type()
         self._data = None
+        self._is_sparse: bool = is_sparse
+
+    @property
+    def is_sparse(self) -> bool:
+        """
+        Returns:
+            bool: whether the attribute is sparse (based on python dict) or dense (based on numpy array).
+        """
+        return self._is_sparse
     
     @property
     def default_value(self):
         if self._default_value is None:
-            self._default_value = self.type.default_value(self.elemsize)
+            self._default_value = self.type.default_value(self.elem_size)
         return self._default_value
 
     def _check_default_value_type(self):
         if self._default_value is None : return
-        if Attribute.Type(type(self._default_value)) != self.type:
-            raise Attribute.DefaultValueTypeDoesNotMatchError(self._default_value, self.type)
+        try:
+            default_value_type = AttributeType(type(self._default_value))
+        except ValueError:
+            raise _BaseAttribute.DefaultValueTypeDoesNotMatchError(self._default_value, self.type)
+        if default_value_type != self.type:
+            raise _BaseAttribute.DefaultValueTypeDoesNotMatchError(self._default_value, self.type)
+
+    def _check_out_of_bounds(self,key):
+        if key<0 or key>=self.n_elem:
+            raise IndexError(f"Index {key} is out of bounds for attribute with size {self.n_elem}")
 
     @abstractmethod
     def __getitem__(self, key):
@@ -151,134 +158,35 @@ class _BaseAttribute(ABC):
         return str(self._data)
 
     @abstractmethod
+    def __array__(self, dtype=None, copy=None):
+        return
+
+    @abstractmethod
     def __iter__(self):
-        """
-        Sparse attributes allow to iterate only over non-default elements
-        """
         pass
 
-    @abstractmethod
-    def _expand(self, n: int):
-        """Expands the storage capacity of the attributes. Adds `n` to self.n_elem
-        Parameters:
-            n (int) : number of new elements
+    def as_array(self, dtype=None, copy=None):
+        """Returns a numpy array containing the data of the attribute. Similar to `np.asarray(attr)`
         """
-        pass
+        return self.__array__(dtype, copy)
 
-    @abstractmethod
-    def as_array(self, container_size: int = None):
-        pass
-
-    def empty(self):
-        """
-        Check if an attribute is empty.
-        For an attribute to be empty, its number of elements should not be fixed, and the dictionnary should be empty
-        """
-        return len(self)==0
-    
     @abstractmethod
     def clear(self):
         """
         Empties the attribute. Frees the memory and ensures that all access return default value
         """
         pass
+
 
 
 class Attribute(_BaseAttribute):
-    def __init__(self, elem_type, elem_size:int=1, default_value=None):
-        """
-        __init__ method and the whole Attribute class are not supposed to be manipulated outside of the DataContainer class
-
-        Parameters:
-            elem_type : the type of the attribute (bool, int, float, complex, string)
-
-            elem_size (int, optional): Number of elem_type objects to be stored per element. Defaults to 1.
-            
-            default_value (optional) : the default value of the attribute is n_elem is not specified. 
-                If it is not specified either, it will correspond to the default value of the type provided in elem_type.
-        """
-        super().__init__(elem_type, elem_size, default_value)
-        self._data = dict()
-    
-    def __getitem__(self, key):
-        if key in self._data:
-            return self._data[key]
-        return self.default_value
-
-    def __setitem__(self, key, value):
-        if self.elemsize>1:
-            data = list(value)
-            n = len(data)
-            if not n==self.elemsize: 
-                # provided number of element do not match elemsize
-                raise Attribute.InvalidSizeError(n,self.elemsize)
-        
-            datatype = type(data[0])
-            data_attr_type = Attribute.Type(datatype)  
-            if not self._can_be_casted(data_attr_type, self.type):
-                raise Attribute.TypeNotMatchingError(data, datatype, self.type)
-            self._data[key] = Vec(data)
-        
-        else:
-            datatype = type(value)
-            data_attr_type = Attribute.Type(datatype)
-            if not self._can_be_casted(data_attr_type, self.type):
-                raise Attribute.TypeNotMatchingError(value, datatype, self.type)
-            self._data[key] = value
-
-    def __delitem__(self, key):
-        del self._data[key]
-
-    def _expand(self, n : int):
-        """Expands the storage capacity of the attributes. Adds `n` to self.n_elem
-        Parameters:
-            n (int) : number of new elements
-        """
-        pass # Nothing to do when data is stored in a dict
-
-    def __len__(self):
-        return self._data.__len__()
-
-    def __iter__(self):
-        """
-        Sparse attributes allow to iterate only over non-default elements
-        """
-        return self._data.keys().__iter__()
-
-    def as_array(self, container_size : int = None) -> np.ndarray:
-        """Converts the attribute to a numpy array
-
-        Args:
-            container_size (int, optional): the total size of the array. Needs to be provided for a dictionnary-based attribute. Ignored for an array-based attribute. Defaults to None.
-
-        Raises:
-            Exception: fails if the container size is not provided.
-
-        Returns:
-            np.ndarray : attribute as an array over elements.
-        """
-        if container_size is None:
-            raise Exception("Dictionnary based attributes need to know the size before being converted to an array.\nPlease call `attribute.as_array(size)` instead.")
-        out = np.full((container_size, self.elemsize), self.default_value, dtype= self.type.dtype)
-        for i,x in self._data.items():
-            out[i,:] = x
-        return np.squeeze(out)
-
-    def clear(self):
-        """
-        Empties the attribute. Frees the memory and ensures that all access return default value
-        """
-        self._data = dict()
-
-
-class ArrayAttribute(_BaseAttribute):
-    def __init__(self, elem_type, n_elem:int, elem_size:int=1, default_value=None):
+    def __init__(self, elem_type:type, n_elem:int, elem_size:int=1, default_value=None):
         """
         __init__ method and the whole Attribute class are not supposed to be manipulated outside of the DataContainer class.
         An ArrayAttribute stores its values in a numpy array. This is a less flexible but safer approach than Attribute.
 
         Parameters:
-            elem_type : the type of the attribute (bool, int, float, complex, string)
+            elem_type : the type of the attribute (bool, int, float, complex)
 
             n_elem (int): Total number of elements in the container. Should match the size of the DataContainer the attribute is stored in.
 
@@ -287,50 +195,123 @@ class ArrayAttribute(_BaseAttribute):
             default_value (optional) : the default value of the attribute is n_elem is not specified. 
                 If it is not specified either, it will correspond to the default value of the type provided in elem_type.
         """
-        super().__init__(elem_type, elem_size, default_value)
-        self.n_elem:int = n_elem
-        self._data = np.full((n_elem, elem_size), self.default_value, dtype=self.type.dtype)
-    
-    def _check_out_of_bounds(self,key):
-        if key<0 or key>self.n_elem:
-            raise Attribute.OutOfBoundsError(key, self.n_elem)
+        super().__init__(elem_type, n_elem, elem_size, default_value, False)
+        if self.elem_size==1: 
+            self._data = np.full(n_elem, self.default_value, dtype=self.type.dtype)
+        else:
+            self._data = np.full((n_elem, elem_size), self.default_value, dtype=self.type.dtype)
+
+    def __array__(self, dtype=None, copy=None):
+        if copy:
+            return self._data.copy().astype(dtype)
+        return self._data.astype(dtype)
 
     def __getitem__(self, key):
+        self._check_out_of_bounds(key) #check because key=-1 returns a correct result with numpy while we want to avoid this.
+        return self._data[key]
+                    
+    def __setitem__(self, key, value):
         self._check_out_of_bounds(key)
-        return self._data[key,0] if self.elemsize==1 else self._data[key,:]
+        if self.elem_size==1:
+            datatype = type(value)
+            data_attr_type = AttributeType(datatype)
+            if not AttributeType.can_be_casted(data_attr_type, self.type):
+                raise self.TypeNotMatchingError(value, datatype, self.type)
+            self._data[key] = value
+        else:
+            data = np.ascontiguousarray(value)
+            datatype = AttributeType(type(data[0]))
+            if not AttributeType.can_be_casted(datatype, self.type):
+                raise self.TypeNotMatchingError(data, data.dtype, self.type)
+            if data.shape[0]!= self.elem_size:
+                # provided number of element do not match elemsize
+                raise self.InvalidSizeError(data.shape[0], self.elem_size)
+            self._data[key] = data
+
+    def __delitem__(self, key):
+        if self.elem_size==1:
+            self._data[key] = self.default_value
+        else:
+            self._data[key] = np.full(self.elem_size, self.default_value, dtype=self.type.dtype)
+
+    def __len__(self):
+        return self.n_elem
+
+    def __iter__(self):
+        for i in range(self.n_elem):
+            yield self._data[i]
+
+    def _expand(self, n:int):
+        self.n_elem += n
+        if self.elem_size==1:
+            new_data = np.full(n, self.default_value, dtype=self.type.dtype)
+        else:
+            new_data = np.full((n, self.elem_size), self.default_value, dtype=self.type.dtype)
+        self._data = np.concatenate((self._data, new_data))
+
+    def clear(self):
+        """
+        Empties the attribute. Frees the memory and ensures that all access return default value
+        """
+        if self.elem_size==1: 
+            self._data = np.full(self.n_elem, self.default_value, dtype=self.type.dtype)
+        else:
+            self._data = np.full((self.n_elem, self.elem_size), self.default_value, dtype=self.type.dtype)
+
+
+
+class SparseAttribute(_BaseAttribute):
+    """
+    A SparseAttribute is a container based on a python dict. It allows to store data for each element of a mesh (vertices, edges, faces, cells) in a _sparse_ way, meaning that only the assigned elements get a value stored in the dictionary, and every other element falls back to a default specified value.
+    """
+    def __init__(self, elem_type:type, n_elem: int, elem_size:int=1, default_value=None):
+        """
+        __init__ method is not supposed to be manipulated outside of the DataContainer class
+
+        Parameters:
+            elem_type : the type of the attribute (bool, int, float, complex)
+            
+            n_elem (int): Total number of elements in the container. Should match the size of the DataContainer the attribute is stored in.
+
+            elem_size (int, optional): Number of elem_type objects to be stored per element. Defaults to 1.
+            
+            default_value (optional) : the default value of the attribute is n_elem is not specified. 
+                If it is not specified either, it will correspond to the default value of the type provided in elem_type.
+        """
+        super().__init__(elem_type, n_elem, elem_size, default_value, True)
+        self._data = dict()
+    
+    def __getitem__(self, key):
+        self._check_out_of_bounds(key)
+        if key in self._data:
+            return self._data[key]
+        dflt = self.default_value
+        # return a copy for vector defaults so that mutating the result does not alter the shared default
+        return dflt.copy() if self.elem_size > 1 else dflt
 
     def __setitem__(self, key, value):
         self._check_out_of_bounds(key)
-        if self.elemsize>1:
+        if self.elem_size>1:
             data = list(value)
             n = len(data)
-            if not n==self.elemsize: 
+            if not n==self.elem_size: 
                 # provided number of element do not match elemsize
-                raise Attribute.InvalidSizeError(n,self.elemsize)
+                raise self.InvalidSizeError(n,self.elem_size)
         
             datatype = type(data[0])
-            data_attr_type = Attribute.Type(datatype)  
-            if not self._can_be_casted(data_attr_type, self.type):
-                raise Attribute.TypeNotMatchingError(data, datatype, self.type)
-            self._data[key] = Vec(data)
-        
+            data_attr_type = AttributeType(datatype)  
+            if not AttributeType.can_be_casted(data_attr_type, self.type):
+                raise self.TypeNotMatchingError(data, datatype, self.type)
+            self._data[key] = np.asarray(data)
         else:
             datatype = type(value)
-            data_attr_type = Attribute.Type(datatype)
-            if not self._can_be_casted(data_attr_type, self.type):
-                raise Attribute.TypeNotMatchingError(value, datatype, self.type)
+            data_attr_type = AttributeType(datatype)
+            if not AttributeType.can_be_casted(data_attr_type, self.type):
+                raise self.TypeNotMatchingError(value, datatype, self.type)
             self._data[key] = value
 
     def __delitem__(self, key):
-        self._data[key] = np.full(self.elem_size, self.default_value, dtype=self.type.dtype)
-
-    def _expand(self, n : int):
-        """Expands the storage capacity of the attributes. Adds `n` to self.n_elem
-        Parameters:
-            n (int) : number of new elements
-        """
-        self._data = np.concatenate((self._data, np.full((n, self.elemsize), self.default_value, dtype= self.type.dtype)))
-        self.n_elem += n
+        del self._data[key]
 
     def __len__(self):
         return self.n_elem
@@ -339,19 +320,22 @@ class ArrayAttribute(_BaseAttribute):
         """
         Sparse attributes allow to iterate only over non-default elements
         """
-        for i in range(self.n_elem):
-            yield self._data[i]
+        return self._data.keys().__iter__()
 
-    def as_array(self, *args) -> np.ndarray:
-        """Converts the attribute to a numpy array
+    def __array__(self, dtype=None, copy=None):
+        if self.elem_size == 1:
+            out = np.full(self.n_elem, self.default_value, dtype= self.type.dtype)
+        else:
+            out = np.full((self.n_elem, self.elem_size), self.default_value, dtype= self.type.dtype)
+        for i,x in self._data.items():
+            out[i] = x
+        return out.astype(dtype)
 
-        Returns:
-            np.ndarray : attribute as an array over elements.
-        """
-        return np.squeeze(self._data)
+    def _expand(self, n:int):
+        self.n_elem += n
     
     def clear(self):
         """
         Empties the attribute. Frees the memory and ensures that all access return default value
         """
-        self._data = np.full((self.n_elem, self.elemsize), self.default_value, dtype= self.type.dtype)
+        self._data = dict()

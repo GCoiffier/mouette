@@ -1,66 +1,65 @@
 import mouette as M
-import pytest
-from math import cos, sin, pi
-import os
+import numpy as np
 
 ### Surfaces ###
 
 def surf_triangle():
-    m = M.mesh.RawMeshData()
-    m.vertices += [
-        M.Vec(0., 0., 0.),
-        M.Vec(1., 0., 0.),
-        M.Vec(0., 0., 1.),
-    ]
-    m.edges += [(0,1), (0,2), (1,2)]
-    m.faces.append((0,1,2))
-    return M.mesh.SurfaceMesh(m)
+    return M.mesh.from_arrays(
+        np.array([
+            [0., 0., 0.],
+            [1., 0., 0.],
+            [0., 0., 1.],
+        ]), F=np.array([[0,1,2]]))
+    
 
 def surf_square():
-    m = M.mesh.RawMeshData()
-    m.vertices += [
-        M.Vec(1.,0.,0.),
-        M.Vec(0.,1.,0.),
-        M.Vec(1.,1.,0.),
-        M.Vec(1.,0.,0.),
-    ]
-    m.edges += [(0,1), (1,2), (2,3), (0,3), (1,3)]
-    m.faces += [(0,1,3), (1,2,3)]
-    return M.mesh.SurfaceMesh(m)
+    return M.mesh.from_arrays(
+        np.array([
+            [1.,0.,0.],
+            [0.,1.,0.],
+            [1.,1.,0.],
+            [1.,0.,0.],
+    ]), F = np.array([[0,1,3], [1,2,3]]))
+
 
 def surf_cube():
-    m = M.mesh.RawMeshData()
-    m.vertices += [
-        M.Vec(0., 0., 0.),
-        M.Vec(1., 0., 0.),
-        M.Vec(1., 1., 0.),
-        M.Vec(0., 1., 0.),
-        M.Vec(0., 0., 1.),
-        M.Vec(1., 0., 1.),
-        M.Vec(1., 1., 1.),
-        M.Vec(0., 1., 1.),
-    ]
-    m.faces += [
-        (0,2,1), (0,3,2),
-        (0,1,5), (0,5,4),
-        (1,2,6), (1,6,5),
-        (2,3,7), (2,7,6),
-        (3,0,4), (3,4,7),
-        (4,5,6), (4,6,7)
-    ]
-    return M.mesh.SurfaceMesh(m)
+    return M.mesh.from_arrays(
+        np.array([
+            [0., 0., 0.],
+            [1., 0., 0.],
+            [1., 1., 0.],
+            [0., 1., 0.],
+            [0., 0., 1.],
+            [1., 0., 1.],
+            [1., 1., 1.],
+            [0., 1., 1.],
+        ]),
+        F = np.array([
+        [0,2,1], [0,3,2],
+        [0,1,5], [0,5,4],
+        [1,2,6], [1,6,5],
+        [2,3,7], [2,7,6],
+        [3,0,4], [3,4,7],
+        [4,5,6], [4,6,7]
+        ])
+    )
+
 
 def surf_tetrahedron():
-    m = M.mesh.RawMeshData()
-    m.vertices += [
-        M.Vec(0., 0., 0.),
-        M.Vec(1., 0., 0.),
-        M.Vec(0., 0., 1.),
-        M.Vec(0., 1., 0.),
-    ]
-    m.edges += [(0,1), (1,2), (0,2), (0,3), (1,3), (2,3)]
-    m.faces += [[0,1,2], [0,1,3], [1,2,3], [2,0,3]]
-    return M.mesh.SurfaceMesh(m)
+    return M.mesh.from_arrays(
+        np.array([
+            [0., 0., 0.],
+            [1., 0., 0.],
+            [0., 1., 0.],
+            [0., 0., 1.]
+        ]),
+        F=np.array([
+            [0,1,2],
+            [0,1,3],
+            [1,2,3],
+            [2,0,3]
+        ])
+    )
 
 def surf_one_ring():
     return M.procedural.ring(10,0.1)
@@ -92,6 +91,14 @@ def surf_spot():
 def surf_cube_subdiv():
     return M.mesh.load("tests/data/cube_subdiv.obj")
 
+def surf_torus(triangulate=True):
+    return M.procedural.torus(triangulate=triangulate)
+
+def surf_uv_sphere_quads():
+    # example of a quad mesh
+    return M.mesh.load("tests/data/uv_sphere_nopoles_quad.obj")
+
+# all surface meshes
 surfaces = [
     surf_triangle(),
     surf_one_ring(),
@@ -101,12 +108,10 @@ surfaces = [
     surf_feat(),
     surf_two_pieces(),
     surf_pointy(),
-    surf_cube_subdiv()
+    surf_cube_subdiv(),
+    surf_torus(),
+    surf_uv_sphere_quads()
 ]
 
-def surf_torus(triangulate=True):
-    return M.procedural.torus(triangulate=triangulate)
-
-def surf_uv_sphere_quads():
-    # example of a quad mesh
-    return M.mesh.load("tests/data/uv_sphere_nopoles_quad.obj")
+# surface meshes that are closed (no boundary) and triangulated
+closed_triangle_surfaces = [surf_cube_subdiv(), surf_spot(), surf_cube(), surf_tetrahedron(), surf_torus()]

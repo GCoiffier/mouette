@@ -4,7 +4,7 @@ from enum import Enum
 
 from ..mesh.datatypes import *
 from ..mesh.mesh_data import RawMeshData
-from ..mesh.mesh_attributes import ArrayAttribute
+from ..mesh.mesh_attributes import Attribute
 from .worker import Worker
 from .. import geometry as geom
 from ..geometry import Vec
@@ -62,8 +62,8 @@ class PointCloudNormalEstimator(Worker):
         self._compute_curvature : bool = compute_curvature
         
         self.pc : PointCloud = None
-        self.normals : ArrayAttribute = None
-        self.curvature : ArrayAttribute = None
+        self.normals : Attribute = None
+        self.curvature : Attribute = None
 
     def clear(self):
         self.pc = None

@@ -10,7 +10,7 @@ from .base import FrameField
 
 from ...mesh.datatypes import PolyLine,SurfaceMesh,VolumeMesh
 from ...mesh.mesh_data import RawMeshData
-from ...mesh.mesh_attributes import Attribute, ArrayAttribute
+from ...mesh.mesh_attributes import SparseAttribute, Attribute
 
 from ... import attributes, utils, geometry as geom
 
@@ -45,14 +45,14 @@ class FrameField3DCells(FrameField):
         self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None)
         self._boundary_mesh : SurfaceMesh = None
 
-        self._fnormals : ArrayAttribute = None
-        self._cell_on_bnd : Attribute = None
+        self._fnormals : Attribute = None
+        self._cell_on_bnd : SparseAttribute = None
 
         self.frames : list = None # raw representation of frames as scipy.Rotation objects
         self.var = np.zeros(9*len(self.mesh.cells))
 
-        self._singul_vertices : Attribute = None
-        self._singul_edges : Attribute = None
+        self._singul_vertices : SparseAttribute = None
+        self._singul_edges : SparseAttribute = None
 
     def read_from_file(self, file_path :str):
         """Reads the values of the frames from a .frame file
@@ -112,7 +112,7 @@ class FrameField3DCells(FrameField):
         self._cell_on_bnd = attributes.cell_faces_on_boundary(self.mesh)
 
         self.log(" | Compute spherical harmonics coordinates on the boundary")
-        face_bases_sh = Attribute(float, 9)
+        face_bases_sh = SparseAttribute(float, 9)
         for iF,F in enumerate(self._boundary_mesh.faces):
             NF = self._fnormals[iF]
             axis = geom.cross(Vec(0.,0.,1.), NF)

@@ -4,7 +4,7 @@ from tqdm import trange
 
 from .worker import Worker
 from ..mesh.datatypes import *
-from ..mesh.mesh_attributes import ArrayAttribute
+from ..mesh.mesh_attributes import Attribute
 from ..operators import adjacency_matrix
 from .. import geometry as geom
 from ..geometry import Vec
@@ -32,11 +32,11 @@ class ShapeOperator(Worker):
         self.mesh : SurfaceMesh = mesh
         assert self.mesh.is_triangular()
         self.shape_op : np.ndarray = None
-        self._gaussian_curv : ArrayAttribute = None
-        self._mean_curv : ArrayAttribute = None
+        self._gaussian_curv : Attribute = None
+        self._mean_curv : Attribute = None
         self._patches : list = None
-        self._varea : ArrayAttribute = None
-        self.vertex_normals : ArrayAttribute  = attributes.vertex_normals(self.mesh, persistent=False)
+        self._varea : Attribute = None
+        self.vertex_normals : Attribute  = attributes.vertex_normals(self.mesh, persistent=False)
 
     def run(self, patch_size : int = 3):
         """Runs the computation of the shape operator for each vertex.
@@ -107,12 +107,12 @@ class ShapeOperator(Worker):
     def vertex_area(self):
         if self._varea is None:
             f_area = attributes.face_area(self.mesh, persistent=False)
-            self._varea = ArrayAttribute(float, len(self.mesh.vertices))
+            self._varea = Attribute(float, len(self.mesh.vertices))
             attributes.interpolate_faces_to_vertices(self.mesh, f_area, self._varea)
         return self._varea
     
     @property
-    def gaussian_curvature(self) -> ArrayAttribute:
+    def gaussian_curvature(self) -> Attribute:
         """Gaussian curvature estimator at each vertex. Defined as the determinant of the shape operator. The values are weighted by the local areas around each vertex.
 
         Returns:
@@ -126,7 +126,7 @@ class ShapeOperator(Worker):
         return self._gaussian_curv
 
     @property
-    def mean_curvature(self) -> ArrayAttribute:
+    def mean_curvature(self) -> Attribute:
         """Mean curvature estimator at each vertex. Defined as half the trace of the shape operator.
 
         Returns:

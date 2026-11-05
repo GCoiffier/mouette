@@ -1,11 +1,11 @@
 import numpy as np
 
-from ..mesh.mesh_attributes import Attribute, ArrayAttribute
+from ..mesh.mesh_attributes import SparseAttribute, Attribute
 from ..mesh.datatypes import *
 from ..geometry.geometry import det_3x3
 
 @allowed_mesh_types(VolumeMesh)
-def cell_volume(mesh : VolumeMesh, name="volume", persistent=True , dense=True) -> Attribute:
+def cell_volume(mesh : VolumeMesh, name="volume", persistent=True , dense=True) -> SparseAttribute:
     """
     Computes the volume of each cell.
 
@@ -21,7 +21,7 @@ def cell_volume(mesh : VolumeMesh, name="volume", persistent=True , dense=True) 
     if persistent :
         volume = mesh.cells.create_attribute(name, float, dense=dense)
     else:
-        volume = ArrayAttribute(float, len(mesh.cells)) if dense else Attribute(float)
+        volume = Attribute(float, len(mesh.cells)) if dense else SparseAttribute(float)
     if not mesh.is_tetrahedral():
         raise NotImplementedError
     for ic,(A,B,C,D) in enumerate(mesh.cells):
@@ -30,7 +30,7 @@ def cell_volume(mesh : VolumeMesh, name="volume", persistent=True , dense=True) 
     return volume
 
 @allowed_mesh_types(VolumeMesh)
-def cell_barycenter(mesh : VolumeMesh, name="barycenter", persistent=True, dense=True)-> Attribute:
+def cell_barycenter(mesh : VolumeMesh, name="barycenter", persistent=True, dense=True)-> SparseAttribute:
     """
     Computes the barycenter point of each cell.
 
@@ -46,13 +46,13 @@ def cell_barycenter(mesh : VolumeMesh, name="barycenter", persistent=True, dense
     if persistent :
         bary = mesh.cells.create_attribute(name, float, 3, dense=dense)
     else:
-        bary = ArrayAttribute(float, len(mesh.cells), 3) if dense else Attribute(float, 3)
+        bary = Attribute(float, len(mesh.cells), 3) if dense else SparseAttribute(float, 3)
     for iC,C in enumerate(mesh.cells):
         bary[iC] = sum(mesh.vertices[u] for u in C) / len(C)
     return bary
 
 @allowed_mesh_types(VolumeMesh)
-def cell_faces_on_boundary(mesh : VolumeMesh, name="boundary", persistent=True, dense=False)-> Attribute:
+def cell_faces_on_boundary(mesh : VolumeMesh, name="boundary", persistent=True, dense=False)-> SparseAttribute:
     """
     Integer flag on cells. For each cell, computes the number of its faces that lay on the boundary
 
@@ -68,7 +68,7 @@ def cell_faces_on_boundary(mesh : VolumeMesh, name="boundary", persistent=True, 
     if persistent:
         bndf = mesh.cells.create_attribute(name, int, dense=dense)
     else:
-        bndf = ArrayAttribute(int, len(mesh.cells)) if dense else Attribute(int)
+        bndf = Attribute(int, len(mesh.cells)) if dense else SparseAttribute(int)
 
     for iF in mesh.id_faces:
         if len(mesh.connectivity.face_to_cells(iF))==1 : 

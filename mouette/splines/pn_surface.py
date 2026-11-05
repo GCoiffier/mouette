@@ -91,7 +91,7 @@ class P2Triangulation(_PnTriangulation):
     def node_order(self):
         if not self.nodes.has_attribute("order"):
             # Compute node order
-            node_order = self.nodes.create_attribute("order",int, dense=True)
+            node_order = self.nodes.create_attribute("order",int, sparse=True)
             for A0,A1,A2,A3,A4,A5 in self.faces:
                 node_order[A0] = 1
                 node_order[A1] = 1

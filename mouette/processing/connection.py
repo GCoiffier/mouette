@@ -1,5 +1,5 @@
 from ..mesh.datatypes import *
-from ..mesh.mesh_attributes import ArrayAttribute
+from ..mesh.mesh_attributes import Attribute
 from .. import attributes
 from .features import FeatureEdgeDetector
 from ..geometry import Vec
@@ -18,8 +18,8 @@ class SurfaceConnection(ABC):
     def __init__(self, mesh : SurfaceMesh, feat : FeatureEdgeDetector = None ):
         self.mesh = mesh
         self.feat = feat or FeatureEdgeDetector(only_border=True, compute_feature_graph=False, verbose=False)(self.mesh)
-        self._baseX : ArrayAttribute = None
-        self._baseY : ArrayAttribute = None
+        self._baseX : Attribute = None
+        self._baseY : Attribute = None
         self._transport : dict = None
         self._initialize()
     
@@ -106,15 +106,15 @@ class SurfaceConnectionVertices(SurfaceConnection):
             else:
                 self.angles = attributes.corner_angles(mesh)
         
-        self.total_angle = ArrayAttribute(float, len(mesh.vertices))
+        self.total_angle = Attribute(float, len(mesh.vertices))
         for iC, C in enumerate(mesh.face_corners):
             self.total_angle[C] = self.total_angle[C] + self.angles[iC] 
         super().__init__(mesh, feat)
 
     def _initialize(self):
         n_vert = len(self.mesh.vertices)
-        self._baseX = ArrayAttribute(float, n_vert, 3)
-        self._baseY = ArrayAttribute(float, n_vert, 3)
+        self._baseX = Attribute(float, n_vert, 3)
+        self._baseY = Attribute(float, n_vert, 3)
         self._transport = dict()
 
         for u in range(n_vert):
@@ -216,7 +216,7 @@ class SurfaceConnectionFaces(SurfaceConnection):
     def _initialize(self):
         #### Initialize bases
         NF = len(self.mesh.faces)
-        self._baseX, self._baseY = ArrayAttribute(float, NF, 3), ArrayAttribute(float, NF, 3)
+        self._baseX, self._baseY = Attribute(float, NF, 3), Attribute(float, NF, 3)
         self._transport = dict()
         for id_face, (A,B,C) in enumerate(self.mesh.faces):
             feat = [self.mesh.connectivity.edge_id(_u,_v) in self.feat.feature_edges for (_u,_v) in [(A,B), (B,C), (C,A)]]
@@ -297,8 +297,8 @@ class SurfaceConnectionEdges(SurfaceConnection):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, mesh : SurfaceMesh, **kwargs):
         assert mesh.is_triangular()
-        self.enormals : ArrayAttribute = kwargs.get("enormals", None)
-        self.fnormals : ArrayAttribute = attributes.face_normals(mesh)
+        self.enormals : Attribute = kwargs.get("enormals", None)
+        self.fnormals : Attribute = attributes.face_normals(mesh)
         if self.enormals is None:
             self.enormals = mesh.edges.create_attribute("normals", float, 3, dense=True)
         super().__init__(mesh)
@@ -306,7 +306,7 @@ class SurfaceConnectionEdges(SurfaceConnection):
     def _initialize(self):
         #### Initialize bases
         NE = len(self.mesh.edges)
-        self._baseX, self._baseY = ArrayAttribute(float, NE, 3), ArrayAttribute(float, NE, 3)
+        self._baseX, self._baseY = Attribute(float, NE, 3), Attribute(float, NE, 3)
         self._transport = dict()
         for id_edge,(A,B) in enumerate(self.mesh.edges):
             pA,pB = self.mesh.vertices[A], self.mesh.vertices[B]

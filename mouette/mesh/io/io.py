@@ -13,30 +13,35 @@ from .tet import import_tet, export_tet
 from .ply import import_ply
 
 
-
 def convert_meshio_to_mouette_mesh(meshio_data : meshio.Mesh) -> RawMeshData:
     output_data = RawMeshData()
     
     V = meshio_data.points
     if V.shape[1]<3:
         V = np.pad(V, ((0,0),(0,3-V.shape[1])))
-    output_data.vertices += list(V)
+    output_data.vertices.set_data(V)
     
     filtered_point_attributes = {"medit:ref"}
     for attr_name, attr_data in meshio_data.point_data.items():
         if attr_name in filtered_point_attributes: continue
         output_data.vertices.register_array_as_attribute(attr_name, attr_data)
-    
+
+    # TODO: read and add edges/face/cell attributes to the mesh.
+
     if "line" in meshio_data.cells_dict:
-        output_data.edges += list(meshio_data.cells_dict["line"])
+        output_data.edges.set_data(meshio_data.cells_dict["line"])
 
     for face_type in ("triangle", "quad"):
         if face_type in meshio_data.cells_dict:
-            output_data.faces += list(meshio_data.cells_dict[face_type])
+            if len(output_data.faces)>0:
+                raise Exception("Variable face types (triangles / quads) are not supported by mouette.")
+            output_data.faces.set_data(meshio_data.cells_dict[face_type])
    
     for cell_type in ("tetra", "hexahedron"):
         if cell_type in meshio_data.cells_dict:
-            output_data.cells += list(meshio_data.cells_dict[cell_type])
+            if len(output_data.cells)>0:
+                raise Exception("Variable cell types (tetra / hexahedron) are not supported by mouette.")
+            output_data.cells.set_data(meshio_data.cells_dict[cell_type])
     
     filtered_cell_attributes = {"medit:ref"}
     for attr_name, attr_data in meshio_data.cell_data_dict.items():
@@ -57,13 +62,12 @@ def _attribute_as_array(attr, n : int) -> np.ndarray:
 
 def convert_to_meshio_data(mesh : RawMeshData, ext : str = None) -> meshio.Mesh:
     """Converts a mouette mesh into a meshio mesh. The conversion depends on the target format:
-    - medit (.mesh, .meshb): same output as `export_medit` (hard edges only if defined, triangles/quads, tetrahedra/hexahedra, no attributes)
+    - .mesh, .meshb: hard edges only if defined, triangles/quads, tetrahedra/hexahedra, no attributes
     - .vtk, .vtu: all elements, vertex attributes as point data and edge/face/cell attributes as cell data
-    - other formats: all elements (no polygons for .msh), attributes are dropped
+    - other formats: all elements, attributes are dropped
     """
-    ext = (ext or "").lower()
-    is_medit, is_msh, is_vtk = ext in ("mesh", "meshb"), ext=="msh", ext in ("vtk", "vtu")
-    allow_polygons = not (is_medit or is_msh)  # medit and gmsh files have no polygon element type
+    ext = ext.lower() if ext is not None else ""
+    is_medit, is_vtk = ext in ("mesh", "meshb"), ext in ("vtk", "vtu")
     containers = {name : getattr(mesh, name) for name in ("vertices", "edges", "faces", "cells") if hasattr(mesh, name)}
     _ELEMENT_TYPES = {
         "edges" : {2: "line"},
@@ -74,7 +78,8 @@ def convert_to_meshio_data(mesh : RawMeshData, ext : str = None) -> meshio.Mesh:
     blocks = [] # (meshio cell type, container name, element indices)
     for name, types in _ELEMENT_TYPES.items():
         container = containers.get(name)
-        if container is None or container.empty(): continue
+        if container is None or container.empty(): # there is no such element in this mesh data
+            continue
         ids = range(len(container))
         if is_medit and name=="edges" and container.has_attribute("hard_edges"):
             ids = list(container.get_attribute("hard_edges"))
@@ -82,7 +87,7 @@ def convert_to_meshio_data(mesh : RawMeshData, ext : str = None) -> meshio.Mesh:
         for i in ids:
             by_size.setdefault(len(container[i]), []).append(i)
         for size, size_ids in sorted(by_size.items()):
-            cell_type = types.get(size, "polygon" if (name=="faces" and allow_polygons) else None)
+            cell_type = types.get(size)
             if cell_type is None:
                 warnings.warn(f"{len(size_ids)} {name} with {size} vertices cannot be exported in .{ext} format. Skipping.")
                 continue
@@ -90,7 +95,7 @@ def convert_to_meshio_data(mesh : RawMeshData, ext : str = None) -> meshio.Mesh:
 
     point_data, cell_data = dict(), dict()
     attributes = [(cname, attr) for cname, c in containers.items() for attr in c.attributes if not c.get_attribute(attr).empty()]
-    if is_vtk:
+    if is_vtk: # also export attributes associated to edges, faces, cells in cell_data
         names = [attr for _, attr in attributes]
         for cname, attr in attributes:
             container = containers[cname]
@@ -109,7 +114,6 @@ def convert_to_meshio_data(mesh : RawMeshData, ext : str = None) -> meshio.Mesh:
     cells = [(cell_type, np.array([containers[cname][i] for i in ids], dtype=np.int64)) for cell_type, cname, ids in blocks]
     V = np.asarray(mesh.vertices, dtype=np.float64).reshape((-1,3))
     return meshio.Mesh(V, cells=cells, point_data=point_data, cell_data=cell_data)
-
 
 
 def read_by_extension(filename : str) -> RawMeshData:

@@ -1,6 +1,6 @@
 from .worker import Worker
 
-from ..mesh.mesh_attributes import Attribute
+from ..mesh.mesh_attributes import SparseAttribute
 from ..mesh.datatypes import *
 from ..mesh.mesh_data import RawMeshData
 from .. import geometry
@@ -45,14 +45,14 @@ class FeatureEdgeDetector(Worker):
         
         self.border_cycles : list = None # result of 'M.processing.extract_border_cycle_all'
 
-        self.fnormals : Attribute = None # face normals
+        self.fnormals : SparseAttribute = None # face normals
 
         # Following data structures will be filled
         self.feature_vertices : set = None # indexes of feature vertices
         self.feature_edges : set = None # indexes of feature edges
-        self.feature_degrees : Attribute = None # degree of each feature vertex in the feature graph
+        self.feature_degrees : SparseAttribute = None # degree of each feature vertex in the feature graph
         self.local_feat_edges : dict = None # vertex -> list of local indices of edges that are feature edges
-        self.corners : Attribute = None # index of each detected corners (as an int k such that defect is close to k*pi/2)
+        self.corners : SparseAttribute = None # index of each detected corners (as an int k such that defect is close to k*pi/2)
 
         super().__init__("FeatureDetector", verbose)
 
@@ -60,7 +60,7 @@ class FeatureEdgeDetector(Worker):
         """Clears the data structures"""
         self.feature_vertices = set()
         self.feature_edges = set()
-        self.feature_degrees = Attribute(int)
+        self.feature_degrees = SparseAttribute(int)
         self.local_feat_edges = dict() # vertex -> list of local indices of edges that are feature edges
 
 
@@ -113,13 +113,13 @@ class FeatureEdgeDetector(Worker):
 
 ##### Feature detection subfunctions #####
 
-    def _add_border_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:
+    def _add_border_to_features(self, mesh : SurfaceMesh, feature_attr : SparseAttribute) -> SparseAttribute:
         if len(mesh.boundary_edges)==0 : return feature_attr # no border
         for e in mesh.boundary_edges:
             feature_attr[e] = True
         return feature_attr
 
-    def _add_hard_edges_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:
+    def _add_hard_edges_to_features(self, mesh : SurfaceMesh, feature_attr : SparseAttribute) -> SparseAttribute:
         # The mesh may already define a set of "hard" edges, for instance if it was imported from a file where edges were specified.
         # These edges should be registered as features, but we filter them if their curvature is too small.
 
@@ -142,7 +142,7 @@ class FeatureEdgeDetector(Worker):
                     feature_attr[e] = True
         return feature_attr
 
-    def _add_sharp_angles_to_features(self, mesh : SurfaceMesh, feature_attr : Attribute) -> Attribute:
+    def _add_sharp_angles_to_features(self, mesh : SurfaceMesh, feature_attr : SparseAttribute) -> SparseAttribute:
         # Flags as features all edges which dihedral angle is smaller than pi/2 or greater than 3*pi/2
 
         # Parameters:

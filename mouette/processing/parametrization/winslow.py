@@ -4,7 +4,7 @@ from scipy.optimize import fmin_l_bfgs_b
 from .base import BaseParametrization
 from ...mesh.datatypes import *
 from ...mesh.mesh import copy
-from ...mesh.mesh_attributes import ArrayAttribute
+from ...mesh.mesh_attributes import Attribute
 from ... import geometry as geom
 from ...attributes import euler_characteristic, face_area
 
@@ -159,7 +159,7 @@ class WinslowInjectiveEmbedding(BaseParametrization):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, 
         mesh : SurfaceMesh, 
-        uv_init : ArrayAttribute, 
+        uv_init : Attribute, 
         lmbd : float = 1., 
         n_iter_max : int = 10_000, 
         stop_if_positive : bool = False, 

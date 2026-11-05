@@ -1,7 +1,7 @@
 from .base import FrameField
 from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import Attribute, ArrayAttribute
+from ...mesh.mesh_attributes import SparseAttribute, Attribute
 from ... import geometry as geom
 from ... import operators
 from ... import attributes
@@ -41,8 +41,8 @@ class FrameField2DEdges(FrameField) :
         self.n_smooth = kwargs.get("n_smooth", 10)
         self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None)
 
-        self.cot : Attribute = None
-        self.defect : Attribute = None
+        self.cot : SparseAttribute = None
+        self.defect : SparseAttribute = None
         self.conn : SurfaceConnectionEdges = kwargs.get("custom_connection", None)
         self.feat : FeatureEdgeDetector = kwargs.get("custom_features", None)
         self.initialized = False
@@ -121,7 +121,7 @@ class FrameField2DEdges(FrameField) :
 
         # compute singularities 
         singulsV = self.mesh.vertices.create_attribute(singul_attr_name, float)
-        defectsV = attributes.average_corners_to_vertices(self.mesh, angles, ArrayAttribute(float, len(self.mesh.vertices)), weight="sum")
+        defectsV = attributes.average_corners_to_vertices(self.mesh, angles, Attribute(float, len(self.mesh.vertices)), weight="sum")
         angle_defect = attributes.angle_defects(self.mesh, persistent=False)
        
         for v in self.mesh.id_vertices:
@@ -130,7 +130,7 @@ class FrameField2DEdges(FrameField) :
             elif defectsV[v]+angle_defect[v] < -ZERO_THRESHOLD:
                 singulsV[v] = -1
         
-        defectsF = attributes.average_corners_to_faces(self.mesh, angles, ArrayAttribute(float, len(self.mesh.faces)) , weight="sum")
+        defectsF = attributes.average_corners_to_faces(self.mesh, angles, Attribute(float, len(self.mesh.faces)) , weight="sum")
         singulsF = self.mesh.faces.create_attribute(singul_attr_name, float)
         for F in self.mesh.id_faces:
             if defectsF[F]>ZERO_THRESHOLD:

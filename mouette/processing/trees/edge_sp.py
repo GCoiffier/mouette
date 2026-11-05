@@ -3,7 +3,7 @@ from collections import deque
 from math import isinf
 
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import Attribute
+from ...mesh.mesh_attributes import SparseAttribute
 from ...utils import keyify, UnionFind
 from ...attributes import edge_length as attr_edge_length
 from .base import SpanningForest, SpanningTree
@@ -133,7 +133,7 @@ class EdgeMinimalSpanningTree(EdgeSpanningTree):
                 Defaults to "length".
         """
         super().__init__(mesh, starting_vertex, avoid_boundary=avoid_boundary)
-        if not ((isinstance(weights, str) and weights in ["one", "length"]) or isinstance(weights, dict) or isinstance(weights, Attribute)):
+        if not ((isinstance(weights, str) and weights in ["one", "length"]) or isinstance(weights, dict) or isinstance(weights, SparseAttribute)):
             raise Exception("Acceptable weights are 'one', 'length' or a custom dict or Attribute on edges")
         self.weights = weights
 

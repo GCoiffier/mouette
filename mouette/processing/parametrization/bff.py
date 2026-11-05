@@ -33,8 +33,8 @@ class BoundaryFirstFlattening(BaseParametrization):
 
     def __init__(self, 
         mesh: SurfaceMesh,
-        bnd_scale_fctr : Attribute = None,
-        bnd_curvature : Attribute = None,
+        bnd_scale_fctr : SparseAttribute = None,
+        bnd_curvature : SparseAttribute = None,
         verbose:bool=False, 
         **kwargs):
         """
@@ -67,7 +67,7 @@ class BoundaryFirstFlattening(BaseParametrization):
         self.use_cotan = kwargs.get("use_cotan", True)
         self.hilbert_transform = kwargs.get("hilbert_transform", True)
 
-        self._curv : ArrayAttribute = None
+        self._curv : Attribute = None
         self.NV,self.NB = None,None
         self._solve_L : sp.csc_matrix = None # Laplacian operator
         self._solve_Lii, self._Lib, self._Lbb = None, None, None # Laplacian submatrices

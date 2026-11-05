@@ -240,7 +240,7 @@ class SingularityCutter(SurfaceMeshCutter):
         
         ### Run heuristic cuts depending on the strategy
         if self._strategy == SingularityCutter.Strategy.SIMPLE:
-            edge_flag = Attribute(bool) # False by default for all edges
+            edge_flag = SparseAttribute(bool) # False by default for all edges
             regions = None # no features
         
         elif self._strategy in (SingularityCutter.Strategy.SHORTEST_PATHS, SingularityCutter.Strategy.SHORTEST_LIMITED):
@@ -270,7 +270,7 @@ class SingularityCutter(SurfaceMeshCutter):
         self.log("Building cut mesh")
         super().run(seam_edges)
  
-    def _heuristic_flag_edges_shortest_path(self, limited) -> Attribute:
+    def _heuristic_flag_edges_shortest_path(self, limited) -> SparseAttribute:
         # With the shortest path strategy, we first compute all shortest paths between pairs of singularities and restrain the cut graph to be a spanning tree on this path graph
 
         mesh_has_border = len(self.input_mesh.boundary_vertices)>0
@@ -283,7 +283,7 @@ class SingularityCutter(SurfaceMeshCutter):
         singul = self.singularities + [BORDER] if mesh_has_border else self.singularities
 
         # edge selected for spanning tree
-        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else Attribute(bool) 
+        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else SparseAttribute(bool) 
         if not self.singularities:
             # no singularities => no spanning tree and no constraints on edges
             return edge_flags
@@ -326,12 +326,12 @@ class SingularityCutter(SurfaceMeshCutter):
                 edge_flags[ self.input_mesh.connectivity.edge_id(u,v) ] = True
         return edge_flags
 
-    def _heuristic_flag_edges_features(self) -> Attribute:
+    def _heuristic_flag_edges_features(self) -> SparseAttribute:
         # With the feature strategy we want the spanning tree to have the maximal possible intersection with the feature graph. This leads to prettier results
 
         edge_lengths = attributes.edge_length(self.input_mesh, persistent=False)
         # edge selected for spanning tree
-        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else Attribute(bool) 
+        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else SparseAttribute(bool) 
         if len(self.singularities)==0:
             # no singularities => no spanning tree and no constraints on edges
             return edge_flags
@@ -364,7 +364,7 @@ class SingularityCutter(SurfaceMeshCutter):
                         queue.append((nv,v))
         return edge_flags
 
-    def _build_feature_regions(self, forbidden_edges : Attribute) -> UnionFind:
+    def _build_feature_regions(self, forbidden_edges : SparseAttribute) -> UnionFind:
         ### Builds a UnionFind data structure over faces. Two faces are connected if they can be linked by dual edges that do not cross the feature graph.
         regions = UnionFind(self.input_mesh.id_faces)
         not_traversible = { _e for _e in forbidden_edges} | self._feat_detector.feature_edges
@@ -378,13 +378,13 @@ class SingularityCutter(SurfaceMeshCutter):
                 TriFlagAttr[f] = regions.find(f)
         return regions
 
-    def _build_dual_tree(self, forbidden_edges:Attribute = None, regions : UnionFind = None):
+    def _build_dual_tree(self, forbidden_edges:SparseAttribute = None, regions : UnionFind = None):
         ### Builds a spanning tree over dual edges, so that each face is visited
         # If forbidden_edges is provided, will avoid crossing those edges.
         # If regions is provided, will make sure that two adjacent regions are connected by only one edge to avoid creating additionnal seams
     
         # Dijsktra on faces (dual edges)
-        fvisited = ArrayAttribute(bool, len(self.input_mesh.faces)) #self.input_mesh.faces.create_attribute("cut_visited", bool)
+        fvisited = Attribute(bool, len(self.input_mesh.faces)) #self.input_mesh.faces.create_attribute("cut_visited", bool)
         path = [None for _ in self.input_mesh.id_faces]
         dist = [float("inf") for _ in self.input_mesh.id_faces]
         queue : PriorityQueue = PriorityQueue() # queue contains indexes of faces

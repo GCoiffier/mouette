@@ -1,7 +1,7 @@
 from .base import BaseParametrization
 
 from ...mesh.datatypes import SurfaceMesh,PolyLine
-from ...mesh.mesh_attributes import Attribute, ArrayAttribute
+from ...mesh.mesh_attributes import SparseAttribute, Attribute
 from ...mesh.mesh import copy, save
 
 from ..cutting import SingularityCutter
@@ -67,9 +67,9 @@ class FrameFieldIntegration(BaseParametrization):
         ###
         self._cutter : SingularityCutter
         self._matching : np.ndarray = None # matching attribute on faces
-        self._jumps : Attribute = None # jump attribute on edges
-        self._singus : Attribute = None # position and indices of cones (on vertices)
-        self._feature_dir : Attribute = None # whether a feature edge is horizontal (constant v) or vertical (constant u)
+        self._jumps : SparseAttribute = None # jump attribute on edges
+        self._singus : SparseAttribute = None # position and indices of cones (on vertices)
+        self._feature_dir : SparseAttribute = None # whether a feature edge is horizontal (constant v) or vertical (constant u)
         self._tree : FaceSpanningTree = None # traversal tree
         
         self._var_indirection : np.ndarray = None # corner_id -> variable id in system

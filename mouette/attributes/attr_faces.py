@@ -1,13 +1,13 @@
 import numpy as np
 import cmath
 
-from ..mesh.mesh_attributes import ArrayAttribute, Attribute
+from ..mesh.mesh_attributes import Attribute, SparseAttribute
 from ..mesh.datatypes import *
 from .. import geometry as geom
 from ..geometry import Vec
 
 @allowed_mesh_types(SurfaceMesh, VolumeMesh)
-def face_area(mesh : Mesh, name="area", persistent:bool=True, dense:bool=True) -> Attribute:
+def face_area(mesh : Mesh, name="area", persistent:bool=True, dense:bool=True) -> SparseAttribute:
     """
     Computes the barycenter point of each face.
 
@@ -23,7 +23,7 @@ def face_area(mesh : Mesh, name="area", persistent:bool=True, dense:bool=True) -
     if persistent:
         area = mesh.faces.create_attribute(name, float, dense=dense)
     else:
-        area = ArrayAttribute(float, len(mesh.faces)) if dense else Attribute(float)
+        area = Attribute(float, len(mesh.faces)) if dense else SparseAttribute(float)
     for T in mesh.id_faces:
         pts = [mesh.vertices[u] for u in mesh.faces[T]]
         npt = len(pts)
@@ -40,7 +40,7 @@ def face_area(mesh : Mesh, name="area", persistent:bool=True, dense:bool=True) -
     return area
 
 @allowed_mesh_types(SurfaceMesh)
-def face_normals(mesh : SurfaceMesh, name="normals", persistent:bool=True, dense:bool=True) -> Attribute:
+def face_normals(mesh : SurfaceMesh, name="normals", persistent:bool=True, dense:bool=True) -> SparseAttribute:
     """
     Computes the barycenter point of each face.
 
@@ -56,14 +56,14 @@ def face_normals(mesh : SurfaceMesh, name="normals", persistent:bool=True, dense
     if persistent :
         normals = mesh.faces.create_attribute(name, float, 3, dense=dense)
     else:
-        normals = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
+        normals = Attribute(float, len(mesh.faces), 3) if dense else SparseAttribute(float, 3)
     for iT,T in enumerate(mesh.faces):
         pA,pB,pC = (mesh.vertices[u] for u in T[:3])
         normals[iT] = Vec.normalized(geom.cross(pB-pA, pC-pA))
     return normals
 
 @allowed_mesh_types(SurfaceMesh, VolumeMesh)
-def face_barycenter(mesh : SurfaceMesh, name="barycenter", persistent:bool = True, dense:bool = True) -> Attribute:
+def face_barycenter(mesh : SurfaceMesh, name="barycenter", persistent:bool = True, dense:bool = True) -> SparseAttribute:
     """
     Computes the barycenter point of each face.
 
@@ -79,13 +79,13 @@ def face_barycenter(mesh : SurfaceMesh, name="barycenter", persistent:bool = Tru
     if persistent :
         bary = mesh.faces.create_attribute(name, float, 3, dense=dense)
     else:
-        bary = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
+        bary = Attribute(float, len(mesh.faces), 3) if dense else SparseAttribute(float, 3)
     for iT,T in enumerate(mesh.faces):
         bary[iT] = sum(mesh.vertices[u] for u in T) / len(T)
     return bary
 
 @allowed_mesh_types(SurfaceMesh, VolumeMesh)
-def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=True, dense:bool=True) -> Attribute:
+def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=True, dense:bool=True) -> SparseAttribute:
     """
     Computes the circumcenter point of each triangular face.
 
@@ -104,7 +104,7 @@ def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=T
     if persistent :
         circum = mesh.faces.create_attribute(name, float, 3, dense=dense)
     else:
-        circum = ArrayAttribute(float, len(mesh.faces), 3) if dense else Attribute(float, 3)
+        circum = Attribute(float, len(mesh.faces), 3) if dense else SparseAttribute(float, 3)
     for iF,F in enumerate(mesh.faces):
         if len(F)!=3:
             raise Exception("circumcenters can be computed only for triangular faces. Received face n°{} containing {}!=3 vertices".format(iF,len(F)))
@@ -112,7 +112,7 @@ def face_circumcenter(mesh : SurfaceMesh, name="circumcenter", persistent:bool=T
     return circum
 
 @allowed_mesh_types(SurfaceMesh)
-def face_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", persistent:bool = True, dense:bool = False) -> Attribute:
+def face_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", persistent:bool = True, dense:bool = False) -> SparseAttribute:
     """Returns a boolean attribute that is True if the face is at most at 'dist' neighbours from the boundary.
     Proceeds by region growing, starting from all faces touching the boundary and going inwards.
 
@@ -143,12 +143,12 @@ def face_near_border(mesh : SurfaceMesh, dist:int = 2, name = "near_border", per
     if persistent:
         near_attr = mesh.faces.create_attribute(name, bool, dense=dense)
     else:
-        near_attr = ArrayAttribute(bool, len(mesh.faces)) if dense else Attribute(bool)
+        near_attr = Attribute(bool, len(mesh.faces)) if dense else SparseAttribute(bool)
     for f in near: near_attr[f] = True
     return near_attr
 
 @allowed_mesh_types(SurfaceMesh)
-def triangle_aspect_ratio(mesh : SurfaceMesh, name : str="aspect_ratio", persistent : bool = True, dense : bool =True) -> Attribute:
+def triangle_aspect_ratio(mesh : SurfaceMesh, name : str="aspect_ratio", persistent : bool = True, dense : bool =True) -> SparseAttribute:
     """Computes the aspect ratio of every triangular faces. Sets aspect ratio to -1 for every other faces
 
     Parameters:
@@ -163,7 +163,7 @@ def triangle_aspect_ratio(mesh : SurfaceMesh, name : str="aspect_ratio", persist
     if persistent :
         ratio = mesh.faces.create_attribute(name, float, dense=dense)
     else:
-        ratio = ArrayAttribute(float, len(mesh.faces)) if dense else Attribute(float)
+        ratio = Attribute(float, len(mesh.faces)) if dense else SparseAttribute(float)
     for iF,F in enumerate(mesh.faces):
         if len(F)!=3: ratio[iF] = -1 
         ratio[iF] = geom.aspect_ratio(*(mesh.vertices[u] for u in F))
@@ -186,7 +186,7 @@ def parallel_transport_curvature(mesh : SurfaceMesh, PT:"SurfaceConnectionVertic
     if persistent :
         curv = mesh.faces.create_attribute(name, float, dense=dense)
     else:
-        curv = ArrayAttribute(float, len(mesh.faces)) if dense else Attribute(float)
+        curv = Attribute(float, len(mesh.faces)) if dense else SparseAttribute(float)
     for iF, (A,B,C) in enumerate(mesh.faces):
         v = 1+0j
         for a,b in [(A,B) ,(B,C), (C,A)]:

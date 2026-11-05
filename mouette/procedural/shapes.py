@@ -3,12 +3,12 @@ import numpy as np
 from ..geometry import *
 from ..mesh.datatypes import *
 from ..mesh.mesh_data import RawMeshData
-from ..mesh.mesh import _instanciate_raw_mesh_data
+from ..mesh import mesh
 from ..mesh.subdivision import SurfaceSubdivision
 from .dual import dual_mesh
 from scipy.spatial import ConvexHull
+from math import sqrt
 
-from math import sqrt, pi, cos, sin
 
 def tetrahedron(P1: Vec, P2: Vec, P3: Vec, P4: Vec, volume: bool=False) -> SurfaceMesh:
     """Simple tetrahedron from four points
@@ -23,11 +23,11 @@ def tetrahedron(P1: Vec, P2: Vec, P3: Vec, P4: Vec, volume: bool=False) -> Surfa
     Returns:
         SurfaceMesh: _description_
     """
-    tet = RawMeshData()
-    tet.vertices += [P1,P2,P3,P4]
-    tet.faces += [(1,2,3), (0,2,3),(0,1,3),(0,1,2)]
-    if volume: tet.cells.append((0,1,2,3))
-    return _instanciate_raw_mesh_data(tet)
+    V = np.concatenate((P1, P2, P3, P4)).reshape((4,3))
+    F = [[1,2,3], [0,2,3], [0,1,3], [0,1,2]]
+    C = [[0,1,2,3]] if volume else None
+    return mesh.from_arrays(V, F=F, C=C)
+
 
 def hexahedron(
         P1: Vec, P2: Vec, P3: Vec, P4: Vec, P5: Vec, P6: Vec, P7: Vec, P8: Vec, 
@@ -56,49 +56,50 @@ def hexahedron(
     Returns:
         SurfaceMesh: a cube
     """
-    hexa = RawMeshData()
-    hexa.vertices += [P1,P2,P3,P4,P5,P6,P7,P8]
-
-    if volume:
-        #hexa.cells += [(0,1,2,3),(0,5,7,4), (2,6,7,5)]
-        hexa.cells += [(0,1,2,3,4,5,6,7)]
+    V = np.concatenate((P1,P2,P3,P4,P5,P6,P7,P8)).reshape((8,3))
+    if triangulate:
+        F =[
+            (0,2,1), (0,3,2),
+            (0,1,5), (0,5,4),
+            (1,2,6), (1,6,5),
+            (2,3,7), (2,7,6),
+            (3,0,4), (3,4,7),
+            (4,5,6), (4,6,7)
+        ]
     else:
+        F = [
+            (0,3,2,1),
+            (0,1,5,4),
+            (1,2,6,5),
+            (2,3,7,6),
+            (3,0,4,7),
+            (4,5,6,7)
+        ]
+    C = None
+    if volume:
         if triangulate:
-            hexa.faces += [
-                (0,2,1), (0,3,2),
-                (0,1,5), (0,5,4),
-                (1,2,6), (1,6,5),
-                (2,3,7), (2,7,6),
-                (3,0,4), (3,4,7),
-                (4,5,6), (4,6,7)
-            ]
+            raise NotImplementedError
         else:
-            hexa.faces += [
-                (0,3,2,1),
-                (0,1,5,4),
-                (1,2,6,5),
-                (2,3,7,6),
-                (3,0,4,7),
-                (4,5,6,7)
-            ]
-        if colored:
-            col = hexa.faces.create_attribute("color", float, 3)
-            RED,GREEN,BLUE = Vec(1.,0.,0), Vec(0.,1.,0.), Vec(0.,0.,1.)
-            col[0] = RED
-            col[1] = RED
-            col[10] = RED
-            col[11] = RED
+            C = [[0,1,2,3,4,5,6,7]]
+    hexa = mesh.from_arrays(V, F=F, C=C)
+    if colored:
+        col = hexa.faces.create_attribute("color", float, 3)
+        RED,GREEN,BLUE = [1.,0.,0], [0.,1.,0.], [0.,0.,1.]
+        col[0] = RED
+        col[1] = RED
+        col[10] = RED
+        col[11] = RED
 
-            col[2] = GREEN
-            col[3] = GREEN
-            col[6] = GREEN
-            col[7] = GREEN
-            
-            col[4] = BLUE
-            col[5] = BLUE
-            col[8] = BLUE
-            col[9] = BLUE
-    return _instanciate_raw_mesh_data(hexa)
+        col[2] = GREEN
+        col[3] = GREEN
+        col[6] = GREEN
+        col[7] = GREEN
+        
+        col[4] = BLUE
+        col[5] = BLUE
+        col[8] = BLUE
+        col[9] = BLUE
+    return hexa
 
 def axis_aligned_cube(colored: bool = False, triangulate: bool = False) -> SurfaceMesh:
     """generated an axis aligned cube as 6 quad faces.
@@ -164,7 +165,7 @@ def octahedron():
     """
     return dual_mesh(axis_aligned_cube())
 
-def icosahedron(center : Vec = Vec(0,0,0), radius: float=1., uv=False):
+def icosahedron(center: Vec = Vec(0,0,0), radius: float=1., uv=False):
     """Generate a unit icosahedron
 
     Args:
@@ -175,9 +176,8 @@ def icosahedron(center : Vec = Vec(0,0,0), radius: float=1., uv=False):
         _type_: _description_
     """
     phi = (1 + sqrt(5)) / 2
-    m = RawMeshData()
 
-    m.vertices += [ radius*a+center for a in 
+    V = [ radius*a+center for a in 
     [
         Vec(-1, phi,0),
         Vec(1, phi, 0),
@@ -195,29 +195,29 @@ def icosahedron(center : Vec = Vec(0,0,0), radius: float=1., uv=False):
         Vec(-phi, 0, 1),
     ]]
 
-    m.faces += [
-        (0, 11, 5),
-        (0, 5, 1),
-        (0, 1, 7),
-        (0, 7, 10),
-        (0, 10, 11),
-        (1, 5, 9),
-        (5, 11, 4),
-        (11, 10, 2),
-        (10, 7, 6),
-        (7, 1, 8),
-        (3, 9, 4),
-        (3, 4, 2),
-        (3, 2, 6),
-        (3, 6, 8),
-        (3, 8, 9),
-        (4, 9, 5),
-        (2, 4, 11),
-        (6, 2, 10),
-        (8, 6, 7),
-        (9, 8, 1)
+    F = [
+        [0, 11, 5],
+        [0, 5, 1],
+        [0, 1, 7],
+        [0, 7, 10],
+        [0, 10, 11],
+        [1, 5, 9],
+        [5, 11, 4],
+        [11, 10, 2],
+        [10, 7, 6],
+        [7, 1, 8],
+        [3, 9, 4],
+        [3, 4, 2],
+        [3, 2, 6],
+        [3, 6, 8],
+        [3, 8, 9],
+        [4, 9, 5],
+        [2, 4, 11],
+        [6, 2, 10],
+        [8, 6, 7],
+        [9, 8, 1]
     ]
-    return SurfaceMesh(m)
+    return mesh.from_arrays(V, F=F)
 
 def dodecahedron() -> SurfaceMesh:
     """Generate a unit dodecahedron as the dual mesh of an icosahedron
@@ -240,7 +240,7 @@ def cylinder(P1 : Vec, P2 : Vec, radius: float = 1., N=50, fill_caps=True) -> Su
     Returns:
         SurfaceMesh: a cylinder
     """
-    cy = RawMeshData()
+    V, F = [], []
     axis = Vec.normalized(P2-P1)
     t = Vec(axis.y, -axis.x, 0.) # tangent vector
     if t.norm()<1e-6:
@@ -249,18 +249,17 @@ def cylinder(P1 : Vec, P2 : Vec, radius: float = 1., N=50, fill_caps=True) -> Su
     for P in (P1,P2):
         for i in range(N):
             Pi = P + radius * rotate_around_axis(t, axis, 2*np.pi*i/N)
-            cy.vertices.append(Pi)
-    # caps
-    if fill_caps:
-        cy.vertices += [P1,P2]
+            V.append(Pi)
+    if fill_caps: # caps are triangle fan -> 2 additional center vertices
+        V  += [P1,P2]
         for i in range(N):
-            cy.faces.append((i,(i+1)%N,2*N))
-            cy.faces.append((i+N,2*N+1, (i+1)%N+N))
-    # side of cylinder
-    for i in range(N):
-        cy.faces.append((i,  N+i, (i+1)%N))
-        cy.faces.append((N+i, N+(i+1)%N, (i+1)%N))
-    return SurfaceMesh(cy)
+            F.append((i,(i+1)%N,2*N))
+            F.append((i+N,2*N+1, (i+1)%N+N))
+    for i in range(N): # sides of cylinder made of triangles
+        F.append((i,  N+i, (i+1)%N))
+        F.append((N+i, N+(i+1)%N, (i+1)%N))
+    return mesh.from_arrays(V, F=F)
+
 
 def torus(
     major_segments: int = 50,
@@ -283,7 +282,7 @@ def torus(
     Returns:
         SurfaceMesh: a torus
     """
-    out = RawMeshData()
+    V, F = [], []
     # generate vertices
     for i in range(major_segments):
        for j in range(minor_segments):
@@ -292,7 +291,7 @@ def torus(
             x = (major_radius + minor_radius * np.cos(v)) * np.cos(u)
             y = (major_radius + minor_radius * np.cos(v)) * np.sin(u)
             z = minor_radius * np.sin(v)
-            out.vertices.append(Vec(x,y,z))
+            V.append(Vec(x,y,z))
 
     for i in range(major_segments):
         i_next = (i+1)%major_segments
@@ -303,10 +302,10 @@ def torus(
             v2 = i_next * minor_segments + j_next
             v3 = i_next * minor_segments + j
             if triangulate:
-                out.faces += [(v0,v1,v3), (v1,v2,v3)]
+                F += [(v0,v1,v3), (v1,v2,v3)]
             else:
-                out.faces.append((v0,v1,v2,v3))
-    return _instanciate_raw_mesh_data(out, 2)
+                F.append((v0,v1,v2,v3))
+    return mesh.from_arrays(V, F=F)
 
 def sphere_uv( n_lat : int = 30, n_long : int= 50, center : Vec = Vec(0.,0.,0.), radius : float = 1.) -> SurfaceMesh:
     """Generates a sphere using classical spherical uv-coordinates 
@@ -323,10 +322,10 @@ def sphere_uv( n_lat : int = 30, n_long : int= 50, center : Vec = Vec(0.,0.,0.),
     Returns:
         SurfaceMesh: the sphere
     """
-    sp = RawMeshData()
+    V, F = [], []
 
     # add north pole
-    sp.vertices.append(center + radius*Vec(0.,0.,1.))
+    V.append(center + radius*Vec(0.,0.,1.))
 
     # add other points
     for i in range(n_lat):
@@ -336,19 +335,18 @@ def sphere_uv( n_lat : int = 30, n_long : int= 50, center : Vec = Vec(0.,0.,0.),
             x = np.sin(phi)*np.cos(theta)
             y = np.sin(phi)*np.sin(theta)
             z = np.cos(phi)
-            sp.vertices.append(center + radius*Vec(x,y,z))
+            V.append(center + radius*Vec(x,y,z))
 
     # add south pole
-    sp.vertices.append(center + radius*Vec(0.,0.,-1.))
+    V.append(center + radius*Vec(0.,0.,-1.))
 
     # add rings of triangles at poles
     for i in range(n_long):
         i0, i1 = i+1, (i+1)%n_long+1
-        sp.faces.append((i0, 0, i1))
-
+        F.append((i0, 0, i1))
         i0 = i + n_long * (n_lat - 2) + 1
         i1 = (i + 1) % n_long + n_long * (n_lat - 2) + 1
-        sp.faces.append((len(sp.vertices)-1, i0, i1))
+        F.append((len(V)-1, i0, i1))
 
     # add rows of quads
     for j in range(n_lat-2):
@@ -359,8 +357,8 @@ def sphere_uv( n_lat : int = 30, n_long : int= 50, center : Vec = Vec(0.,0.,0.),
             i1 = j0 + (i + 1) % n_long
             i2 = j1 + (i + 1) % n_long
             i3 = j1 + i
-            sp.faces.append((i0,i1,i2,i3))
-    return _instanciate_raw_mesh_data(sp,2)
+            F.append((i0,i1,i2,i3))
+    return mesh.from_arrays(V, F=F)
 
 
 def icosphere(n_refine : int= 3, center: Vec = Vec(0.,0.,0.), radius: float = 1.) -> SurfaceMesh:
@@ -413,8 +411,7 @@ def sphere_fibonacci( n_pts : int, radius:float =1., build_surface : bool = True
         z = sphi
         points.append(radius*Vec(x,y,z))
 
-    data = RawMeshData()
-    data.vertices += points
+    faces = []
     if build_surface:
         # Triangulate points on a sphere : Delaunay is equivalent to convex hull since every points lay in the hull
         ch = ConvexHull(points, qhull_options="QJ")
@@ -424,7 +421,7 @@ def sphere_fibonacci( n_pts : int, radius:float =1., build_surface : bool = True
             pcenter = (pA+pB+pC)/3
             normal = geom.cross(pB-pA,pC-pA)
             if geom.dot(pcenter,normal)<0:
-                data.faces.append((A,C,B))
+                faces.append((A,C,B))
             else:
-                data.faces.append((A,B,C))
-    return _instanciate_raw_mesh_data(data)
+                faces.append((A,B,C))
+    return mesh.from_arrays(points, F=faces)

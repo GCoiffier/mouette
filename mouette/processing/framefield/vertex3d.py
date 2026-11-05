@@ -2,7 +2,7 @@ from .base import FrameField
 
 from ...mesh.datatypes import *
 from ...mesh.mesh_data import RawMeshData
-from ...mesh.mesh_attributes import Attribute
+from ...mesh.mesh_attributes import SparseAttribute
 
 from ... import attributes
 from ..features import FeatureEdgeDetector
@@ -38,7 +38,7 @@ class FrameField3DVertices(FrameField):
         supporting_mesh.enable_boundary_connectivity()
 
         self.boundary_mesh : SurfaceMesh = None
-        self.vertex_normals : Attribute = None
+        self.vertex_normals : SparseAttribute = None
         self.n_smooth = kwargs.get("n_smooth", 3)
         self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None)
 
@@ -46,7 +46,7 @@ class FrameField3DVertices(FrameField):
         self.var = np.concatenate([SphericalHarmonics.EYE]*len(self.mesh.vertices)) # representation vectors in spherical harmonics basis
 
         self._omegas : dict = None # rotation on edges
-        self._singuls_tri : Attribute = None # value of defect on every triangle
+        self._singuls_tri : SparseAttribute = None # value of defect on every triangle
 
         self.features : bool = feature_edges # whether feature edges are enabled or not
         self.feat : FeatureEdgeDetector = kwargs.get("custom_boundary_features", None)
@@ -59,7 +59,7 @@ class FrameField3DVertices(FrameField):
         self.vertex_normals = attributes.vertex_normals(self.boundary_mesh, persistent=False, interpolation="angle")
         
         self.log(" | Compute spherical harmonics coordinates on the boundary")
-        face_bases_sh = Attribute(float, 9)
+        face_bases_sh = SparseAttribute(float, 9)
         for iF,F in enumerate(self.boundary_mesh.faces):
             pA,pB,pC = (self.boundary_mesh.vertices[v] for v in F)
             _,_,NF = geom.face_basis(pA,pB,pC)
@@ -71,7 +71,7 @@ class FrameField3DVertices(FrameField):
                 face_bases_sh[iF] = SphericalHarmonics.from_vec3(axis)
             else:
                 face_bases_sh[iF] =  Vec(0., 0., 0., 0., 1., 0., 0., 0., 0.)
-        vertex_bases_sh = Attribute(float, 9)
+        vertex_bases_sh = SparseAttribute(float, 9)
         vertex_bases_sh = attributes.interpolate_faces_to_vertices(self.boundary_mesh, face_bases_sh, vertex_bases_sh, weight="angle")
 
         self.frames = [Rotation.identity() for _ in self.mesh.id_vertices]

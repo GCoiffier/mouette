@@ -1,7 +1,7 @@
 from .base import FrameField
 from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import Attribute
+from ...mesh.mesh_attributes import SparseAttribute
 from ... import geometry as geom
 from ... import operators
 
@@ -41,8 +41,8 @@ class _BaseFrameField2DFaces(FrameField) :
         self.n_smooth = kwargs.get("n_smooth", 10)
         self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None)
 
-        self.cot : Attribute = None
-        self.defect : Attribute = None
+        self.cot : SparseAttribute = None
+        self.defect : SparseAttribute = None
         self.conn : SurfaceConnectionFaces = kwargs.get("custom_connection", None)
         self.feat : FeatureEdgeDetector = kwargs.get("custom_features", None)
         
@@ -265,7 +265,7 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
     @allowed_mesh_types(SurfaceMesh)
     def __init__(self, 
         supporting_mesh : SurfaceMesh, 
-        singus_indices : Attribute,
+        singus_indices : SparseAttribute,
         free_boundary : bool = True,
         order : int = 4, 
         verbose : bool=True,
@@ -293,7 +293,7 @@ class TrivialConnectionFaces(_BaseFrameField2DFaces):
         Returns:
             TrivialConnectionFaces : the frame field (not initialized nor smoothed)
         """
-        singuls = Attribute(float)
+        singuls = SparseAttribute(float)
         return cls(supporting_mesh, singuls, free_boundary=True, order=order, verbose=verbose, **kwargs)
     
     def initialize(self):

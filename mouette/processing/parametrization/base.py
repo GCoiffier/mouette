@@ -1,7 +1,7 @@
 from ..worker import Worker
 
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import ArrayAttribute
+from ...mesh.mesh_attributes import Attribute
 from ...mesh.mesh import copy
 
 from ...geometry import Vec
@@ -19,7 +19,7 @@ class BaseParametrization(Worker):
         super().__init__(name, verbose)
         self.mesh : SurfaceMesh = mesh
         self.save_on_corners : bool = kwargs.get("save_on_corners", True)
-        self.uvs : ArrayAttribute = kwargs.get("uv_attr", None) # attribute on corners or vertices
+        self.uvs : Attribute = kwargs.get("uv_attr", None) # attribute on corners or vertices
 
         self._flat_mesh : SurfaceMesh = None
 

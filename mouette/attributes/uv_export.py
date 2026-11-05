@@ -1,11 +1,11 @@
 import numpy as np
 from ..mesh.datatypes import *
-from ..mesh.mesh_attributes import Attribute
+from ..mesh.mesh_attributes import SparseAttribute
 
 @allowed_mesh_types(SurfaceMesh)
 def generate_uv_colormap_vertices(
     mesh : SurfaceMesh, 
-    vattr : Attribute, 
+    vattr : SparseAttribute, 
     vmin : float = None, 
     vmax : float = None
 ):
@@ -36,7 +36,7 @@ def generate_uv_colormap_vertices(
 @allowed_mesh_types(SurfaceMesh)
 def generate_uv_colormap_corners(
     mesh : SurfaceMesh, 
-    cattr : Attribute, 
+    cattr : SparseAttribute, 
     vmin : float = None, 
     vmax : float = None
 ):
@@ -66,7 +66,7 @@ def generate_uv_colormap_corners(
 @allowed_mesh_types(SurfaceMesh)
 def generate_uv_colormap_faces(
     mesh : SurfaceMesh, 
-    fattr : Attribute, 
+    fattr : SparseAttribute, 
     vmin : float = None,
     vmax : float = None
 ):

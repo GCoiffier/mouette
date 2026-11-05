@@ -1,7 +1,7 @@
 from ..mesh.mesh_data import RawMeshData
 from ..utils import cyclic_pairs
 from ..mesh.datatypes import *
-from ..mesh.mesh_attributes import Attribute
+from ..mesh.mesh_attributes import SparseAttribute
 
 @allowed_mesh_types(SurfaceMesh)
 def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
@@ -72,7 +72,7 @@ def extract_boundary_of_surface(mesh : SurfaceMesh) -> PolyLine:
         dict: maps a vertex id in the boundary to its corresponding id in the original mesh.
     """
     bound = PolyLine()
-    visited = Attribute(bool)
+    visited = SparseAttribute(bool)
     component = bound.vertices.create_attribute("component", int)
     map_v2v = dict() # vertices have a new and different index in the boundary mesh (so that indexes are [0, n])
 

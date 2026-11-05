@@ -1,10 +1,10 @@
-from ..mesh.mesh_attributes import Attribute, Attribute, ArrayAttribute
+from ..mesh.mesh_attributes import SparseAttribute, SparseAttribute, Attribute
 from ..mesh.datatypes import *
 from .. import geometry as geom
 import numpy as np
 
 @allowed_mesh_types(SurfaceMesh)
-def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, dense:bool = True) -> Attribute:
+def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, dense:bool = True) -> SparseAttribute:
     """Attribute storing the angles of a face at a vertex
 
     Parameters:
@@ -19,7 +19,7 @@ def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, den
     if persistent:
         angles = mesh.face_corners.create_attribute(name, float, dense=True)
     else:
-        angles = ArrayAttribute(float, len(mesh.face_corners)) if dense else Attribute(float)
+        angles = Attribute(float, len(mesh.face_corners)) if dense else SparseAttribute(float)
     c = 0
     for face in mesh.faces:
         n = len(face)
@@ -31,7 +31,7 @@ def corner_angles(mesh : SurfaceMesh, name = "angles", persistent:bool=True, den
     return angles
 
 @allowed_mesh_types(SurfaceMesh)
-def cotangent(mesh : SurfaceMesh, name = "cotan", persistent=True, dense=True) -> Attribute:
+def cotangent(mesh : SurfaceMesh, name = "cotan", persistent=True, dense=True) -> SparseAttribute:
     """Attribute storing the cotangents of each face at each vertex.
     
     Warning: 
@@ -59,7 +59,7 @@ def cotangent(mesh : SurfaceMesh, name = "cotan", persistent=True, dense=True) -
         else:
             cot = mesh.face_corners.create_attribute(name, float, dense=True)
     else:
-        cot = ArrayAttribute(float, len(mesh.face_corners)) if dense else Attribute(float)
+        cot = Attribute(float, len(mesh.face_corners)) if dense else SparseAttribute(float)
 
     if mesh.face_corners.has_attribute("angles"):
         # Compute cotan from angles

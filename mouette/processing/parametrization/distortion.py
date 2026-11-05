@@ -1,6 +1,6 @@
 from ..worker import Worker
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import ArrayAttribute
+from ...mesh.mesh_attributes import Attribute
 from ...attributes import face_area
 
 from ...geometry import Vec
@@ -44,12 +44,12 @@ class ParamDistortion(Worker):
 
         self._summary : dict = None
 
-        self._conformal : ArrayAttribute = None # ||J||² / det J
-        self._scale     : ArrayAttribute = None # 0.5*(det J + 1 / det J)
-        self._iso       : ArrayAttribute = None # distance( (sigma_1, sigma_2), (1,1))
-        self._shear     : ArrayAttribute = None # dot(c_1, c_2) of columns of jacobian 
-        self._stretch   : ArrayAttribute = None # sigma_1 / sigma_2
-        self._det       : ArrayAttribute = None # determinant of faces
+        self._conformal : Attribute = None # ||J||² / det J
+        self._scale     : Attribute = None # 0.5*(det J + 1 / det J)
+        self._iso       : Attribute = None # distance( (sigma_1, sigma_2), (1,1))
+        self._shear     : Attribute = None # dot(c_1, c_2) of columns of jacobian 
+        self._stretch   : Attribute = None # sigma_1 / sigma_2
+        self._det       : Attribute = None # determinant of faces
 
     def run(self):
         """
@@ -169,12 +169,12 @@ class ParamDistortion(Worker):
             self._det = self.mesh.faces.create_attribute("det", float, dense=True)
         else:
             N = len(self.mesh.faces)
-            self._conformal = ArrayAttribute(float, N)
-            self._scale = ArrayAttribute(float, N)
-            self._stretch = ArrayAttribute(float, N)
-            self._shear = ArrayAttribute(float, N)
-            self._iso = ArrayAttribute(float, N)
-            self._det = ArrayAttribute(float, N)
+            self._conformal = Attribute(float, N)
+            self._scale = Attribute(float, N)
+            self._stretch = Attribute(float, N)
+            self._shear = Attribute(float, N)
+            self._iso = Attribute(float, N)
+            self._det = Attribute(float, N)
 
     @property
     def summary(self) -> dict:
@@ -188,7 +188,7 @@ class ParamDistortion(Worker):
         return self._summary
 
     @property
-    def det(self) -> ArrayAttribute:
+    def det(self) -> Attribute:
         """
         Jacobian determinants of each element
         """
@@ -196,7 +196,7 @@ class ParamDistortion(Worker):
         return self._det
 
     @property
-    def conformal(self) -> ArrayAttribute:
+    def conformal(self) -> Attribute:
         """
         Conformal distortion, defined as $\\frac{||J||^2}{\\det(J)}$
         """
@@ -204,7 +204,7 @@ class ParamDistortion(Worker):
         return self._conformal
     
     @property
-    def scale(self) -> ArrayAttribute:
+    def scale(self) -> Attribute:
         """
         Scale distortion, defined as $\\frac12 (\\det(J) + 1/\\det(J))$
         """
@@ -212,7 +212,7 @@ class ParamDistortion(Worker):
         return self._scale
     
     @property
-    def stretch(self) -> ArrayAttribute:
+    def stretch(self) -> Attribute:
         """
         Stretch distortion
 
@@ -222,7 +222,7 @@ class ParamDistortion(Worker):
         return self._stretch
 
     @property
-    def iso(self) -> ArrayAttribute :
+    def iso(self) -> Attribute :
         """
         Isometric distortion
 
@@ -232,7 +232,7 @@ class ParamDistortion(Worker):
         return self._iso
 
     @property
-    def shear(self) -> ArrayAttribute :
+    def shear(self) -> Attribute :
         """
         Shear distortion
 
@@ -257,10 +257,10 @@ class QuadQuality(Worker):
         self.save_on_mesh = save_on_mesh
 
         self._summary : dict = None
-        self._conformal : ArrayAttribute = None
-        self._scale : ArrayAttribute = None
-        self._stretch : ArrayAttribute = None
-        self._det : ArrayAttribute = None
+        self._conformal : Attribute = None
+        self._scale : Attribute = None
+        self._stretch : Attribute = None
+        self._det : Attribute = None
 
     def run(self):
         """Runs the distortion computation
@@ -341,10 +341,10 @@ class QuadQuality(Worker):
             self._det = self.mesh.faces.create_attribute("det", float, dense=True)
         else:
             N = len(self.mesh.faces)
-            self._conformal = ArrayAttribute(float, N)
-            self._scale = ArrayAttribute(float, N)
-            self._stretch = ArrayAttribute(float, N)
-            self._det = ArrayAttribute(float, N)
+            self._conformal = Attribute(float, N)
+            self._scale = Attribute(float, N)
+            self._stretch = Attribute(float, N)
+            self._det = Attribute(float, N)
 
     @property
     def summary(self):

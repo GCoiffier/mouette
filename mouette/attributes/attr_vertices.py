@@ -1,7 +1,7 @@
 from math import pi
 
 from ..mesh.datatypes import *
-from ..mesh.mesh_attributes import Attribute, ArrayAttribute, Attribute
+from ..mesh.mesh_attributes import SparseAttribute, Attribute, SparseAttribute
 from .attr_faces import face_normals
 from .attr_corners import corner_angles
 from .interpolate import interpolate_faces_to_vertices
@@ -9,7 +9,7 @@ from .. import geometry as geom
 from ..geometry import Vec
 
 @forbidden_mesh_types(PointCloud)
-def degree(mesh : Mesh, name : str = "degree", persistent:bool = True, dense:bool = True) -> Attribute :
+def degree(mesh : Mesh, name : str = "degree", persistent:bool = True, dense:bool = True) -> SparseAttribute :
     """Computes the degree of each vertex, that is the number of vertex that are adjacent.
 
     Parameters:
@@ -24,14 +24,14 @@ def degree(mesh : Mesh, name : str = "degree", persistent:bool = True, dense:boo
     if persistent:
         deg = mesh.vertices.create_attribute(name, int, dense=dense)
     else:
-        deg = ArrayAttribute(int, len(mesh.vertices)) if dense else Attribute(int)
+        deg = Attribute(int, len(mesh.vertices)) if dense else SparseAttribute(int)
     for (a,b) in mesh.edges:
         deg[a] = deg[a] + 1
         deg[b] = deg[b] + 1
     return deg
 
 @allowed_mesh_types(SurfaceMesh)
-def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", persistent=True, dense=True) -> Attribute :
+def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", persistent=True, dense=True) -> SparseAttribute :
     """Computes the angle defect at each vertex, defined as 2*pi minus the sum of angles around the vertex.
 
     Angle defect is an discrete approximation of the gaussian curvature.
@@ -59,7 +59,7 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
     if persistent:
         defects = mesh.vertices.create_attribute(name, float, dense=dense, default_value=2*pi)
     else:
-        defects = ArrayAttribute(float, len(mesh.vertices), default_value=2*pi) if dense else Attribute(float, default_value=2*pi)
+        defects = Attribute(float, len(mesh.vertices), default_value=2*pi) if dense else SparseAttribute(float, default_value=2*pi)
     
     for i in mesh.boundary_vertices:
         defects[i] = 0 if zero_border else pi
@@ -75,7 +75,7 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
     return defects
 
 @allowed_mesh_types(SurfaceMesh)
-def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpolation="area", dense=True, custom_fnormals : Attribute = None) -> Attribute:
+def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpolation="area", dense=True, custom_fnormals : SparseAttribute = None) -> SparseAttribute:
     """Computes normal directions as 3d vectors for each vertex.
     Normal at a vertex is a weighted sum of normals of adjacent faces. This function essentially interpolates the face normals.
 
@@ -110,7 +110,7 @@ def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpol
     if persistent:
         normals = mesh.vertices.create_attribute(name, float, 3, dense=dense)
     else:
-        normals = ArrayAttribute(float, len(mesh.vertices), 3) if dense else Attribute(float, 3)
+        normals = Attribute(float, len(mesh.vertices), 3) if dense else SparseAttribute(float, 3)
 
     normals = interpolate_faces_to_vertices(mesh, fnormals, normals, weight=interpolation)
     for v in mesh.id_vertices:
@@ -118,7 +118,7 @@ def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpol
     return normals
     
 @allowed_mesh_types(SurfaceMesh)
-def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = True, dense:bool = False) -> Attribute :
+def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = True, dense:bool = False) -> SparseAttribute :
     """Computes the normal direction of the boundary curve.
 
     Parameters:
@@ -133,7 +133,7 @@ def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = 
     if persistent:
         bnormals = mesh.vertices.create_attribute(name, float, 3, dense=dense)
     else:
-        bnormals = ArrayAttribute(float, len(mesh.vertices), 3) if dense else Attribute(float, 3)
+        bnormals = Attribute(float, len(mesh.vertices), 3) if dense else SparseAttribute(float, 3)
 
     for v in mesh.boundary_vertices:
         v0 = mesh.connectivity.vertex_to_vertices(v)[0]

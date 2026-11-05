@@ -1,5 +1,5 @@
 from ..mesh_data import RawMeshData
-from ..mesh_attributes import Attribute
+from ..mesh_attributes import SparseAttribute
 from .base import Mesh
 from .surface import SurfaceMesh
 from ...geometry.geometry import det_3x3
@@ -17,11 +17,11 @@ class VolumeMesh(Mesh):
         self._boundary_faces : list = None
         self._interior_faces : list = None
 
-        self._is_vertex_on_border : Attribute = None 
+        self._is_vertex_on_border : SparseAttribute = None 
         self._boundary_vertices : list = None
         self._interior_vertices : list = None
 
-        self._is_edge_on_border : Attribute = None
+        self._is_edge_on_border : SparseAttribute = None
         self._boundary_edges : list = None
         self._interior_edges : list = None
 
@@ -229,7 +229,7 @@ class VolumeMesh(Mesh):
 
         def __init__(self, master):
             super().__init__(master)
-            self._adjC2C : Attribute = None
+            self._adjC2C : SparseAttribute = None
             self._adjV2C : dict = None
 
             self._adjC2F : dict = None
@@ -240,7 +240,7 @@ class VolumeMesh(Mesh):
         
         def clear(self):
             super().clear()
-            self._adjC2C : Attribute = None
+            self._adjC2C : SparseAttribute = None
             self._adjV2C : dict = None
             
             self._adjC2F : dict = None

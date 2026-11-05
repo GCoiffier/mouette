@@ -1,5 +1,5 @@
 from ..mesh_data import RawMeshData
-from ..mesh_attributes import Attribute
+from ..mesh_attributes import SparseAttribute
 from .base import Mesh
 from .linear import PolyLine
 from ... import utils
@@ -31,7 +31,7 @@ class SurfaceMesh(Mesh):
         self._boundary_edges : list = None
         self._interior_edges : list = None
 
-        self._is_vertex_on_border : Attribute = None
+        self._is_vertex_on_border : SparseAttribute = None
         self._boundary_vertices : list = None
         self._interior_vertices : list = None
 
@@ -135,7 +135,7 @@ class SurfaceMesh(Mesh):
         self._boundary_edges : list = None
         self._interior_edges : list = None
 
-        self._is_vertex_on_border : Attribute = None 
+        self._is_vertex_on_border : SparseAttribute = None 
         self._boundary_vertices : set = None
         self._interior_vertices : set = None
 

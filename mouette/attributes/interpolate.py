@@ -1,6 +1,6 @@
 import numpy as np
 from ..mesh.datatypes import *
-from ..mesh.mesh_attributes import Attribute
+from ..mesh.mesh_attributes import SparseAttribute
 from .attr_corners import corner_angles
 from .attr_faces import face_area
 from ..utils import check_argument
@@ -9,9 +9,9 @@ from ..utils import check_argument
 @forbidden_mesh_types(PointCloud,PolyLine)
 def interpolate_vertices_to_faces(
     mesh : Mesh,
-    vattr : Attribute, 
-    fattr : Attribute
-) -> Attribute:
+    vattr : SparseAttribute, 
+    fattr : SparseAttribute
+) -> SparseAttribute:
     
     """Given an attribute on vertices, interpolates its value onto faces
 
@@ -34,9 +34,9 @@ def interpolate_vertices_to_faces(
 @allowed_mesh_types(SurfaceMesh)
 def interpolate_faces_to_vertices(
     mesh : SurfaceMesh,
-    fattr : Attribute, 
-    vattr : Attribute,
-    weight : str = "uniform")-> Attribute:
+    fattr : SparseAttribute, 
+    vattr : SparseAttribute,
+    weight : str = "uniform")-> SparseAttribute:
     """Given an attribute on faces, interpolates its value onto vertices
 
     Parameters:
@@ -101,9 +101,9 @@ def interpolate_faces_to_vertices(
 @allowed_mesh_types(SurfaceMesh)
 def scatter_vertices_to_corners(
     mesh : Mesh,
-    vattr : Attribute,
-    cattr : Attribute
-) -> Attribute :
+    vattr : SparseAttribute,
+    cattr : SparseAttribute
+) -> SparseAttribute :
     """
     Given an attribute on vertices, distributes its values onto corresponding corners.
 
@@ -122,9 +122,9 @@ def scatter_vertices_to_corners(
 @allowed_mesh_types(SurfaceMesh)
 def average_corners_to_vertices(
     mesh : SurfaceMesh,
-    cattr : Attribute, 
-    vattr : Attribute,
-    weight : str = "uniform")-> Attribute:
+    cattr : SparseAttribute, 
+    vattr : SparseAttribute,
+    weight : str = "uniform")-> SparseAttribute:
     """Given an attribute on corners, computes a vertex attribute that is the average per vertex
 
     Parameters:
@@ -176,9 +176,9 @@ def average_corners_to_vertices(
 @allowed_mesh_types(SurfaceMesh)
 def scatter_faces_to_corners(
     mesh : SurfaceMesh,
-    fattr : Attribute,
-    cattr : Attribute
-) -> Attribute :
+    fattr : SparseAttribute,
+    cattr : SparseAttribute
+) -> SparseAttribute :
     """
     Given an attribute on faces, distributes its values onto corresponding corners.
 
@@ -199,9 +199,9 @@ def scatter_faces_to_corners(
 @allowed_mesh_types(SurfaceMesh)
 def average_corners_to_faces(
     mesh : SurfaceMesh,
-    cattr : Attribute, 
-    fattr : Attribute,
-    weight : str = "uniform")-> Attribute:
+    cattr : SparseAttribute, 
+    fattr : SparseAttribute,
+    weight : str = "uniform")-> SparseAttribute:
     """Given an attribute on corners, computes a face attribute that is the average per face
 
     Parameters:

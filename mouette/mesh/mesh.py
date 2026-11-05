@@ -19,21 +19,16 @@ def load(filename: str, dim: int = None, raw: bool = False) -> Mesh:
 
     Supported file formats are:
     
-    - wavefront (.obj)
-    
-    - medit (.mesh)
-    
+    - wavefront (.obj)  
+    - medit (.mesh)  
     - geogram (.geogram_ascii)
-    
-    - .ply
-    
-    - .stl
-    
-    - .off
-    
-    - .tet
-    
-    - .xyz (point clouds only)
+    - ply  
+    - stl  
+    - vtk
+    - msh
+    - off  
+    - tet  
+    - xyz
 
     Parameters:
         filename (str):  the path of the file
@@ -56,21 +51,16 @@ def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
 
     Supported file formats are:
     
-    - wavefront (.obj)
-    
-    - medit (.mesh)
-    
+    - wavefront (.obj)  
+    - medit (.mesh)  
     - geogram (.geogram_ascii)
-    
-    - .ply
-    
-    - .stl
-    
-    - .off
-    
-    - .tet
-    
-    - .xyz (point clouds only)
+    - ply  
+    - stl  
+    - vtk
+    - msh
+    - off  
+    - tet  
+    - xyz
 
     Parameters:
         filename (str): The output file path
@@ -109,27 +99,35 @@ def from_arrays(
         C (np.ndarray, optional): Cell indices (shape |C|*n for n-regular cells). Defaults to None.
         raw (bool, optional): Returns the RawMeshData object instead of a fully prepared Mesh object. Defaults to False
 
+    Note:
+        The function also accepts list of lists or any 2D iterable as input, though they will first be converted to numpy arrays.
+
     Returns:
         Mesh: a mesh object (PointCloud to VolumeMesh depending on the data provided)
     """
+    V = np.ascontiguousarray(V)
+    E = np.ascontiguousarray(E) if E is not None else None
+    F = np.ascontiguousarray(F) if F is not None else None
+    C = np.ascontiguousarray(C) if C is not None else None
+
     m = RawMeshData()
     if V.shape[1]<3:
         V = np.pad(V, ((0,0),(0,3-V.shape[1])))
     elif V.shape[1]!=3: 
         raise Exception("Vertex array should have shape (n,3)")
+    m.vertices.set_data(V)
     
     n_vert = V.shape[0]
-    m.vertices += list(V)
     if E is not None:
-        if np.any(np.asarray(E)>=n_vert): raise Exception("Edges indices should be between 0 and n_vertices")
+        if np.any(E>=n_vert): raise Exception("Edges indices should be between 0 and n_vertices")
         if E.shape[1]!=2: raise Exception("Edge array should have shape (n,2)")
-        m.edges += list(E)
+        m.edges.set_data(E)
     if F is not None:
-        if np.any(np.asarray(F)>=n_vert): raise Exception("Face indices should be between 0 and n_vertices")
-        m.faces += list(F)
+        if np.any(F>=n_vert): raise Exception("Face indices should be between 0 and n_vertices")
+        m.faces.set_data(F)
     if C is not None:
-        if np.any(np.asarray(C)>=n_vert): raise Exception("Cell indices should be between 0 and n_vertices")
-        m.cells += list(C)
+        if np.any(C>=n_vert): raise Exception("Cell indices should be between 0 and n_vertices")
+        m.cells.set_data(C)
     if raw: return m
     return _instanciate_raw_mesh_data(m)
 
@@ -187,15 +185,19 @@ def merge(mesh_list : list) -> Mesh:
     if len(mesh_list)==0: return None
     merged = RawMeshData()
     vertex_offset = 0
-    for to_merge in mesh_list:
-        merged.vertices += to_merge.vertices
-        if hasattr(to_merge, "edges") : 
-            merged.edges += [tuple((vertex_offset+u for u in e)) for e in to_merge.edges]
-        if hasattr(to_merge, "faces") : 
-            merged.faces += [tuple((vertex_offset+u for u in f)) for f in to_merge.faces]
-        if hasattr(to_merge, "cells") :
-            merged.cells += [tuple((vertex_offset+u for u in c)) for c in to_merge.cells]
-        vertex_offset += len(to_merge.vertices)
+    vertices = [m.vertices for m in mesh_list]
+    vertex_offset = np.zeros(len(merged)+1)
+    vertex_offset[1:] = np.cumsum([len(v) for v in vertices])
+ 
+    edges = [m.edges+vertex_offset[i] for i,m in enumerate(mesh_list)]
+    merged.edges.set_data(np.concatenate(edges))
+
+    faces = [m.faces+vertex_offset[i] for i,m in enumerate(mesh_list)]
+    merged.faces.set_data(np.concatenate(faces))
+
+    cells = [m.cells+vertex_offset[i] for i,m in enumerate(mesh_list)]
+    merged.cells.set_data(np.concatenate(cells))
+
     return _instanciate_raw_mesh_data(merged)
 
 
@@ -212,15 +214,12 @@ def reorder_vertices(mesh : Mesh, new_indices: list) -> Mesh:
     assert len(new_indices) == len(mesh.vertices)
     ind = np.argsort(new_indices) # "inverted list"
     raw = RawMeshData()
-    for v in mesh.id_vertices:
-        raw.vertices.append(mesh.vertices[new_indices[v]])
+    raw.vertices.set_data(mesh.vertices._data[new_indices,:])
+    perm = np.vectorize(lambda i: ind[i])
     if hasattr(mesh, "edges"):
-        for (A,B) in mesh.edges:
-            raw.edges.append((ind[A], ind[B]))
+        raw.edges.set_data(perm(mesh.edges._data.copy()))
     if hasattr(mesh, "faces"):
-        for F in mesh.faces:
-            raw.faces.append([ind[v] for v in F])
+        raw.faces.set_data(perm(mesh.faces._data.copy()))
     if hasattr(mesh, "cells"):
-        for C in mesh.cells:
-            raw.cells.append([ind[v] for v in C])
+        raw.cells.set_data(perm(mesh.cells._data.copy()))
     return _instanciate_raw_mesh_data(raw)

@@ -1,4 +1,4 @@
-from ..mesh.mesh_attributes import Attribute, ArrayAttribute
+from ..mesh.mesh_attributes import SparseAttribute, Attribute
 from ..mesh.datatypes import *
 from .attr_corners import cotangent
 from .. import geometry as geom
@@ -6,7 +6,7 @@ from ..geometry import Vec
 import numpy as np
 
 @forbidden_mesh_types(PointCloud)
-def edge_length(mesh : Mesh, name = "length", persistent:bool=True, dense:bool = True) -> Attribute:
+def edge_length(mesh : Mesh, name = "length", persistent:bool=True, dense:bool = True) -> SparseAttribute:
     """Compute edge lengths across the mesh.
 
     Parameters:
@@ -18,14 +18,14 @@ def edge_length(mesh : Mesh, name = "length", persistent:bool=True, dense:bool =
     if persistent:
         length = mesh.edges.create_attribute(name, float, dense=True)
     else:
-        length = ArrayAttribute(float, len(mesh.edges)) if dense else Attribute(float)
+        length = Attribute(float, len(mesh.edges)) if dense else SparseAttribute(float)
     for e,(a,b) in enumerate(mesh.edges):
         pA,pB = mesh.vertices[a], mesh.vertices[b]
         length[e] = geom.distance(pA,pB)
     return length
 
 @forbidden_mesh_types(PointCloud)
-def edge_middle_point(mesh : SurfaceMesh, name="middle", persistent: bool = True, dense: bool = True) -> Attribute:
+def edge_middle_point(mesh : SurfaceMesh, name="middle", persistent: bool = True, dense: bool = True) -> SparseAttribute:
     """Compute the middle point of each edge across the mesh.
 
     Parameters:
@@ -38,7 +38,7 @@ def edge_middle_point(mesh : SurfaceMesh, name="middle", persistent: bool = True
     if persistent:
         middle = mesh.edges.create_attribute(name, float, dim, dense=True)
     else:
-        middle = ArrayAttribute(float, len(mesh.edges), dim) if dense else Attribute(float, dim)
+        middle = Attribute(float, len(mesh.edges), dim) if dense else SparseAttribute(float, dim)
     for e,(a,b) in enumerate(mesh.edges):
         pA,pB = mesh.vertices[a], mesh.vertices[b]
         middle[e] = (pA+pB)/2
@@ -46,7 +46,7 @@ def edge_middle_point(mesh : SurfaceMesh, name="middle", persistent: bool = True
 
 
 @allowed_mesh_types(SurfaceMesh)
-def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
+def curvature_matrices(mesh : SurfaceMesh) -> SparseAttribute:
     """
     Curvature matrix for each edge on the mesh
     
@@ -71,7 +71,7 @@ def curvature_matrices(mesh : SurfaceMesh) -> Attribute:
     return data
 
 @allowed_mesh_types(SurfaceMesh)
-def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent: bool = True, dense: bool = True)-> Attribute:
+def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent: bool = True, dense: bool = True)-> SparseAttribute:
     """ Compute the cotan weights of edges.
     The weight of an edge separating T1 and T2 is the sum of cotangent of opposite angles in T1 and T2
 
@@ -87,7 +87,7 @@ def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent: bool = Tr
     if persistent:
         cw = mesh.edges.create_attribute(name, float, dense=dense)
     else:
-        cw = ArrayAttribute(float, len(mesh.edges)) if dense else Attribute(float)
+        cw = Attribute(float, len(mesh.edges)) if dense else SparseAttribute(float)
 
     if mesh.face_corners.has_attribute("cotan"):
         cot = mesh.face_corners.get_attribute("cotan")

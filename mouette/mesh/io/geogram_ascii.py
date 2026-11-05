@@ -1,5 +1,5 @@
 from ..mesh_data import RawMeshData
-from ..mesh_attributes import Attribute
+from ..mesh_attributes import Attribute, AttributeType
 from ...geometry import Vec
 import numpy as np
 from enum import Enum
@@ -54,14 +54,14 @@ class Chunk:
         
         if self.type == Chunk.Type.ATTR:
             self.name : str = chunk_data[2]
-            self.data_type : Attribute.Type = Attribute.Type.from_string(chunk_data[3])
+            self.data_type : AttributeType = AttributeType.from_string(chunk_data[3])
             self.data_size : int = int(chunk_data[4]) # number of data point per element
             self.n_data : int = int(chunk_data[5]) # number of elements
-            if self.data_type == Attribute.Type.Float:
+            if self.data_type == AttributeType.Float:
                 self.data = [np.float64(x) for x in chunk_data[6:]]
-            elif self.data_type == Attribute.Type.Int:
+            elif self.data_type == AttributeType.Int:
                 self.data = [int(x) for x in chunk_data[6:]]
-            elif self.data_type == Attribute.Type.Bool:
+            elif self.data_type == AttributeType.Bool:
                 self.data = [bool(int(x)) for x in chunk_data[6:]]
             else:
                 # Attribute type cannot be exported
@@ -88,7 +88,7 @@ def import_geogram_ascii(path):
 
     data = None
     with open(path, 'r') as f:
-        data = [x.split("#")[0].strip() for x in f.readlines()] # split to remove comments
+        data = [x.split("#")[0].strip() for x in f.readlines()] # split to remove end-of-line comments
 
     # Detect chunk separators
     chunk_sep = [] # int values for header lines -> separators of data
@@ -100,13 +100,7 @@ def import_geogram_ascii(path):
     # build chunk objects
     chunks = []
     for i in range(len(chunk_sep)-1):
-        start =  chunk_sep[i]
-        end = chunk_sep[i+1]
-        chunk_data = []
-        for k in range(start,end):
-            chunk_data.append(data[k])
-        chunks.append(chunk_data)
-    chunks = [Chunk(data) for data in chunks]
+        chunks.append(Chunk([data[k] for k in range(chunk_sep[i], chunk_sep[i+1])]))
 
     outmesh = RawMeshData()
 
@@ -163,33 +157,38 @@ def import_geogram_ascii(path):
 
         # first handle special cases : vertices coordinates, edges, faces and cells connectivity
         if chk.container == Chunk.Container.VERTICES and chk.name == "\"point\"":
+            vertices = []
             assert chk.n_data==3 # points have three coordinates
             for i in range(len(chk.data)//chk.n_data):
-                outmesh.vertices.append(Vec([chk.data[3*i], chk.data[3*i+1], chk.data[3*i+2] ]))
+                vertices.append([chk.data[3*i], chk.data[3*i+1], chk.data[3*i+2] ])
+            outmesh.vertices.set_data(vertices)
         
         elif chk.container == Chunk.Container.EDGES and chk.name == "\"GEO::Mesh::edges::edge_vertex\"":
             assert chk.n_data==2 # edges should have 2 pointers to vertices id
+            edges = []
             for i in range(container_sizes[Chunk.Container.EDGES]):
-                outmesh.edges.append([chk.data[2*i], chk.data[2*i+1]])
-        
+                edges.append([chk.data[2*i], chk.data[2*i+1]])
+            outmesh.edges.set_data(edges)
+
         elif chk.container == Chunk.Container.FACES and chk.name == "\"GEO::Mesh::facets::facet_ptr\"":
             # already read above
             continue
 
         elif chk.container == Chunk.Container.FACE_CORNERS and chk.name == "\"GEO::Mesh::facet_corners::corner_vertex\"":
             assert chk.n_data==1
+            faces, face_corners_elem, face_corners_adj = [], [], []
             for i in range(container_sizes[Chunk.Container.FACES]):
                 ncf = n_corner_in_facet[i]
                 ptr = facet_ptr[i]
                 face = [chk.data[ptr+_i] for _i in range(ncf)]
-                outmesh.faces.append(face)
-                outmesh.face_corners += [(x,i) for x in face]
+                faces.append(face)
+                face_corners_elem += face 
+                face_corners_adj += [i]*len(face)
+            outmesh.faces.set_data(faces)
+            outmesh.face_corners.set_data(face_corners_elem, face_corners_adj)
 
-        elif chk.container == Chunk.Container.FACE_CORNERS and chk.name == "\"GEO::Mesh::facet_corners::corner_adjacent_facet\"":
+        elif chk.container == Chunk.Container.FACE_CORNERS and chk.name == "\"GEO::Mesh::facet_corners::corner_adjacent_facet\"": 
             pass
-            # assert chk.n_data==1
-            # adj_corner = outmesh.face_corners.create_attribute("adjacent_face", int, default_value=NOT_AN_ID)
-            # import_attribute(chk, adj_corner)
 
         elif chk.container == Chunk.Container.CELLS and chk.name == "\"GEO::Mesh::cells::cell_ptr\"":
             # already read above
@@ -197,17 +196,20 @@ def import_geogram_ascii(path):
 
         elif chk.container == Chunk.Container.CELL_CORNERS and chk.name == "\"GEO::Mesh::cell_corners::corner_vertex\"":
             assert chk.n_data==1
+            cells, cell_corners_elem, cell_corners_adj = [], [], []
             for i in range(container_sizes[Chunk.Container.CELLS]):
                 ncc = n_corner_in_cell[i]
                 ptr = cell_ptr[i]
                 cell = [chk.data[ptr+_i] for _i in range(ncc)]
-                outmesh.cells.append(cell)
-                outmesh.cell_corners += [(x,i) for x in cell]
+                cells.append(cell)
+                cell_corners_elem += cell
+                cell_corners_adj += [i]*len(cell)
+            outmesh.cells.set_data(cells)
+            outmesh.cell_corners.set_data(cell_corners_elem, cell_corners_adj)
 
         elif chk.container == Chunk.Container.CELL_FACETS and chk.name == "\"GEO::Mesh::cell_facets::adjacent_cell\"":
             assert chk.n_data==1
             adj_cell = outmesh.cell_faces.create_attribute("adjacent_cell", int, default_value=NOT_AN_ID)
-            adj_cell._expand(container_sizes[Chunk.Container.CELL_FACETS])
             import_attribute(chk, adj_cell)
 
         else: # user defined attribute
@@ -224,22 +226,21 @@ def import_geogram_ascii(path):
                 err_msg = f"In import_geogram_ascii : Container {chk.container} is not recognized"
                 raise Exception(err_msg)
             attr = container.create_attribute(chk.name.split("\"")[1], chk.data_type, chk.n_data) # remove first and last "
-            if chk.container == Chunk.Container.CELL_FACETS:
-                attr._expand(container_sizes[Chunk.Container.CELL_FACETS])
             import_attribute(chk, attr)
     return outmesh
+
 
 def export_attribute(f, size, container, attr, attr_name):
     f.write(f"[ATTR]\n\"{container}\"\n\"{attr_name}\"\n\"{attr.type.to_string()}\"\n{attr.type.byte_size()}\n{attr.elemsize}\n")
     for i in range(size):
         if attr.elemsize==1:
-            if attr.type==Attribute.Type.Bool: # should be written as 0 or 1 and not as "true" or "false"
+            if attr.type==AttributeType.Bool: # should be written as 0 or 1 and not as "true" or "false"
                 f.write(f"{int(attr[i])}\n")
             else:
                 f.write("{}\n".format(attr[i]))
         else:
             for j in range(attr.elemsize):
-                if attr.type==Attribute.Type.Bool:
+                if attr.type==AttributeType.Bool:
                     f.write(f"{int(attr[i][j])}\n")
                 else:
                     f.write(f"{attr[i][j]}\n")
@@ -290,12 +291,6 @@ def export_geogram_ascii(mesh : RawMeshData, path):
             f.write(f"[ATTR]\n\"GEO::Mesh::facet_corners\"\n\"GEO::Mesh::facet_corners::corner_vertex\"\n\"index_t\"\n4\n1\n")
             for c in mesh.face_corners:
                 f.write(f"{c}\n")
-
-            # corner adjacent facet
-            # f.write("[ATTR]\n\"GEO::Mesh::facet_corners\"\n\"GEO::Mesh::facet_corners::corner_adjacent_facet\"\n\"index_t\"\n4\n1\n")
-            # for c in mesh.face_corners:
-            #     for i in range(n_corners):
-            #         f.write(f"{mesh.face_corners.adj(c)}\n")
                 
             for attr_key in mesh.face_corners.attributes:
                 if attr_key in ["adjacent_facet", "facet_ptr"]: continue
