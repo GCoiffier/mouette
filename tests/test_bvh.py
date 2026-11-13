@@ -16,7 +16,7 @@ def query_points(V, n, seed=0):
 ### Points ###
 
 @pytest.mark.parametrize("leaf_size", [1, 4, 10, 32])
-@pytest.mark.parametrize("mesh", surfaces + point_clouds)
+@pytest.mark.parametrize("mesh", list(TRI_SURFACES.values()) + list(POINT_CLOUDS.values()))
 def test_bvh_points_vs_kdtree(mesh, leaf_size):
     V = np.asarray(mesh.vertices, dtype=float)
     Q = query_points(V, 2000)
@@ -41,11 +41,10 @@ def test_bvh_points_2d_vs_kdtree(leaf_size):
 
 ### Triangles ###
 
-triangle_surfaces = surfaces + [surf_spot(), surf_cube(), surf_tetrahedron(), surf_torus()]
-
 @pytest.mark.parametrize("leaf_size", [1, 4, 10, 32])
-@pytest.mark.parametrize("mesh", triangle_surfaces)
-def test_bvh_triangles_vs_igl(mesh, leaf_size):
+@pytest.mark.parametrize("s", CLOSED_TRI_SURFACES.items())
+def test_bvh_triangles_vs_igl(s, leaf_size):
+    _,mesh = s
     V = np.asarray(mesh.vertices, dtype=float)
     F = np.asarray(mesh.faces, dtype=np.int64)
     Q = query_points(V, 2000)
@@ -60,7 +59,8 @@ def test_bvh_triangles_vs_igl(mesh, leaf_size):
 
 def test_bvh_oriented_with_points():
     # oriented=True is ignored on a point cloud BVH
-    V = np.asarray(surf_spot().vertices, dtype=float)
+    spot = CLOSED_TRI_SURFACES["spot"]
+    V = np.asarray(spot.vertices, dtype=float)
     Q = query_points(V, 100)
     bvh = M.spatial.BoundingVolumeHierarchy(V)
     d, p = bvh.query_distance(Q)
@@ -68,8 +68,9 @@ def test_bvh_oriented_with_points():
     assert np.allclose(d_or, d) and np.allclose(p_or, p)
 
 @pytest.mark.parametrize("leaf_size", [1, 4, 10, 32])
-@pytest.mark.parametrize("mesh", closed_triangle_surfaces)
-def test_bvh_triangles_oriented_vs_igl(mesh, leaf_size):
+@pytest.mark.parametrize("s", CLOSED_TRI_SURFACES.items())
+def test_bvh_triangles_oriented_vs_igl(s, leaf_size):
+    _, mesh = s
     V = np.asarray(mesh.vertices, dtype=float)
     F = np.asarray(mesh.faces, dtype=np.int64)
     Q = query_points(V, 2000)
@@ -100,8 +101,9 @@ def test_bvh_edges_2d_oriented(leaf_size):
 
 ### Other ###
 
-@pytest.mark.parametrize("mesh", [surf_spot(), surf_cube(), surf_torus()])
-def test_bvh_query_on_vertices(mesh):
+@pytest.mark.parametrize("s", CLOSED_TRI_SURFACES.items())
+def test_bvh_query_on_vertices(s):
+    _,mesh = s
     V = np.asarray(mesh.vertices, dtype=float)
     F = np.asarray(mesh.faces, dtype=np.int64)
     bvh = M.spatial.BoundingVolumeHierarchy(V, F)
@@ -110,9 +112,9 @@ def test_bvh_query_on_vertices(mesh):
     assert np.allclose(p, V, atol=1e-10)
 
 def test_bvh_single_query():
-    mesh = surf_spot()
-    V = np.asarray(mesh.vertices, dtype=float)
-    F = np.asarray(mesh.faces, dtype=np.int64)
+    spot = CLOSED_TRI_SURFACES["spot"]
+    V = np.asarray(spot.vertices, dtype=float)
+    F = np.asarray(spot.faces, dtype=np.int64)
     bvh = M.spatial.BoundingVolumeHierarchy(V, F)
     Q = query_points(V, 10)
     d, p = bvh.query_distance(Q)

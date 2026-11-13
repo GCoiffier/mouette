@@ -15,7 +15,7 @@ ff_param.run()
 
 # ps_surf = ps.register_surface_mesh("surf", np.asarray(mesh.vertices), np.asarray(mesh.faces))
 # ps.register_curve_network("seams", np.asarray(ff_param.cut_graph.vertices), np.asarray(ff_param.cut_graph.edges), material="flat", color=[1,0,0], radius=0.001)
-# ps_surf.add_parameterization_quantity("uv", ff_param.uvs.as_array(len(mesh.face_corners)), defined_on="corners", checker_size=0.5, enabled=True)
+# ps_surf.add_parameterization_quantity("uv", ff_param.uvs.as_array(), defined_on="corners", checker_size=0.5, enabled=True)
 
 # ps.show()
 

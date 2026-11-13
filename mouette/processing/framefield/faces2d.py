@@ -1,5 +1,4 @@
 from .base import FrameField
-from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import SparseAttribute
 from ... import geometry as geom
@@ -50,7 +49,7 @@ class _BaseFrameField2DFaces(FrameField) :
 
     def _initialize_attributes(self):
         self.cot = cotangent(self.mesh, persistent=False)
-        self.defect = angle_defects(self.mesh,persistent=False, dense=True)
+        self.defect = angle_defects(self.mesh,persistent=False)
         if self.feat is None:
             self.feat = FeatureEdgeDetector(only_border = not self.features, verbose=self.verbose)(self.mesh)
         if self.conn is None:
@@ -105,7 +104,7 @@ class _BaseFrameField2DFaces(FrameField) :
             edge_rot = self.mesh.edges.get_attribute("angles")
             edge_rot.clear()
         else:
-            edge_rot = self.mesh.edges.create_attribute("angles", float, dense=True)
+            edge_rot = self.mesh.edges.create_attribute("angles", float)
             # the rotation induced by the frame field on every edge
             # if edge is uv, positive orientation is from T(uv) to T(vu)
 
@@ -128,12 +127,7 @@ class _BaseFrameField2DFaces(FrameField) :
             i_angle = np.argmin(abs_angles)
             edge_rot[ie] = angles[i_angle]
 
-        if self.mesh.vertices.has_attribute(singul_attr_name):
-            singuls = self.mesh.vertices.get_attribute(singul_attr_name)
-            singuls.clear()
-        else:
-            singuls = self.mesh.vertices.create_attribute(singul_attr_name, int)
-        
+        singuls = self.mesh.vertices.create_attribute(singul_attr_name, int, sparse=True)
         for v in self.mesh.id_vertices:
             angle = self.defect[v]
             for e in self.mesh.connectivity.vertex_to_edges(v):
@@ -151,7 +145,7 @@ class _BaseFrameField2DFaces(FrameField) :
         Returns:
             PolyLine: representation of the frame field
         """
-        FFMesh = RawMeshData()
+        raw = RawMeshData()
         L = mean_edge_length(self.mesh)/3
         n = self.order+1
         for id_face, face in enumerate(self.mesh.faces):
@@ -162,10 +156,10 @@ class _BaseFrameField2DFaces(FrameField) :
             bary = (pA+pB+pC)/3 # reference point for display
             cmplx = [geom.rotate_around_axis(basis, normal, angle + 2*k*pi/self.order) for k in range(self.order)]
             pts = [bary + abs(self.var[id_face])*L*r for r in cmplx]
-            FFMesh.vertices.append(bary)
-            FFMesh.vertices += pts
-            FFMesh.edges += [(n*id_face, n*id_face+k) for k in range(1,n)]
-        return PolyLine(FFMesh)
+            raw.vertices.append(bary)
+            raw.vertices += pts
+            raw.edges += [(n*id_face, n*id_face+k) for k in range(1,n)]
+        return raw.instantiate()
 
 class FrameField2DFaces(_BaseFrameField2DFaces) : 
 

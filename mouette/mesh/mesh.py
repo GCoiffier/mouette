@@ -1,18 +1,11 @@
-from .mesh_data import RawMeshData
+from .datatypes.raw import RawMeshData
+from .data_container import DataContainer, CornerDataContainer
 from .datatypes import Mesh, PointCloud, PolyLine, SurfaceMesh, VolumeMesh
 from .io.io import read_by_extension, write_by_extension
-
+from typing import Iterable
 import numpy as np
 
-def _instanciate_raw_mesh_data(mesh_data : RawMeshData, dim : int = None) -> Mesh:
-    mesh_data.prepare()
-    if dim is None: dim = -1
-    dim = max(dim, mesh_data.dimensionality)
-    if dim==0: return PointCloud(mesh_data)
-    if dim==1: return PolyLine(mesh_data)
-    if dim==2: return SurfaceMesh(mesh_data)
-    if dim==3: return VolumeMesh(mesh_data)
-
+##### Mesh loading #####
 def load(filename: str, dim: int = None, raw: bool = False) -> Mesh:
     """
     Loads a Mesh object from a file on the disk.
@@ -41,12 +34,61 @@ def load(filename: str, dim: int = None, raw: bool = False) -> Mesh:
     Returns:
         Mesh:  A new mesh object (PointCloud, LineMesh, SurfaceMesh or VolumeMesh)
     """
-    data = read_by_extension(filename)
-    if raw: return data
-    return _instanciate_raw_mesh_data(data, dim)
-    
+    rawdata : RawMeshData = read_by_extension(filename)
+    if raw: return rawdata
+    return rawdata.instantiate()
 
-def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
+
+def from_arrays(
+        V: np.ndarray, 
+        E: np.ndarray = None, 
+        F: np.ndarray = None, 
+        C: np.ndarray = None
+    ) -> Mesh:
+    """Creates a mesh object from numpy arrays.
+
+    Args:
+        V (np.ndarray): vertex coordinates. SHould have shape |V|*3 or |V|*2. If shape is |V|*2, the array is padded so that z=0.
+        E (np.ndarray, optional): Edge indices (shape |E|*2). Defaults to None.
+        F (np.ndarray, optional): Face indices (shape |F|*n for n-regular faces). Defaults to None.
+        C (np.ndarray, optional): Cell indices (shape |C|*n for n-regular cells). Defaults to None.
+
+    Note:
+        The function also accepts list of lists or any 2D iterable as input, though they will first be converted to numpy arrays.
+
+    Returns:
+        Mesh: a mesh object (PointCloud to VolumeMesh depending on the data provided)
+    """
+    vertices = np.ascontiguousarray(V, dtype=np.float64)
+    edges = np.ascontiguousarray(E, dtype=np.int64) if E is not None else None
+    faces = np.ascontiguousarray(F, dtype=np.int64) if F is not None else None
+    cells = np.ascontiguousarray(C, dtype=np.int64) if C is not None else None
+    rawmesh = RawMeshData()
+
+    if vertices.shape[1]<3:
+        vertices = np.pad(vertices, ((0,0),(0,3-vertices.shape[1])))
+    elif vertices.shape[1]!=3: 
+        raise Exception("Vertex array should have shape (n,3)")
+    n_vert = vertices.shape[0]
+    rawmesh.vertices = vertices
+
+    if edges is not None:
+        if np.any(edges>=n_vert): raise Exception("Edges indices should be between 0 and n_vertices")
+        if edges.shape[1]!=2: raise Exception("Edge array should have shape (n,2)")
+        rawmesh.edges = edges
+
+    if faces is not None:
+        if np.any(faces>=n_vert): raise Exception("Face indices should be between 0 and n_vertices")
+        rawmesh.faces = faces
+
+    if cells is not None:
+        if np.any(cells>=n_vert): raise Exception("Cell indices should be between 0 and n_vertices")
+        rawmesh.cells = cells
+    return rawmesh.instantiate()
+
+
+##### Mesh saving #####
+def save(mesh : Mesh, filename: str) -> None:
     """ Saves the mesh data into a file.
 
     Supported file formats are:
@@ -68,68 +110,11 @@ def save(mesh : Mesh, filename: str, ignore_elements:set = None) -> None:
     Raises:
         Exception: Unsupported file extension
     """
-    if isinstance(mesh,VolumeMesh) and ".geogram" in filename:
-        mesh.connectivity._compute_adjacent_cell()
-    raw_mesh = RawMeshData(mesh) # get rid of connectivity and additional attributes depending on dimension
-    if ignore_elements is not None:
-        if "edges" in ignore_elements: raw_mesh.edges.clear()
-        if "faces" in ignore_elements:
-            raw_mesh.faces.clear()
-            raw_mesh.face_corners.clear()
-        if "cells" in ignore_elements: 
-            raw_mesh.cells.clear()
-            raw_mesh.cell_corners.clear()
-            raw_mesh.cell_faces.clear()
-    write_by_extension(raw_mesh, filename)
+    write_by_extension(mesh, filename)
 
 
-def from_arrays(
-        V: np.ndarray, 
-        E: np.ndarray = None, 
-        F: np.ndarray = None, 
-        C: np.ndarray = None, 
-        raw: bool = False
-    ) -> Mesh:
-    """Creates a mesh object from numpy arrays.
 
-    Args:
-        V (np.ndarray): vertex coordinates. SHould have shape |V|*3 or |V|*2. If shape |V|*2, the array is padded so that z=0.
-        E (np.ndarray, optional): Edge indices (shape |E|*2). Defaults to None.
-        F (np.ndarray, optional): Face indices (shape |F|*n for n-regular faces). Defaults to None.
-        C (np.ndarray, optional): Cell indices (shape |C|*n for n-regular cells). Defaults to None.
-        raw (bool, optional): Returns the RawMeshData object instead of a fully prepared Mesh object. Defaults to False
-
-    Note:
-        The function also accepts list of lists or any 2D iterable as input, though they will first be converted to numpy arrays.
-
-    Returns:
-        Mesh: a mesh object (PointCloud to VolumeMesh depending on the data provided)
-    """
-    V = np.ascontiguousarray(V)
-    E = np.ascontiguousarray(E) if E is not None else None
-    F = np.ascontiguousarray(F) if F is not None else None
-    C = np.ascontiguousarray(C) if C is not None else None
-
-    m = RawMeshData()
-    if V.shape[1]<3:
-        V = np.pad(V, ((0,0),(0,3-V.shape[1])))
-    elif V.shape[1]!=3: 
-        raise Exception("Vertex array should have shape (n,3)")
-    m.vertices.set_data(V)
-    
-    n_vert = V.shape[0]
-    if E is not None:
-        if np.any(E>=n_vert): raise Exception("Edges indices should be between 0 and n_vertices")
-        if E.shape[1]!=2: raise Exception("Edge array should have shape (n,2)")
-        m.edges.set_data(E)
-    if F is not None:
-        if np.any(F>=n_vert): raise Exception("Face indices should be between 0 and n_vertices")
-        m.faces.set_data(F)
-    if C is not None:
-        if np.any(C>=n_vert): raise Exception("Cell indices should be between 0 and n_vertices")
-        m.cells.set_data(C)
-    if raw: return m
-    return _instanciate_raw_mesh_data(m)
+##### Other mesh manipulations ######
 
 def copy(mesh : Mesh, copy_attributes=False, copy_connectivity=False) -> Mesh:
     """Makes a copy of the input mesh
@@ -142,36 +127,44 @@ def copy(mesh : Mesh, copy_attributes=False, copy_connectivity=False) -> Mesh:
         Mesh: a hard copy of the given mesh
     """
     from copy import deepcopy
-    copy_mesh = type(mesh)() # instanciate a new mesh of the same type
+    def make_copy(container, id):
+        if isinstance(container, CornerDataContainer):
+            return deepcopy(container) if copy_attributes else CornerDataContainer(container._elem.copy(), container._adj.copy(), id=id)
+        elif isinstance(container, DataContainer):
+            return deepcopy(container) if copy_attributes else DataContainer(container._data.copy(), id=id)
+        else:
+            raise Exception("Should not happen")
+        
+    match mesh:
+        case PointCloud():
+            copy_mesh = PointCloud(make_copy(mesh.vertices, "vertices"))
 
-    if copy_attributes:
-        copy_mesh.vertices = deepcopy(mesh.vertices)
-        if hasattr(mesh, "edges") : copy_mesh.edges = deepcopy(mesh.edges)
-        if hasattr(mesh, "faces") :
-            copy_mesh.faces = deepcopy(mesh.faces)
-            copy_mesh.face_corners = deepcopy(mesh.face_corners)
-        if hasattr(mesh, "cells"):
-            copy_mesh.cells = deepcopy(mesh.cells)
-            copy_mesh.cell_corners = deepcopy(mesh.cell_corners)
-            copy_mesh.cell_faces = deepcopy(mesh.cell_faces)
-    else:
-        # copy only _cont data of each container (connectivity data and not attribute data)
-        copy_mesh.vertices._data = deepcopy(mesh.vertices._data)
-        if hasattr(mesh, "edges"): copy_mesh.edges._data = deepcopy(mesh.edges._data)
-        if hasattr(mesh, "faces") : 
-            copy_mesh.faces._data = deepcopy(mesh.faces._data)
-            copy_mesh.face_corners._elem = deepcopy(mesh.face_corners._elem)
-            copy_mesh.face_corners._adj = deepcopy(mesh.face_corners._adj)
-        if hasattr(mesh, "cells") : 
-            copy_mesh.cells._data = deepcopy(mesh.cells._data)
-            copy_mesh.cell_corners._elem = deepcopy(mesh.cell_corners._elem)
-            copy_mesh.cell_corners._adj = deepcopy(mesh.cell_corners._adj)
-            copy_mesh.cell_faces._elem = deepcopy(mesh.cell_faces._elem)
-            copy_mesh.cell_faces._adj = deepcopy(mesh.cell_faces._adj)
-        # _cont of face_corners and cell_corners are always empty
+        case PolyLine():
+            copy_mesh = PolyLine(
+                vertices = make_copy(mesh.vertices, "vertices"),
+                edges = make_copy(mesh.edges, "edges")
+            )
+        case SurfaceMesh():
+            copy_mesh = SurfaceMesh(
+                vertices = make_copy(mesh.vertices, "vertices"),
+                edges = make_copy(mesh.edges, "edges"),
+                faces = make_copy(mesh.faces, "faces"),
+                face_corners= make_copy(mesh.face_corners, "face_corners")
+            )
+        case VolumeMesh():
+            copy_mesh = SurfaceMesh(
+                vertices = make_copy(mesh.vertices, "vertices"),
+                edges = make_copy(mesh.edges, "edges"),
+                faces = make_copy(mesh.faces, "faces"),
+                face_corners= make_copy(mesh.face_corners, "face_corners"),
+                cells = make_copy(mesh.cells, "cells"),
+                cell_corners = make_copy(mesh.cell_corners, "cell_corners"),
+                cell_faces = make_copy(mesh.cell_faces, "cell_faces")
+            )
     if copy_connectivity and hasattr(mesh, "connectivity"):
-        copy_mesh.connectivity = mesh.connectivity
+        copy_mesh.connectivity = deepcopy(mesh.connectivity)
     return copy_mesh
+
 
 def merge(mesh_list : list) -> Mesh:
     """Merges a list of independents meshes as a unique mesh.
@@ -179,47 +172,49 @@ def merge(mesh_list : list) -> Mesh:
     Parameters:
         mesh_list (list): a list of meshes. If empty, this function returns None
 
+    Raises:
+        Exception: fails if provided meshes are not of the same type (i.e. cannot merge a PointCloud with a SurfaceMesh).
+
     Returns:
-        Mesh: the merged mesh. Takes the type of the mesh with the largest dimensionality in the list (ie merging a Polyline with a Volume mesh returns a Volume mesh)
+        Mesh: the merged mesh.
     """
     if len(mesh_list)==0: return None
-    merged = RawMeshData()
-    vertex_offset = 0
+    if not np.all([isinstance(m, type(mesh_list[0])) for m in mesh_list]):
+        raise Exception("`merge` received meshes of different types.")
     vertices = [m.vertices for m in mesh_list]
-    vertex_offset = np.zeros(len(merged)+1)
+    vertex_offset = np.zeros(len(mesh_list)+1)
     vertex_offset[1:] = np.cumsum([len(v) for v in vertices])
- 
-    edges = [m.edges+vertex_offset[i] for i,m in enumerate(mesh_list)]
-    merged.edges.set_data(np.concatenate(edges))
+    vertices = np.concatenate(vertices)
 
-    faces = [m.faces+vertex_offset[i] for i,m in enumerate(mesh_list)]
-    merged.faces.set_data(np.concatenate(faces))
+    edges, faces, cells = None, None, None
+    if hasattr(mesh_list[0], "edges"):
+        edges = np.concatenate([m.edges._data+vertex_offset[i] for i,m in enumerate(mesh_list)])
+    if hasattr(mesh_list[0], "faces"):
+        faces =  np.concatenate([m.faces._data+vertex_offset[i] for i,m in enumerate(mesh_list)])
+    if hasattr(mesh_list[0], "cells"):
+        cells = np.concatenate([m.cells._data+vertex_offset[i] for i,m in enumerate(mesh_list)])
+    return from_arrays(vertices, edges, faces, cells)
 
-    cells = [m.cells+vertex_offset[i] for i,m in enumerate(mesh_list)]
-    merged.cells.set_data(np.concatenate(cells))
 
-    return _instanciate_raw_mesh_data(merged)
-
-
-def reorder_vertices(mesh : Mesh, new_indices: list) -> Mesh:
+def reorder_vertices(mesh : Mesh, new_indices: Iterable) -> Mesh:
     """Reorders vertex indices in a mesh object.
 
     Args:
         mesh (Mesh): input mesh
-        new_indices (list): a list containing a permutation of vertices. New index of vertex L[i] will be i.
+        new_indices (Iterable): a container with a permutation of vertices. New index of vertex L[i] will be i.
 
     Returns:
-        Mesh: the mesh object with permuted vertices
+        Mesh: a copy of the mesh with permuted vertices
     """
-    assert len(new_indices) == len(mesh.vertices)
+    new_indices = np.asarray(new_indices)
+    assert new_indices.shape == (len(mesh.vertices),)
     ind = np.argsort(new_indices) # "inverted list"
-    raw = RawMeshData()
-    raw.vertices.set_data(mesh.vertices._data[new_indices,:])
     perm = np.vectorize(lambda i: ind[i])
-    if hasattr(mesh, "edges"):
-        raw.edges.set_data(perm(mesh.edges._data.copy()))
-    if hasattr(mesh, "faces"):
-        raw.faces.set_data(perm(mesh.faces._data.copy()))
-    if hasattr(mesh, "cells"):
-        raw.cells.set_data(perm(mesh.cells._data.copy()))
-    return _instanciate_raw_mesh_data(raw)
+
+    V, E, F, C = None, None, None, None
+    
+    V = mesh.vertices._data[new_indices,:]
+    if hasattr(mesh, "edges"): E = perm(mesh.edges._data.copy())
+    if hasattr(mesh, "faces"): F = perm(mesh.faces._data.copy())
+    if hasattr(mesh, "cells"): C = perm(mesh.cells._data.copy())
+    return from_arrays(V, E, F, C)

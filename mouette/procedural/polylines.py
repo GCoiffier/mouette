@@ -1,8 +1,8 @@
 from ..mesh import from_arrays
-from ..mesh.datatypes import PolyLine
-from ..mesh.mesh_data import RawMeshData
+from ..mesh.datatypes import PolyLine, RawMeshData
 from ..utils import iterators
 import numpy as np
+
 
 def chain_of_vertices(vertices: np.ndarray, loop:bool = False) -> PolyLine:
     """Creates a polyline that links the provided vertices in order.
@@ -14,13 +14,13 @@ def chain_of_vertices(vertices: np.ndarray, loop:bool = False) -> PolyLine:
     Returns:
         PolyLine: _description_
     """
-    pl = from_arrays(np.asarray(vertices), raw=True)
-    n = len(pl.vertices)
+    raw = RawMeshData()
+    raw.vertices = vertices
     if loop:
-        pl.edges += [x for x in iterators.cyclic_pairs(range(n))]
+        raw.edges += [x for x in iterators.cyclic_pairs(range(len(vertices)))]
     else:
-        pl.edges += [x for x in iterators.consecutive_pairs(range(n))]
-    return PolyLine(pl)
+        raw.edges += [x for x in iterators.consecutive_pairs(range(len(vertices)))]
+    return raw.instantiate()
 
 
 def vector_field(origins: np.ndarray, vectors: np.ndarray, length_mult: float = 1.) -> PolyLine:
@@ -55,5 +55,5 @@ def vector_field(origins: np.ndarray, vectors: np.ndarray, length_mult: float = 
         end_i = origins[i] + length_mult*vectors[i]
         pl.vertices += [origins[i], end_i]
         pl.edges.append((2*i,2*i+1))
-    pl.vertices.register_array_as_attribute("orig", np.array([i%2==0 for i in pl.id_vertices]))
-    return PolyLine(pl)
+    pl.vertices_attr["orig"] = np.array([i%2==0 for i in pl.id_vertices])
+    return pl.instantiate()

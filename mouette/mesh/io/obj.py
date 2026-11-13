@@ -1,8 +1,6 @@
-import meshio
-from ..mesh_data import RawMeshData
-from ...geometry import Vec
+from ..datatypes import RawMeshData, PolyLine
 from ... import config
-from ...utils import keyify
+import numpy as np
 
 def import_obj(path : str):
     """
@@ -21,43 +19,39 @@ def parse_vertex( vstr ):
     return (vid,tid,nid) 
 
 def parse_obj_data(data):
-    obj = RawMeshData()
+    out = RawMeshData()
+    face_data = []
     normals = []
     uv_coords = []
-    faces = []
     for line in data:
         toks = line.split()
         if not toks: continue # empty line
         if toks[0] == 'v':
-            obj.vertices.append( Vec([ float(v) for v in toks[1:4]]) ) # get only the first three components and ignore the rest
+            out.vertices.append([ float(v) for v in toks[1:4]]) # get only the first three components and ignore the rest
         elif toks[0] == 'vn':
-            normals.append( Vec([ float(v) for v in toks[1:]]) )
+            normals.append([ float(v) for v in toks[1:]])
         elif toks[0] == 'vt':
-            uv_coords.append( Vec([float(toks[1]), float(toks[2])]) )
+            uv_coords.append([float(toks[1]), float(toks[2])])
         elif toks[0] == 'f':
-            faces.append([ parse_vertex(vstr) for vstr in toks[1:] ])
+            face_data.append([parse_vertex(vstr) for vstr in toks[1:]])
         elif toks[0] == 'l':
             v1,v2 = int(toks[1])-1, int(toks[2])-1
-            e = keyify(v1,v2)
-            obj.edges.append(e)
-    
-    normals_attr = obj.face_corners.create_attribute("normals", float, 3)
-    uv_attr = obj.face_corners.create_attribute("uv_coords", float, 2)
-    ic = 0
-    for iF,F in enumerate(faces):
+            out.edges.append((v1,v2))
+
+    ## Process f_field into faces, uv_coords and normals
+    out.face_corners_attr["uv_coords"] = []
+    out.face_corners_attr["normals"] = []
+    for iF,F in enumerate(face_data):
         face = []
         for (vid,tid,nid) in F:
             face.append(vid)
             if nid!=-1:
-                normals_attr[ic] = normals[nid]
+                out.face_corners_attr["normals"].append(normals[nid])
             if tid!=-1:
-                uv_attr[ic] = uv_coords[tid]
-            ic += 1
-        obj.faces.append(face)
-        obj.face_corners += [(v,iF) for v in face]
-    if normals_attr.empty() : obj.face_corners.delete_attribute("normals")
-    if uv_attr.empty(): obj.face_corners.delete_attribute("uv_coords")
-    return obj
+                out.face_corners_attr["uv_coords"].append(uv_coords[tid])
+        out.faces.append(face)
+        out.face_corners += [[face[i], iF] for i in range(len(F))]
+    return out
 
 def export_obj(mesh, path):
     has_texcoords_vert = mesh.vertices.has_attribute("uv_coords") and not mesh.vertices.get_attribute("uv_coords").empty()
@@ -69,12 +63,12 @@ def export_obj(mesh, path):
             ofile.write('v '+' '.join(['{}'.format(v) for v in vtx])+'\n')
 
         if has_texcoords_corners:
-            texcoords = mesh.face_corners.get_attribute("uv_coords").as_array(len(mesh.face_corners))
+            texcoords = mesh.face_corners.get_attribute("uv_coords").as_array()
             for tex in texcoords:
                 ofile.write('vt '+' '.join([str(vt) for vt in tex])+'\n')
                     
         elif has_texcoords_vert:
-            texcoords = mesh.vertices.get_attribute("uv_coords").as_array(len(mesh.vertices))
+            texcoords = mesh.vertices.get_attribute("uv_coords").as_array()
             for tex in texcoords:
                 ofile.write('vt '+' '.join([str(vt) for vt in tex])+'\n')
 
@@ -85,13 +79,14 @@ def export_obj(mesh, path):
                 ofile.write('vn '+' '.join(['{}'.format(vn) for vn in nrm])+'\n')
 
         if config.export_edges_in_obj:
-            if not config.complete_edges_from_faces or mesh.dimensionality==1:
+            if not config.complete_edges_from_faces or isinstance(mesh, PolyLine):
                 for a,b in mesh.edges:
                     ofile.write(f'l {a+1} {b+1}\n')
             elif mesh.edges.has_attribute("hard_edges"):
-                for e in mesh.edges.get_attribute("hard_edges"):
-                    a,b = mesh.edges[e]
-                    ofile.write(f'l {a+1} {b+1}\n')
+                hard_edges = mesh.edges.get_attribute("hard_edges")
+                for e,(A,B) in enumerate(mesh.edges):
+                    if hard_edges[e]:
+                        ofile.write(f'l {A+1} {B+1}\n')
 
         cnr_id = 1
         for face in mesh.faces:

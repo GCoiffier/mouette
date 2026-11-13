@@ -1,6 +1,7 @@
-from ..mesh_data import RawMeshData
+from ..datatypes.raw import RawMeshData
 from ..datatypes.type_checks import *
 from collections import deque
+import numpy as np
 
 def import_tet(path : str):
     """
@@ -28,16 +29,15 @@ def import_tet(path : str):
 def parse_tet_data(data):
     data = deque(data)
     get_line = lambda : data.popleft().strip().split()
-    output = RawMeshData()
     nvert = int(get_line()[0])
     ntet  = int(get_line()[0])
+    out = RawMeshData()
+
     for _ in range(nvert):
-        v = [float(u) for u in get_line()]
-        output.vertices.append(v)
+        out.vertices.append([float(u) for u in get_line()])
     for _ in range(ntet):
-        c = tuple((int(u) for u in get_line()[1:]))
-        output.cells.append(c)
-    return output
+        out.cells.append([int(u) for u in get_line()[1:]])
+    return out
 
 def export_tet(mesh, path):
     with open( path, 'w' ) as ofile:

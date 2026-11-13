@@ -1,52 +1,62 @@
+from typing import Union
+
 from ..mesh.mesh_attributes import SparseAttribute, Attribute
 from ..mesh.datatypes import *
 from .attr_corners import cotangent
 from .. import geometry as geom
 from ..geometry import Vec
+
 import numpy as np
+from numba import njit, prange
+
+@njit(cache=True, parallel=True)
+def _edge_length(V, E):
+    n = E.shape[0]
+    lengths = np.empty(n, dtype=float)
+    for i in prange(n):
+        lengths[i] = np.linalg.norm(V[E[i,0]] - V[E[i,1]])
+    return lengths
 
 @forbidden_mesh_types(PointCloud)
-def edge_length(mesh : Mesh, name = "length", persistent:bool=True, dense:bool = True) -> SparseAttribute:
+def edge_length(mesh : Mesh, name = "length", persistent:bool=True) -> Union[Attribute, np.ndarray]:
     """Compute edge lengths across the mesh.
 
     Parameters:
         mesh (Mesh): the input mesh. PointClouds are forbidden (no edges).
         name (str, optional): name of the attribute. Defaults to "length".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
-        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
     """
+    lengths = _edge_length(mesh.vertices._data, mesh.edges._data)
     if persistent:
-        length = mesh.edges.create_attribute(name, float, dense=True)
-    else:
-        length = Attribute(float, len(mesh.edges)) if dense else SparseAttribute(float)
-    for e,(a,b) in enumerate(mesh.edges):
-        pA,pB = mesh.vertices[a], mesh.vertices[b]
-        length[e] = geom.distance(pA,pB)
-    return length
+        return mesh.edges.register_array_as_attribute(name, lengths)
+    return lengths
+
+
+@njit(cache=True, parallel=True)
+def _edge_middle_point(V, E):
+    n = E.shape[0]
+    mid = np.empty((n,3), dtype=float)
+    for i in prange(n):
+        mid[i] = (V[E[i,0]] + V[E[i,1]])/2
+    return mid
 
 @forbidden_mesh_types(PointCloud)
-def edge_middle_point(mesh : SurfaceMesh, name="middle", persistent: bool = True, dense: bool = True) -> SparseAttribute:
+def edge_middle_point(mesh : SurfaceMesh, name="middle", persistent: bool = True) -> Union[Attribute, np.ndarray]:
     """Compute the middle point of each edge across the mesh.
 
     Parameters:
         mesh (Mesh): the input mesh. PointClouds are forbidden (no edges).
         name (str, optional): name of the attribute. Defaults to "middle".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
-        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
     """
-    dim = len(mesh.vertices[0])
+    middle = _edge_length(mesh.vertices._data, mesh.edges._data)
     if persistent:
-        middle = mesh.edges.create_attribute(name, float, dim, dense=True)
-    else:
-        middle = Attribute(float, len(mesh.edges), dim) if dense else SparseAttribute(float, dim)
-    for e,(a,b) in enumerate(mesh.edges):
-        pA,pB = mesh.vertices[a], mesh.vertices[b]
-        middle[e] = (pA+pB)/2
+        return mesh.edges.register_array_as_attribute(name, middle)
     return middle
 
 
 @allowed_mesh_types(SurfaceMesh)
-def curvature_matrices(mesh : SurfaceMesh) -> SparseAttribute:
+def curvature_matrices(mesh : SurfaceMesh) -> np.ndarray:
     """
     Curvature matrix for each edge on the mesh
     
@@ -55,9 +65,11 @@ def curvature_matrices(mesh : SurfaceMesh) -> SparseAttribute:
 
     Note:
         See Curvature Frame Fields for their aggregation on triangles or vertices
-    """
 
-    data = np.zeros((len(mesh.edges), 3,3), dtype=np.float64)
+    Returns:
+        np.ndarray: an array of shape (V,3,3) containing all the matrices
+    """
+    mats = np.zeros((len(mesh.edges), 3,3), dtype=np.float64)
     for e, (A,B) in enumerate(mesh.edges):
         T1,T2 = mesh.connectivity.edge_to_faces(A,B)
         if T1 is not None and T2 is not None:
@@ -67,11 +79,12 @@ def curvature_matrices(mesh : SurfaceMesh) -> SparseAttribute:
             # angle = geom.signed_angle_2vec3D(n1,n2,n2-n1)
             angle = geom.angle_2vec3D(n1,n2)
             edge = Vec.normalized(pB-pA)
-            data[e,:,:] = angle * geom.distance(pA,pB) * np.outer(edge,edge)
-    return data
+            mats[e,:,:] = angle * geom.distance(pA,pB) * np.outer(edge,edge)
+    return mats
+
 
 @allowed_mesh_types(SurfaceMesh)
-def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent: bool = True, dense: bool = True)-> SparseAttribute:
+def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent: bool = True)-> Union[Attribute, np.ndarray]:
     """ Compute the cotan weights of edges.
     The weight of an edge separating T1 and T2 is the sum of cotangent of opposite angles in T1 and T2
 
@@ -79,21 +92,21 @@ def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent: bool = Tr
         mesh (Mesh): the input mesh.
         name (str, optional): name of the attribute. Defaults to "cotan_weight".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
-        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
+    
+    Raises:
+        Exception: fails if the mesh is not a triangular mesh.
     """
     if not mesh.is_triangular():
         raise Exception("Tried to compute cotan weights on a non-triangulated mesh")
 
-    if persistent:
-        cw = mesh.edges.create_attribute(name, float, dense=dense)
-    else:
-        cw = Attribute(float, len(mesh.edges)) if dense else SparseAttribute(float)
-
     if mesh.face_corners.has_attribute("cotan"):
-        cot = mesh.face_corners.get_attribute("cotan")
+        cot = mesh.face_corners.get_attribute("cotan").as_array()
+    elif persistent:
+        cot = cotangent(mesh, persistent=True).as_array()
     else:
-        cot = cotangent(mesh,persistent=persistent)
-
+        cot = cotangent(mesh, persistent=False)
+    
+    cw = np.zeros(len(mesh.edges), dtype=float)
     for e,(A,B) in enumerate(mesh.edges):
         T,iA,iB = mesh.connectivity.direct_face(A,B,True)
         if T is not None:
@@ -103,4 +116,6 @@ def cotan_weights(mesh : SurfaceMesh, name="cotan_weight", persistent: bool = Tr
         if T is not None:
             cnr = mesh.connectivity.face_to_first_corner(T)+3-iA-iB
             cw[e] += cot[cnr]/2
+    if persistent:
+        return mesh.edges.register_array_as_attribute(name, cw)
     return cw 

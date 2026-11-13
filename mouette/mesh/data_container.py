@@ -42,7 +42,7 @@ class _BaseDataContainer(ABC):
         return self._attr[name]
 
     def register_array_as_attribute(self, name: str, data: np.ndarray, default_value=None):
-        """Converts a numpy array as an attribute. The attribute cannot be made sparse.
+        """Converts a numpy array as a (dense) attribute.
 
         Args:
             name (str): attribute's name. If 'name' already exists in the attribute dict, the corresponding attribute will be overridden. The override warning can be disabled in the config.
@@ -52,22 +52,44 @@ class _BaseDataContainer(ABC):
         Raises:
             ValueError: fails if the provided array does not have a compatible (N,K) shape where N is the container's size.
         """
+        # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
+        if name in self._attr and config.display_duplicate_attribute_warning:
+            warnings.warn(f"Attribute '{name}' already exists on {self.id} and will be overridden")
+        try:
+            n_elem = data.shape[0]
+            elem_size = 1 if len(data.shape)==1 else data.shape[1]
+            assert n_elem == len(self)
+        except Exception as e:
+            raise ValueError(f"data array has invalid shape {data.shape}")
+        self._attr[name] = Attribute(data.dtype, n_elem, elem_size=elem_size, default_value=default_value)
+        self._attr[name]._data = data
+        return self._attr[name]
+
+    def register_dict_as_sparse_attribute(self, name:str, data:dict, default_value=None):
+        """Converts a dictionary as a sparse attribute. The dictionary should map integer indices to values and all values should have the same type.
+
+        Args:
+            name (str):  attribute's name. If 'name' already exists in the attribute dict, the corresponding attribute will be overridden. The override warning can be disabled in the config.
+            data (dict): Type of the attribute will be extrapolated from a random element.
+            default_value (Any, optional): The default value to fill the attribute with. If not provided, will be taken as the default value of the attribute's type. Defaults to None.
+        """
          # If 'name' already exists in the attribute dict, the corresponding attribute will be overridden
         if name in self._attr and config.display_duplicate_attribute_warning:
-            warnings.warn(f"Attribute '{name}' already exists on {self.id}")
+            warnings.warn(f"Attribute '{name}' already exists on {self.id} and will be overridden")
+        if len(data)==0:
+            raise Exception("Trying to register an empty dictionary. Use `create_attribute(sparse=True)` instead.")
+        dict_elem = next(iter(data.values()))
+        if isinstance(dict_elem, Iterable):
+            elem_size = len(dict_elem)
+            dtype = type(dict_elem[0])
         else:
-            if len(data.shape)==1: 
-                data = data[:,np.newaxis] # change array of size (n,) to size (n,1)
-            try:
-                n_elem = data.shape[0]
-                elem_size = data.shape[1]
-                assert n_elem == len(self)
-            except Exception as e:
-                raise ValueError(f"data array has invalid shape {data.shape}")
-            self._attr[name] = Attribute(type(data[0,0].item()), n_elem, elem_size=elem_size, default_value=default_value)
-            self._attr[name]._data = data
-            return self._attr[name]
-        
+            elem_size = 1
+            dtype = type(dict_elem)
+        self._attr[name] = SparseAttribute(dtype, n_elem=len(self), elem_size=elem_size,default_value=default_value)
+        self._attr[name]._data = data
+        return self._attr[name]
+
+
     def delete_attribute(self, name: str):
         """Deletes the attribute associated with name `name` if it exists.
 
@@ -117,16 +139,22 @@ class DataContainer(_BaseDataContainer):
         self.set_data(data)
        
     def set_data(self, data: Iterable):
-        self._data = np.empty(0) if data is None else np.ascontiguousarray(data)
-
-    def add_data(self, other_data):
-        if self.empty():
-            self.set_data(other_data)
+        if (data is None) or \
+        (isinstance(data, np.ndarray) and data.size==0) or \
+        (isinstance(data, Iterable) and len(data)==0): 
+            self._data = np.empty(0)
+            return
+        
+        if isinstance(data, np.ndarray):
+            dtype = data.dtype
+        elif data is not None:
+            try:
+                dtype = type(data[0][0])
+            except AttributeError:
+                dtype = type(data[0])
         else:
-            other_data = np.ascontiguousarray(other_data)
-            self._data = np.concatenate((self._data, other_data))
-            for attr in self._attr.values():
-                attr._expand(other_data.shape[0])
+            dtype=None
+        self._data = np.ascontiguousarray(data, dtype=dtype)
 
     def clear(self):
         self._data = np.empty(0)
@@ -186,17 +214,6 @@ class CornerDataContainer(_BaseDataContainer):
     def set_data(self, elem, adj):
         self._elem = np.empty(0) if elem is None else np.ascontiguousarray(elem)
         self._adj = np.empty(0) if elem is None else np.ascontiguousarray(adj)
-
-    def add_data(self, other_elem, other_adj):
-        if self.empty():
-            self.set_data(other_elem, other_adj)
-        else:
-            other_elem = np.ascontiguousarray(other_elem)
-            other_adj = np.ascontiguousarray(other_adj)
-            self._elem = np.concatenate((self._elem, other_elem))
-            self._adj = np.concatenate((self._adj, other_adj))
-            for attr in self._attr.values():
-                attr._expand(other_elem.shape[0])
 
     def clear(self):
         self._elem = np.empty(0)

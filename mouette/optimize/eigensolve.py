@@ -80,7 +80,6 @@ def rayleigh_quotient_iteration(
         x /= np.linalg.norm(x)
 
     for it in range(maxiter):
-        print(it)
         y = sp.linalg.spsolve(A - m*B, B@x)
         m = (y.T @ A @ y) / (y.T @ B @ y)
         y /= np.linalg.norm(y)

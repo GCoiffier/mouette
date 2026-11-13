@@ -1,5 +1,5 @@
 from ..mesh.datatypes import *
-from ..mesh import RawMeshData
+from ..mesh import from_arrays
 from .connection import SurfaceConnectionVertices
 from .worker import Worker
 from .. import geometry as geom
@@ -102,26 +102,26 @@ class DiscreteExponentialMap(Worker):
         Returns:
             SurfaceMesh: exponential map of v_source as a surface mesh
         """
-        m = RawMeshData()
+        vertices, faces = [], []
         index_map = dict()
 
         if v_source not in self._map:
             self._compute_map(v_source)
         
         ### Add root
-        m.vertices.append([0.,0.,0.])
+        vertices.append([0.,0.,0.])
         index_map[v_source] = 0.
 
         ### Compute point positions
         for iv,(v,pV) in enumerate(self._map[v_source].items()):
             index_map[v] = iv+1
-            m.vertices.append(Vec(pV.x, pV.y, 0.))
+            vertices.append(Vec(pV.x, pV.y, 0.))
         
         ### Add faces
         for F in self.mesh.faces:
             if all([x in self._map[v_source] for x in F]):
-                m.faces.append([ index_map[x] for x in F ])
-
-        return SurfaceMesh(m)
+                faces.append([ index_map[x] for x in F ])
+                
+        return from_arrays(vertices, F=faces)
 
 

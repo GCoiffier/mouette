@@ -96,16 +96,15 @@ class BoundaryFirstFlattening(BaseParametrization):
         self.NV, self.NB = len(self.mesh.vertices), len(self.mesh.boundary_vertices)
 
         self.log("Compute Gaussian and geodesic curvatures")
-        self._curv  = attributes.angle_defects(self.mesh).as_array(self.NV) # Gaussian curvature
+        self._curv  = attributes.angle_defects(self.mesh, persistent=False) # Gaussian curvature
 
         self.log("Compute Laplacian operator")
         self._L = laplacian(self.mesh, cotan = self.use_cotan)
-        self._solve_L = sp.linalg.factorized(self._L)
+        self._solve_L = splinalg.factorized(self._L)
 
         self._solve_Lii = splinalg.factorized(self._L[ self.NB:,:][:, self.NB:])
         self._Lib = self._L[ self.NB:,:][:,:self.NB ]
         self._Lbb = self._L[:self.NB ,:][:,:self.NB ]
-
 
         self.log("Initialize Boundary scale factor and curvature")
         if self._Bscale_fctr is None and self._Bcurvature is None:
@@ -133,16 +132,16 @@ class BoundaryFirstFlattening(BaseParametrization):
 
         self.log("Write UV-coordinates")
         if self.save_on_corners:
-            self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
+            self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2)
             for ic,v in enumerate(self.mesh.face_corners):
-                self.uvs[ic] = Vec(U[v], V[v])
+                self.uvs[ic] = [U[v], V[v]]
         else:
             self.uvs = self.mesh.vertices.register_array_as_attribute("uv_coords", np.vstack((U,V)).T)
         return self.mesh
 
     def _reorder_vertices(self):
         v_border = extract_border_cycle(self.mesh)
-        self._vertex_permutation = v_border + self.mesh.interior_vertices
+        self._vertex_permutation = np.concatenate((v_border, self.mesh.interior_vertices))
         self.mesh = reorder_vertices(self.mesh, self._vertex_permutation)
         v_border = extract_border_cycle(self.mesh)
         return [self.mesh.connectivity.edge_id(*_e) for _e in cyclic_pairs(v_border)]

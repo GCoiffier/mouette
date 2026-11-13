@@ -1,6 +1,5 @@
-from ..mesh_data import RawMeshData
+from ..datatypes.raw import RawMeshData
 import pyminiply
-import meshio
 import numpy as np
 
 def import_ply(path : str):

@@ -16,7 +16,7 @@ selected = mesh.vertices.create_attribute("selection", bool)
 selected[Vorig] = True
 
 ### Export exponential map of this vertex as uv coordinates
-uv_coords = mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
+uv_coords = mesh.vertices.create_attribute("uv_coords", float, 2)
 for v in mesh.id_vertices:
     if expmap.map(Vorig, v) is not None:
         uv_coords[v] = expmap.map(Vorig, v)

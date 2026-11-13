@@ -43,7 +43,7 @@ if __name__ == "__main__":
     signal_G = grad @ signal
 
     print("Output results")
-    signal_attr = mesh.vertices.create_attribute("f", float, dense=True)
+    signal_attr = mesh.vertices.create_attribute("f", float)
     signal_attr._data = signal
 
     grad_mesh = M.mesh.RawMeshData()

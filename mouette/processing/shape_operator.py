@@ -120,7 +120,7 @@ class ShapeOperator(Worker):
         """
         if self.shape_op is None: return None
         if self._gaussian_curv is None:
-            self._gaussian_curv = self.mesh.vertices.create_attribute("gaussian_curvature", float, dense=True)
+            self._gaussian_curv = self.mesh.vertices.create_attribute("gaussian_curvature", float)
             for v in self.mesh.id_vertices:
                 self._gaussian_curv[v] = np.linalg.det(self.shape_op[v,:,:])*self.vertex_area[v]/3
         return self._gaussian_curv
@@ -134,7 +134,7 @@ class ShapeOperator(Worker):
         """
         if self.shape_op is None: return None
         if self._mean_curv is None:
-            self._mean_curv = self.mesh.vertices.create_attribute("mean_curvature", float, dense=True)
+            self._mean_curv = self.mesh.vertices.create_attribute("mean_curvature", float)
             for v in self.mesh.id_vertices:
                 self._mean_curv[v] = np.linalg.trace(self.shape_op[v,:,:])/2
         return self._mean_curv

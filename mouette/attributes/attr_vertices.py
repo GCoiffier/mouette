@@ -1,4 +1,7 @@
 from math import pi
+import numpy as np
+from numba import njit, prange
+from typing import Union
 
 from ..mesh.datatypes import *
 from ..mesh.mesh_attributes import SparseAttribute, Attribute, SparseAttribute
@@ -8,30 +11,40 @@ from .interpolate import interpolate_faces_to_vertices
 from .. import geometry as geom
 from ..geometry import Vec
 
+@njit(cache=True, parallel=True)
+def _degree(V,E):
+    deg = np.zeros(V.shape[0], dtype=int)
+    for i in prange(E.shape[0]):
+        deg[E[i,0]] += 1
+        deg[E[i,1]] += 1
+    return deg
+
 @forbidden_mesh_types(PointCloud)
-def degree(mesh : Mesh, name : str = "degree", persistent:bool = True, dense:bool = True) -> SparseAttribute :
+def degree(mesh : Mesh, name : str = "degree", persistent:bool = True) -> Attribute:
     """Computes the degree of each vertex, that is the number of vertex that are adjacent.
 
     Parameters:
         mesh (Mesh): the input mesh. Pointclouds are forbidden
         name (str, optional): _description_. Defaults to "degree".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
-        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
-        Attribute(int) on vertices 
+        Attribute(int)|np.ndarray:  degree of each vertices 
     """
+    deg = _degree(mesh.vertices._data, mesh.edges._data)
     if persistent:
-        deg = mesh.vertices.create_attribute(name, int, dense=dense)
+        return mesh.vertices.register_array_as_attribute(name, deg)
     else:
-        deg = Attribute(int, len(mesh.vertices)) if dense else SparseAttribute(int)
-    for (a,b) in mesh.edges:
-        deg[a] = deg[a] + 1
-        deg[b] = deg[b] + 1
-    return deg
+        return deg
+
+@njit(cache=True, parallel=True)
+def _angle_defects(C, angles, defects):
+    for i in prange(C.shape[0]):
+        defects[C[i]] -= angles[i]
+    return defects
 
 @allowed_mesh_types(SurfaceMesh)
-def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", persistent=True, dense=True) -> SparseAttribute :
+def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", persistent=True) -> Union[Attribute,np.ndarray]:
     """Computes the angle defect at each vertex, defined as 2*pi minus the sum of angles around the vertex.
 
     Angle defect is an discrete approximation of the gaussian curvature.
@@ -45,37 +58,36 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
         zero_border (bool): if set to true, ignores the defect on the boundary of the mesh. Defaults to False.
         name (str, optional): Name given to the attribute. Defaults to "angleDefect".
         persistent (bool, optional): If the attribute is persistent (stored in the mesh object) or not. Defaults to True.
-        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
         Attribute(float) on vertices
 
     Raises:
-        Exception: fails if the mesh is not triangulated (ie if a face is not a triangle)
+        Exception: fails if the mesh is not triangulated
     """
     if not mesh.is_triangular():
         raise Exception("Tried to compute angle defects on a non-triangulated mesh")
 
-    if persistent:
-        defects = mesh.vertices.create_attribute(name, float, dense=dense, default_value=2*pi)
-    else:
-        defects = Attribute(float, len(mesh.vertices), default_value=2*pi) if dense else SparseAttribute(float, default_value=2*pi)
-    
-    for i in mesh.boundary_vertices:
-        defects[i] = 0 if zero_border else pi
-
     if mesh.face_corners.has_attribute("angles"):
-        ang = mesh.face_corners.get_attribute("angles")
+        angles = mesh.face_corners.get_attribute("angles").as_array()
+    elif persistent:
+        angles = corner_angles(mesh, persistent=True).as_array()
     else:
-        ang = corner_angles(mesh, persistent=persistent)
+        angles = corner_angles(mesh, persistent=False)
 
-    for C,V in enumerate(mesh.face_corners):
-        if mesh.is_vertex_on_border(V) and zero_border: continue
-        defects[V] -= ang[C]
-    return defects
+    defects = np.full(len(mesh.vertices), 2*pi)
+
+    defects[mesh.boundary_vertices] = 0 if zero_border else pi
+    defects = _angle_defects(mesh.face_corners._elem, angles, defects)
+
+    if persistent:
+        return mesh.vertices.register_array_as_attribute(name, defects)
+    else:
+        return defects
+
 
 @allowed_mesh_types(SurfaceMesh)
-def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpolation="area", dense=True, custom_fnormals : SparseAttribute = None) -> SparseAttribute:
+def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpolation="area", custom_fnormals : np.ndarray = None) -> Union[Attribute,np.ndarray]:
     """Computes normal directions as 3d vectors for each vertex.
     Normal at a vertex is a weighted sum of normals of adjacent faces. This function essentially interpolates the face normals.
 
@@ -87,8 +99,7 @@ def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpol
             'uniform' : computes the mean for adjacent facet
             'area' : the mean is weighted by facet area. Default value.
             'angle' : the mean is weighted by internal angle at the vertex 
-        dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
-        custom_fnormals (Attribute, optional): custom values for the face normals to be interpolated. Defaults to None.
+        custom_fnormals (np.ndarray, optional): custom values for the face normals to be interpolated. Defaults to None.
 
     Raises:
         Exception: if 'interpolation' is not one of {'uniform', 'area', 'angles'}
@@ -101,24 +112,23 @@ def vertex_normals(mesh : SurfaceMesh, name="normals", persistent=True, interpol
         raise Exception(f"vertex_normals: interpolation argument '{interpolation}' not recognized.\nPossibilites are {'uniform', 'area', 'angle'}.")
 
     if custom_fnormals is not None:
-        fnormals = custom_fnormals
+        fnormals = np.asarray(custom_fnormals)
     elif mesh.faces.has_attribute("normals"):
-        fnormals = mesh.faces.get_attribute("normals")
+        fnormals = mesh.faces.get_attribute("normals").as_array()
+    elif persistent:
+        fnormals = face_normals(mesh, persistent=True).as_array()
     else:
-        fnormals = face_normals(mesh, persistent=persistent)
+        fnormals = face_normals(mesh, persistent=False)
     
+    normals = interpolate_faces_to_vertices(mesh, fnormals, "normals", weight=interpolation, persistent=False)
+    normals /= np.linalg.norm(normals, axis=1).reshape((-1,1))
     if persistent:
-        normals = mesh.vertices.create_attribute(name, float, 3, dense=dense)
-    else:
-        normals = Attribute(float, len(mesh.vertices), 3) if dense else SparseAttribute(float, 3)
-
-    normals = interpolate_faces_to_vertices(mesh, fnormals, normals, weight=interpolation)
-    for v in mesh.id_vertices:
-        normals[v] = Vec.normalized(normals[v])
+        return mesh.vertices.register_array_as_attribute(name, normals)
     return normals
+
     
 @allowed_mesh_types(SurfaceMesh)
-def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = True, dense:bool = False) -> SparseAttribute :
+def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = True, dense:bool = False) -> Union[Attribute, SparseAttribute] :
     """Computes the normal direction of the boundary curve.
 
     Parameters:
@@ -128,12 +138,12 @@ def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = 
         dense (bool, optional): Is the attribute dense (numpy array) or not (dict). Defaults to True
 
     Returns:
-        Attribute(float,3) on vertices
+        Union[Attribute, SparseAttribute,np.ndarray]: The border normals on vertices (zero for non-boundary vertices)
     """
     if persistent:
         bnormals = mesh.vertices.create_attribute(name, float, 3, dense=dense)
     else:
-        bnormals = Attribute(float, len(mesh.vertices), 3) if dense else SparseAttribute(float, 3)
+        bnormals = np.zeros((len(mesh.vertices), 3)) if dense else SparseAttribute(float, 3)
 
     for v in mesh.boundary_vertices:
         v0 = mesh.connectivity.vertex_to_vertices(v)[0]

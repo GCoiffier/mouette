@@ -1,7 +1,7 @@
 import meshio
 import numpy as np
 import warnings
-from ..mesh_data import RawMeshData
+from ..datatypes.raw import RawMeshData
 
 from ...utils import get_extension
 from .geogram_ascii import import_geogram_ascii, export_geogram_ascii
@@ -13,54 +13,70 @@ from .tet import import_tet, export_tet
 from .ply import import_ply
 
 
+
 def convert_meshio_to_mouette_mesh(meshio_data : meshio.Mesh) -> RawMeshData:
     output_data = RawMeshData()
-    
+
+    # format-specific metadata added by meshio readers (e.g. medit:ref, gmsh:physical, gmsh:geometrical)
+    FILTERED_PREFIXES = ("medit:", "gmsh:")
+
+    def to_native(arr : np.ndarray) -> np.ndarray:
+        """Converts an array to native byte order (some formats, like legacy .vtk, are read as big-endian)"""
+        if not arr.dtype.isnative:
+            arr = arr.astype(arr.dtype.newbyteorder('='))
+        return arr
+
     V = meshio_data.points
     if V.shape[1]<3:
         V = np.pad(V, ((0,0),(0,3-V.shape[1])))
-    output_data.vertices.set_data(V)
+    output_data.vertices = V
     
-    filtered_point_attributes = {"medit:ref"}
     for attr_name, attr_data in meshio_data.point_data.items():
-        if attr_name in filtered_point_attributes: continue
-        output_data.vertices.register_array_as_attribute(attr_name, attr_data)
-
-    # TODO: read and add edges/face/cell attributes to the mesh.
+        if attr_name.startswith(FILTERED_PREFIXES): continue
+        output_data.vertices_attr[attr_name] = to_native(attr_data)
 
     if "line" in meshio_data.cells_dict:
-        output_data.edges.set_data(meshio_data.cells_dict["line"])
+        output_data.edges = meshio_data.cells_dict["line"]
 
     for face_type in ("triangle", "quad"):
         if face_type in meshio_data.cells_dict:
             if len(output_data.faces)>0:
                 raise Exception("Variable face types (triangles / quads) are not supported by mouette.")
-            output_data.faces.set_data(meshio_data.cells_dict[face_type])
-   
+            output_data.faces = meshio_data.cells_dict[face_type]
+
     for cell_type in ("tetra", "hexahedron"):
         if cell_type in meshio_data.cells_dict:
             if len(output_data.cells)>0:
                 raise Exception("Variable cell types (tetra / hexahedron) are not supported by mouette.")
-            output_data.cells.set_data(meshio_data.cells_dict[cell_type])
+            output_data.cells = meshio_data.cells_dict[cell_type]
     
-    filtered_cell_attributes = {"medit:ref"}
-    for attr_name, attr_data in meshio_data.cell_data_dict.items():
-        if attr_name in filtered_cell_attributes: continue
-            
+    # cell data is stored per block (line, triangle, ...). Names may be prefixed with
+    # their container ("faces:area"), as done by convert_to_meshio_data. Unprefixed names
+    # are registered on every container that has a block.
+    block_to_container = {
+        "line": "edges", 
+        "triangle": "faces", "quad": "faces",
+        "tetra": "cells", "hexahedron": "cells"
+    }
+    attr_dicts = {
+        "edges": output_data.edges_attr, 
+        "faces": output_data.faces_attr,
+        "cells": output_data.cells_attr
+    }
+    for attr_name, blocks in meshio_data.cell_data_dict.items():
+        if attr_name.startswith(FILTERED_PREFIXES): continue
+        prefix, _, bare = attr_name.partition(":")
+        target = prefix if bare and prefix in attr_dicts else None
+        name = bare if target else attr_name
+        for block_type, arr in blocks.items():
+            cname = block_to_container.get(block_type)
+            if cname is None or (target is not None and cname != target): continue
+            attr_dicts[cname][name] = to_native(arr)
+
     return output_data
 
 
-def _attribute_as_array(attr, n : int) -> np.ndarray:
-    """Dense (n,) or (n,k) array of an attribute. Returns None if the type cannot be exported."""
-    arr = np.asarray(attr.as_array(n)).reshape((n,-1))
-    if arr.shape[1]==1: arr = arr[:,0]
-    if arr.dtype==bool: arr = arr.astype(np.uint8)
-    if not (np.issubdtype(arr.dtype, np.integer) or np.issubdtype(arr.dtype, np.floating)):
-        return None
-    return arr
-
-
-def convert_to_meshio_data(mesh : RawMeshData, ext : str = None) -> meshio.Mesh:
+def convert_to_meshio_data(mesh : "Mesh", ext : str = None) -> meshio.Mesh:
     """Converts a mouette mesh into a meshio mesh. The conversion depends on the target format:
     - .mesh, .meshb: hard edges only if defined, triangles/quads, tetrahedra/hexahedra, no attributes
     - .vtk, .vtu: all elements, vertex attributes as point data and edge/face/cell attributes as cell data
@@ -96,18 +112,18 @@ def convert_to_meshio_data(mesh : RawMeshData, ext : str = None) -> meshio.Mesh:
     point_data, cell_data = dict(), dict()
     attributes = [(cname, attr) for cname, c in containers.items() for attr in c.attributes if not c.get_attribute(attr).empty()]
     if is_vtk: # also export attributes associated to edges, faces, cells in cell_data
-        names = [attr for _, attr in attributes]
         for cname, attr in attributes:
             container = containers[cname]
-            arr = _attribute_as_array(container.get_attribute(attr), len(container))
+            arr = np.asarray(container.get_attribute(attr))
             if arr is None:
                 warnings.warn(f"Attribute '{attr}' on {cname} has a type that cannot be exported. Skipping.")
                 continue
+            if arr.dtype==bool: arr = arr.astype(np.uint8)
             if cname=="vertices":
                 point_data[attr] = arr
             elif any(bc==cname for _, bc, _ in blocks):
-                key = attr if names.count(attr)==1 else f"{cname}:{attr}"
-                cell_data[key] = [arr[ids] if bc==cname else np.zeros((len(ids),) + arr.shape[1:], dtype=arr.dtype) for _, bc, ids in blocks]
+                # always prefix with the container name so that the importer knows where the attribute belongs
+                cell_data[f"{cname}:{attr}"] = [arr[ids] if bc==cname else np.zeros((len(ids),) + arr.shape[1:], dtype=arr.dtype) for _, bc, ids in blocks]
     elif attributes and not is_medit:
         warnings.warn(f"Attributes are not exported in .{ext} format. Dropping {', '.join(f'{c}:{a}' for c,a in attributes)}.")
 
@@ -133,6 +149,7 @@ def read_by_extension(filename : str) -> RawMeshData:
                 data = meshio.read(filename)
                 return convert_meshio_to_mouette_mesh(data)
             except (meshio.ReadError, ValueError) as e:
+                print(e)
                 return import_obj(filename)
             
         case "ply":
@@ -141,7 +158,10 @@ def read_by_extension(filename : str) -> RawMeshData:
                 return convert_meshio_to_mouette_mesh(data)
             except meshio.ReadError as e:
                 return import_ply(filename)
-                   
+        
+        # case "off":
+        #     return import_off(filename)
+        
         case _:
             # .msh, .stl, .mesh, .meshb, .off are supported
             data = meshio.read(filename)
@@ -160,6 +180,8 @@ def write_by_extension(mesh : RawMeshData, filename : str):
             export_tet(mesh, filename)
         case "obj":
             export_obj(mesh, filename)
+        # case "off":
+        #     export_off(mesh, filename)
         case _:
             meshio_data = convert_to_meshio_data(mesh, ext)
             # .msh is ambiguous in meshio (ansys or gmsh): use gmsh 2.2 which handles mixed cell types without entity tags

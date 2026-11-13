@@ -49,8 +49,8 @@ class PrincipalDirectionsFaces(_BaseFrameField2DFaces):
 
     def optimize(self):
         self.log("Computing curvature via SVD")
-        confidence = self.mesh.faces.create_attribute("confidence", float, dense=True)
-        eigs = self.mesh.faces.create_attribute("eigs", float, 3, dense=True)
+        confidence = self.mesh.faces.create_attribute("confidence", float)
+        eigs = self.mesh.faces.create_attribute("eigs", float, 3)
         for T in self.mesh.id_faces:
             if abs(self.var[T])!=0: continue # already initialized => T is on the boundary
             U,S,V = np.linalg.svd(self.curv_mat_faces[T,:,:], hermitian=True)

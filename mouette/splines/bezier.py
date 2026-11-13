@@ -1,4 +1,4 @@
-from ..mesh.mesh_data import DataContainer, RawMeshData
+from ..mesh.data_container import DataContainer
 from ..mesh.datatypes import *
 from ..geometry import Vec
 import numpy as np
@@ -28,9 +28,8 @@ def de_casteljau(P:list, t:float):
 
 
 class BezierCurve:
-
     def __init__(self, control_points):
-        self.pts = DataContainer([Vec(x) for x in control_points], id="control_points")
+        self.pts = DataContainer(np.array([Vec(x) for x in control_points], dtype=np.float64), id="control_points")
 
     @property
     def order(self):
@@ -45,17 +44,17 @@ class BezierCurve:
         else:
             points = np.linspace(0,1,n_pts)
         out = RawMeshData()
-        uvs = out.vertices.create_attribute("t",float)
-        for it,t in enumerate(points):
+        out.vertices_attr["uv_coords"] = []
+        for t in points:
             pt_t = self.evaluate(t)
             if pt_t.size == 2:
                 out.vertices.append(Vec(pt_t[0], pt_t[1], 0.))
             elif pt_t.size == 3:
                 out.vertices.append(pt_t)
-            uvs[it] = t
+            out.vertices_attr["uv_coords"].append(t)
         for i in range(n_pts-1):
             out.edges.append((i,i+1))
-        return PolyLine(out)
+        return out.instantiate(1)
         
 
 class BezierPatch:
@@ -76,19 +75,17 @@ class BezierPatch:
         out = RawMeshData()
         U = np.linspace(0,1,n1)
         V = np.linspace(0,1,n2)
-        uvs = out.vertices.create_attribute("uv_coords", float, 2)
-        k = 0
+        out.vertices_attr["uv_coords"] = []
 
         # evaluate vertices
         for i in range(n1):
             q = self._evaluate_row(U[i])
             for j in range(n2):
                 out.vertices.append(de_casteljau(q,V[j]))
-                uvs[k] = Vec(U[i],V[j])
-                k+=1
-                
+                out.vertices_attr["uv_coords"].append(Vec(U[i],V[j]))
+
         # add faces
         for i in range(n1-1):
             for j in range(n2-1):
                 out.faces.append(( i*n1+j, i*n1+j+1, (i+1)*n1+j+1, (i+1)*n1+j))
-        return SurfaceMesh(out)
+        return out.instantiate(2)

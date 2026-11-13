@@ -134,7 +134,7 @@ class CotanEmbedding(BaseParametrization):
                 self.uvs[v] = var[2*v:2*v+2]    
 
         elif self._mode=="alternate":
-            var = self.uvs.as_array(len(self.mesh.vertices))
+            var = self.uvs.as_array()
             var = self._optimize_alternate(var, self._tutte_if_convex, self._solver_verbose)
             for v in self.mesh.id_vertices:
                 self.uvs[v] = var[v,:]

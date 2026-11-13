@@ -64,13 +64,13 @@ class LSCM(BaseParametrization):
         U = self._scale(U)        
         # Retrieve uvs and write them in attribute
         if self.save_on_corners:
-            self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
+            self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2)
             for c,v in enumerate(self.mesh.face_corners):
-                self.uvs[c] = Vec(U[v])
+                self.uvs[c] = U[v]
         else:
-            self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
+            self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2)
             for v in self.mesh.id_vertices:
-                self.uvs[v] = Vec(U[v])
+                self.uvs[v] = U[v]
 
     def _build_system(self):
         n = len(self.mesh.vertices)

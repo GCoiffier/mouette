@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import mouette as M
 from mouette.mesh.mesh_attributes import AttributeType, _BaseAttribute, Attribute, SparseAttribute
-from mouette.mesh.mesh_data import DataContainer
+from mouette.mesh.data_container import DataContainer, CornerDataContainer
 from utils import *
 
 dense_and_sparse = pytest.mark.parametrize("sparse", [True, False])
@@ -78,7 +78,7 @@ def test_register_array_wrong_shape(test_container):
 
 @dense_and_sparse
 def test_corner_container_attribute(sparse):
-    c = M.mesh.mesh_data.CornerDataContainer(np.array([0,1,2,0]), np.array([0,0,0,1]), id="corners")
+    c = CornerDataContainer(np.array([0,1,2,0]), np.array([0,0,0,1]), id="corners")
     attr = c.create_attribute("a", float, 1, sparse=sparse)
     assert attr.n_elem == 4
     attr[3] = 2.
@@ -119,7 +119,7 @@ def test_attribute_single_element_container(sparse, elem_size): # [spec] np.sque
 
 @dense_and_sparse
 def test_attribute_empty_container(sparse):
-    c = M.mesh.mesh_data.DataContainer(np.zeros((0,3), dtype=int), id="empty")
+    c = DataContainer(np.zeros((0,3), dtype=int), id="empty")
     attr = c.create_attribute("a", float, 1, sparse=sparse)
     assert attr.n_elem == 0
     with pytest.raises(IndexError):

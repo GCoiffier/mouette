@@ -2,8 +2,9 @@ import mouette as M
 from data import *
 import pytest
 
-@pytest.mark.parametrize("mesh", [surf_spot()])
-def test_cutting_edges(mesh : M.mesh.SurfaceMesh):
+
+def test_cutting_edges():
+    mesh = ALL_SURFACES["spot"]
     cutter = M.processing.SurfaceMeshCutter(mesh, verbose=True)
     vertex_path1 = M.processing.shortest_path(mesh, 796, [995])[995]
     vertex_path2 = M.processing.shortest_path(mesh, 96, [861])[861]
@@ -31,10 +32,10 @@ def test_cutting_edges(mesh : M.mesh.SurfaceMesh):
 
 
 @pytest.mark.parametrize("mesh,singus", [
-    (surf_pointy(), [300]),
-    (surf_circle(), [155, 200, 217, 334])
+    (ALL_SURFACES["circle"], [155, 200, 217, 334]),
+    (ALL_SURFACES["pointy"], [300]),
 ])
-def test_cutting_edges_to_boundary(mesh : M.mesh.SurfaceMesh, singus):
+def test_cutting_edges_to_boundary(mesh, singus):
     cutter = M.processing.SurfaceMeshCutter(mesh, verbose=True)
     cut_edges = set()
     cut_vertices = set()
@@ -55,17 +56,17 @@ def test_cutting_edges_to_boundary(mesh : M.mesh.SurfaceMesh, singus):
 
 
 @pytest.mark.parametrize("mesh,singus,strategy",[
-    (surf_spot(),[796, 978, 995],"simple"),
-    (surf_spot(),[796, 978, 995],"shortest"),
-    (surf_spot(),[796, 978, 995],"limited"),
-    (surf_spot(),[796, 978, 995],"auto"),
-    (surf_cube_subdiv(),[100, 141, 59, 68], "simple"),
-    (surf_cube_subdiv(),[100, 141, 59, 68], "shortest"),
-    (surf_cube_subdiv(),[100, 141, 59, 68], "limited"),
-    (surf_cube_subdiv(),[100, 141, 59, 68], "features"),
-    (surf_cube_subdiv(),[100, 141, 59, 68], "auto"),
-    (surf_torus(),[],"shortest"),
-    (surf_torus(),[],"auto"),
+    (ALL_SURFACES["spot"], [796, 978, 995], "simple"),
+    (ALL_SURFACES["spot"], [796, 978, 995],"shortest"),
+    (ALL_SURFACES["spot"], [796, 978, 995],"limited"),
+    (ALL_SURFACES["spot"], [796, 978, 995],"auto"),
+    (ALL_SURFACES["cube_subdiv"],[100, 141, 59, 68], "simple"),
+    (ALL_SURFACES["cube_subdiv"],[100, 141, 59, 68], "shortest"),
+    (ALL_SURFACES["cube_subdiv"],[100, 141, 59, 68], "limited"),
+    (ALL_SURFACES["cube_subdiv"],[100, 141, 59, 68], "features"),
+    (ALL_SURFACES["cube_subdiv"],[100, 141, 59, 68], "auto"),
+    (ALL_SURFACES["torus_triangulated"],[],"shortest"),
+    (ALL_SURFACES["torus_triangulated"],[],"auto"),
 ])
 def test_singularity_cutting(mesh : M.mesh.SurfaceMesh, singus, strategy):
     if strategy=="features":

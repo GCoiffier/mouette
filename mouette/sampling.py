@@ -26,11 +26,8 @@ def sample_sphere(center : Vec, radius : float, n_pts : int, return_point_cloud 
     pts /= np.linalg.norm(pts, axis=1, keepdims=True) # uniform distribution of the unit sphere
     pts = radius*pts + center
     if return_point_cloud:
-        pointcloud = PointCloud()
-        pointcloud.vertices += list(pts)
-        return pointcloud
-    else:
-        return pts
+        return from_arrays(pts)
+    return pts
 
 def sample_ball(center : Vec, radius : float, n_pts : int, return_point_cloud : bool = False):
     """Samples points uniformly inside a 3D ball.
@@ -54,11 +51,8 @@ def sample_ball(center : Vec, radius : float, n_pts : int, return_point_cloud : 
     R = np.cbrt(R) # R^{1/3} for uniform distribution
     pts = pts*R + center
     if return_point_cloud:
-        pointcloud = PointCloud()
-        pointcloud.vertices += list(pts)
-        return pointcloud
-    else:
-        return pts
+        return from_arrays(pts)
+    return pts
 
 def sample_AABB(
         box : AABB, 
@@ -94,8 +88,7 @@ def sample_AABB(
         points = np.vstack(list(map(np.ravel, np.meshgrid(*Xdims)))).T
     if return_point_cloud:
         return from_arrays(points)
-    else:
-        return points
+    return points
 
 @allowed_mesh_types(PolyLine)
 def sample_polyline(
@@ -117,7 +110,7 @@ def sample_polyline(
     NE = len(mesh.edges)
     sampled_pts = np.zeros((n_pts, 3))
     if NE>1:
-        lengths = edge_length(mesh, persistent=False).as_array()
+        lengths = edge_length(mesh, persistent=False)
         lengths /= np.sum(lengths)
         edges = choice(NE, size=n_pts, p=lengths)
     else:
@@ -127,11 +120,8 @@ def sample_polyline(
         t = np.random.random()
         sampled_pts[i,:] = t*pA + (1-t)*pB
     if return_point_cloud:
-        pointcloud = PointCloud()
-        pointcloud.vertices += list(sampled_pts)
-        return pointcloud
-    else:
-        return sampled_pts
+        return from_arrays(sampled_pts)
+    return sampled_pts
 
 @allowed_mesh_types(SurfaceMesh)
 def sample_surface(
@@ -158,7 +148,7 @@ def sample_surface(
     """
     assert mesh.is_triangular()
     NF = len(mesh.faces)
-    areas = face_area(mesh, persistent=False).as_array()
+    areas = face_area(mesh, persistent=False)
     areas /= np.sum(areas)
     sampled_pts = np.zeros((n_pts,3))
     
@@ -175,15 +165,13 @@ def sample_surface(
         sampled_pts[i,:] = pA+ r1*(pB-pA) + r2*(pC-pA)
     
     if return_point_cloud:
-        pointcloud = PointCloud()
-        pointcloud.vertices += list(sampled_pts)
+        pointcloud = from_arrays(sampled_pts)
         if return_normals: 
-            pc_normals = pointcloud.vertices.create_attribute("normals", float, 3, dense=True)
-            pc_normals._data = sampled_normals
+            pointcloud.vertices.register_array_as_attribute("normals", sampled_normals)
         return pointcloud
     else:
         if return_normals:
-            return sampled_pts,sampled_normals
+            return sampled_pts, sampled_normals
         return sampled_pts
     
 
@@ -211,7 +199,7 @@ def sample_surface_barycentric(
     """
     assert mesh.is_triangular()
     NF = len(mesh.faces)
-    areas = face_area(mesh, persistent=False).as_array()
+    areas = face_area(mesh, persistent=False)
     areas /= np.sum(areas)
     sampled_faces = choice(NF, size=n_pts, p=areas) # faces on which we take the points (probability weighted by area)
     u1 = random(n_pts)

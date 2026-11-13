@@ -2,14 +2,15 @@ import mouette as M
 from data import *
 import pytest
 
-@pytest.mark.parametrize("m", surfaces)
-def test_feature_detect(m):
+@pytest.mark.parametrize("s", ALL_SURFACES.items())
+def test_feature_detect(s):
+    _,m = s
     feat = M.processing.FeatureEdgeDetector(only_border= False, flag_corners=True)
     feat.run(m)
     assert isinstance(feat.feature_vertices, set)
     assert isinstance(feat._feature_graph, M.mesh.PolyLine)
 
-@pytest.mark.parametrize("m", [surf_spline(), surf_half_sphere()])
+@pytest.mark.parametrize("m", [ALL_SURFACES["spline"], ALL_SURFACES["half_sphere"]])
 def test_feature_detect_only_border(m):
     feat = M.processing.FeatureEdgeDetector(only_border=True, flag_corners=False, compute_feature_graph=False, verbose=False)
     feat.run(m)

@@ -3,7 +3,6 @@ from scipy.spatial import KDTree
 from enum import Enum
 
 from ..mesh.datatypes import *
-from ..mesh.mesh_data import RawMeshData
 from ..mesh.mesh_attributes import Attribute
 from .worker import Worker
 from .. import geometry as geom
@@ -78,7 +77,7 @@ class PointCloudNormalEstimator(Worker):
             P2 = self.pc.vertices[i] + scale * self.normals[i]
             pl.vertices += [P1, P2]
             pl.edges.append((2*i,2*i+1))
-        return PolyLine(pl)
+        return pl.instantiate(1)
 
     @allowed_mesh_types(PointCloud)
     def run(self, point_cloud : PointCloud, **kwargs):
@@ -97,8 +96,8 @@ class PointCloudNormalEstimator(Worker):
         _,KNN = kdtree.query(points, self._n_neighbors+1)
 
         if self._save_on_pc:
-            self.normals = point_cloud.vertices.create_attribute(self._normal_attr_name, float, 3, dense=True)
-            self.curvature = point_cloud.vertices.create_attribute(self._curvature_attr_name, float, 1, dense=True)
+            self.normals = point_cloud.vertices.create_attribute(self._normal_attr_name, float, 3)
+            self.curvature = point_cloud.vertices.create_attribute(self._curvature_attr_name, float, 1)
         else:
             self.normals = np.zeros((len(point_cloud.vertices), 3))
             self.curvature = np.zeros(len(point_cloud.vertices))

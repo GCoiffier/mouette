@@ -1,5 +1,5 @@
-from ..mesh_data import RawMeshData
-from ...geometry import Vec
+import numpy as np
+from ..datatypes.raw import RawMeshData
 from collections import deque
 
 def import_off(path : str):
@@ -28,40 +28,28 @@ def import_off(path : str):
         output = parse_off_data(file.readlines())
     return output
 
-def parse_off_data(data):
-    output = RawMeshData()
-    
+def parse_off_data(data): 
     data = [x.strip().split() for x in data]
-    # remove empty lines from data
-    data = deque([x for x in data if x])
+
+    # remove empty lines and comments from data
+    data = deque([x for x in data if x and not x[0]=="#"])
 
     header = data.popleft()[0]
     if (header != "OFF"): # file always starts with OFF
         raise Exception("Import OFF file : OFF header missing.")
 
+    output = RawMeshData()
     nv,nf,ne = (int(u) for u in data.popleft())
 
     for _ in range(nv):
-        vertex = [float(u) for u in data.popleft()]
-        output.vertices.append(Vec(vertex))
+        output.vertices.append([float(u) for u in data.popleft()])
 
-    i_f, i_c = 0, 0
     for _ in range(nf):
         simplex = data.popleft()
         nvi = int(simplex[0])
-        if nvi==3:
-            face = [int(u) for u in simplex[1:nvi+1]]
-            output.faces.append(face)
-            output.face_corners += [(x,i_f) for x in face]
-            i_f += 1
-        elif nvi==2:
-            a,b = simplex[1], simplex[2]
-            output.edges.append((min(a,b), max(a,b)))
-        elif nvi==4:
-            cell = [int(u) for u in simplex[1:nvi+1]]
-            output.cells.append(cell)
-            output.cell_corners += [(x,i_c) for x in cell]
-            i_c += 1
+        simplex = [int(u) for u in simplex[1:nvi+1]]
+        if   nvi==3: output.faces.append(simplex)
+        elif nvi==4: output.cells.append(simplex)
     return output
 
 def export_off(mesh, path):

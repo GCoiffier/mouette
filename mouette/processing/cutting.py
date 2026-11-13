@@ -2,7 +2,6 @@ from .worker import Worker
 
 from ..geometry import distance
 from ..mesh.datatypes import *
-from ..mesh.mesh_data import RawMeshData
 from ..mesh.mesh_attributes import *
 from ..utils import keyify, UnionFind, PriorityQueue, consecutive_pairs
 from .paths import *
@@ -50,8 +49,8 @@ class SurfaceMeshCutter(Worker):
         self._ref_vertex = dict()
 
         self.cut_mesh = RawMeshData()
-        self.cut_mesh.vertices += self.input_mesh.vertices
-        self.cut_mesh.faces += self.input_mesh.faces
+        self.cut_mesh.vertices = [x for x in self.input_mesh.vertices]
+        self.cut_mesh.faces = [list(F) for F in self.input_mesh.faces]
 
         ### Duplicate vertices adjacent to cut edges. N-1 copies of a vertex should be created if it is adjacent to N cuts
         cut_degree = dict()
@@ -61,15 +60,17 @@ class SurfaceMeshCutter(Worker):
             cut_degree[B] = cut_degree.get(B, -1)+1
 
         duplicates = dict()
+
+        new_vid = len(self.cut_mesh.vertices)
         for v in cut_degree:
             if self.input_mesh.is_vertex_on_border(v): cut_degree[v] +=1
             if cut_degree[v]==0: continue # no copies needed (vertex at the end of a cut => 1-ring still connected)
             duplicates[v] = [v]
             for _ in range(cut_degree[v]):
-                new_v = len(self.cut_mesh.vertices)
-                self._ref_vertex[new_v] = v
-                duplicates[v].append(new_v)
+                self._ref_vertex[new_vid] = v
+                duplicates[v].append(new_vid)
                 self.cut_mesh.vertices.append(self.input_mesh.vertices[v])
+                new_vid += 1
 
         ### Reassign face indices
         for v in cut_degree:
@@ -84,7 +85,7 @@ class SurfaceMeshCutter(Worker):
                 e = self.input_mesh.connectivity.edge_id(v,self.input_mesh.connectivity.corner_to_half_edge(c)[1])
                 if e in self.cut_edges: # switch to next version of v upon passing a cut edge
                     ind = (ind+1)%ndup
-        self.cut_mesh = SurfaceMesh(self.cut_mesh) # finalize creation
+        self.cut_mesh = self.cut_mesh.instantiate() # finalize creation
 
     def duplicated_vertices(self, v:int) -> set:
         """Given the index v of a vertex in the input mesh, returns the set of all copies of v in the cut mesh.
@@ -134,7 +135,7 @@ class SurfaceMeshCutter(Worker):
                     self._cut_graph.vertices.append(self.input_mesh.vertices[v])
             e = keyify(new_v_id[v1], new_v_id[v2])
             self._cut_graph.edges.append(e)
-        self._cut_graph = PolyLine(self._cut_graph)
+        self._cut_graph = self._cut_graph.instantiate(1)
 
 
 class SingularityCutter(SurfaceMeshCutter):
@@ -240,7 +241,7 @@ class SingularityCutter(SurfaceMeshCutter):
         
         ### Run heuristic cuts depending on the strategy
         if self._strategy == SingularityCutter.Strategy.SIMPLE:
-            edge_flag = SparseAttribute(bool) # False by default for all edges
+            edge_flag = SparseAttribute(bool, len(self.input_mesh.edges)) # False by default for all edges
             regions = None # no features
         
         elif self._strategy in (SingularityCutter.Strategy.SHORTEST_PATHS, SingularityCutter.Strategy.SHORTEST_LIMITED):
@@ -283,7 +284,7 @@ class SingularityCutter(SurfaceMeshCutter):
         singul = self.singularities + [BORDER] if mesh_has_border else self.singularities
 
         # edge selected for spanning tree
-        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else SparseAttribute(bool) 
+        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool, sparse=True) if self._debug else SparseAttribute(bool, len(self.input_mesh.edges)) 
         if not self.singularities:
             # no singularities => no spanning tree and no constraints on edges
             return edge_flags
@@ -331,7 +332,7 @@ class SingularityCutter(SurfaceMeshCutter):
 
         edge_lengths = attributes.edge_length(self.input_mesh, persistent=False)
         # edge selected for spanning tree
-        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else SparseAttribute(bool) 
+        edge_flags = self.input_mesh.edges.create_attribute("singularity_tree", bool) if self._debug else SparseAttribute(bool, len(self.input_mesh.edges)) 
         if len(self.singularities)==0:
             # no singularities => no spanning tree and no constraints on edges
             return edge_flags
@@ -450,7 +451,6 @@ class SingularityCutter(SurfaceMeshCutter):
     def _build_cut_graph_as_mesh(self):
         # Build tree of potential cuts for debug purposes
         self._cut_graph = RawMeshData()
-
         new_v_id = dict()
         vid = 0
         for ie in self.cut_edges:
@@ -462,8 +462,7 @@ class SingularityCutter(SurfaceMeshCutter):
                     self._cut_graph.vertices.append(self.input_mesh.vertices[v])
             e = keyify(new_v_id[v1], new_v_id[v2])
             self._cut_graph.edges.append(e)
-
-        singuls_attr = self._cut_graph.vertices.create_attribute("selection", bool)
+        self._cut_graph.vertices_attr["selection"] = dict()
         for x in self.singularities:
-            singuls_attr[new_v_id[x]] = True
-        self._cut_graph = PolyLine(self._cut_graph)
+            self._cut_graph.vertices_attr["selection"][new_v_id[x]] = True
+        self._cut_graph = self._cut_graph.instantiate(1)

@@ -32,13 +32,11 @@ def adjacency_matrix(mesh : Mesh, weights="one") -> sp.coo_matrix:
 
     # build matrix coefficients
     if weights == "one":
-        vals = np.ones(2*m)
+        vals = np.ones(2*m, dtype=np.float64)
     elif weights == "length":
-        vals = np.zeros(2*m)
-        for e,(a,b) in enumerate(mesh.edges):
-            d = geom.distance(mesh.vertices[a], mesh.vertices[b])
-            vals[2*e] = d
-            vals[2*e+1] = d
+        PE = mesh.vertices._data[mesh.edges._data]
+        lengths = np.linalg.norm(PE[:,1,:] - PE[:,0,:], axis=1)
+        vals = np.repeat(lengths, 2)
     else:
         vals = np.zeros(2*m)
         for e in mesh.id_edges:
@@ -46,13 +44,8 @@ def adjacency_matrix(mesh : Mesh, weights="one") -> sp.coo_matrix:
             vals[2*e+1] = weights[e]
     
     # build row and cols indices
-    rows, cols = np.zeros(2*m), np.zeros(2*m)
-    for e,(a,b) in enumerate(mesh.edges):
-        rows[2*e] = a
-        rows[2*e+1] = b
-        cols[2*e] = b
-        cols[2*e+1] = a
-
+    rows = mesh.edges._data.reshape(-1)
+    cols = mesh.edges._data[:,::-1].reshape(-1)
     return sp.coo_matrix( (vals, (rows,cols)), shape=(n,n))
 
 @forbidden_mesh_types(PointCloud)

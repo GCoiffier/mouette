@@ -15,8 +15,7 @@ def translate(mesh : Mesh, tr : Vec) -> Mesh:
     Returns:
         Mesh: the translated mesh
     """
-    for i in mesh.id_vertices:
-        mesh.vertices[i] += tr
+    mesh.vertices._data += tr
     return mesh
 
 def rotate(mesh : Mesh, rot : Rotation, orig : Vec = None) -> Mesh:
@@ -46,6 +45,7 @@ def rotate(mesh : Mesh, rot : Rotation, orig : Vec = None) -> Mesh:
         mesh.vertices[i] = orig + rot.apply(mesh.vertices[i] - orig)
     return mesh
 
+
 def scale(mesh : Mesh, factor : float, orig : Vec = None) -> Mesh:
     """Scales the mesh by a given factor around a given origin (fixed point)
 
@@ -57,11 +57,10 @@ def scale(mesh : Mesh, factor : float, orig : Vec = None) -> Mesh:
     Returns:
         Mesh: the scaled input mesh.
     """
-    if orig is None:
-        orig = Vec.zeros(3)
-    for i in mesh.id_vertices:
-        mesh.vertices[i] = orig + factor*(mesh.vertices[i] - orig)
+    orig = orig or Vec.zeros(3)
+    mesh.vertices._data = orig + factor*(mesh.vertices._data - orig)
     return mesh
+
 
 def scale_xyz(mesh : Mesh, fx : float = 1., fy : float = 1., fz : float = 1., orig : Vec = None) -> Mesh:
     """Scales the mesh independently along three axes.
@@ -77,11 +76,9 @@ def scale_xyz(mesh : Mesh, fx : float = 1., fy : float = 1., fz : float = 1., or
     Returns:
         Mesh: the scaled mesh.
     """
-    if orig is None:
-        orig = mesh.vertices[0]
-    for i in mesh.id_vertices:
-        Pi = mesh.vertices[i]
-        mesh.vertices[i] = orig + Vec( fx*(Pi.x - orig.x), fy*(Pi.y - orig.y), fz *(Pi.z - orig.z))
+    orig = orig or mesh.vertices[0]
+    scale = Vec(fx,fy,fz)
+    mesh.vertices._data = orig + scale*(mesh.vertices._data-orig)
     return mesh
 
 
@@ -127,7 +124,7 @@ def translate_to_origin(mesh : Mesh) -> Mesh:
     Returns:
         Mesh: the translated mesh
     """
-    return translate(mesh, -sum(mesh.vertices)/len(mesh.vertices))
+    return translate(mesh, -np.mean(mesh.vertices, axis=0))
 
 
 def flatten(mesh : Mesh, dim : int = None) -> Mesh:
@@ -142,10 +139,7 @@ def flatten(mesh : Mesh, dim : int = None) -> Mesh:
         (Mesh): the modified input mesh
     """
     if dim is None:
-        variances = []
-        for i in range(3):
-            variances.append(np.var([p[i] for p in mesh.vertices]))
+        variances = np.var(mesh.vertices._data, axis=0)
         dim = np.argmin(variances)
-    for i in mesh.id_vertices:
-        mesh.vertices[i][dim] = 0.
+    mesh.vertices._data[:,dim] = 0.
     return mesh

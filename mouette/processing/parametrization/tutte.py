@@ -122,7 +122,7 @@ class TutteEmbedding(BaseParametrization):
         V = linalg.spsolve(LI, -LB.dot(Vbnd))
 
         if self.save_on_corners:
-            self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
+            self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2)
             for i,v in enumerate(freeInds):
                 for c in self.mesh.connectivity.vertex_to_corners(v):
                     self.uvs[c] = Vec(U[i], V[i])
@@ -130,7 +130,7 @@ class TutteEmbedding(BaseParametrization):
                 for c in self.mesh.connectivity.vertex_to_corners(v):
                     self.uvs[c] = Vec(Ubnd[i], Vbnd[i])
         else:
-            self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
+            self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2)
             for i,v in enumerate(freeInds):
                 self.uvs[v] = Vec(U[i], V[i])
             for i,v in enumerate(bndInds):

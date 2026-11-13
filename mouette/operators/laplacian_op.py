@@ -68,7 +68,7 @@ def laplacian(
     cols = np.zeros(n_coeffs, dtype=np.int32)
     coeffs = np.zeros(n_coeffs, dtype=(complex if connection else np.float64))
     _c = 0
-    
+
     for iT, (p,q,r) in enumerate(mesh.faces):
         if cotan:
             a,b,c = (cot[mesh.connectivity.vertex_to_corner_in_face(_v,iT)]/2 for _v in (p,q,r))

@@ -46,7 +46,7 @@ def sign(x: float):
     return 0
 
 
-@njit
+@njit(inline="always")
 def distance2(A: Vec, B: Vec) -> float:
     """Squared euclidean distance between points A and B.
 
@@ -59,7 +59,7 @@ def distance2(A: Vec, B: Vec) -> float:
     """
     return dot(B-A, B-A)
 
-@njit
+@njit(inline="always")
 def distance(A: Vec, B: Vec) -> float:
     """Distance between A and B.
 
@@ -72,7 +72,7 @@ def distance(A: Vec, B: Vec) -> float:
     """
     return norm(B-A)
 
-@njit
+@njit(inline="always")
 def cross(A: Vec, B: Vec) -> Vec:
     """Cross product of vectors A and B
 

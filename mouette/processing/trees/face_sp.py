@@ -71,7 +71,7 @@ class FaceSpanningTree(SpanningTree):
         Returns:
             PolyLine: the tree
         """
-        output = PolyLine()
+        output = RawMeshData()
         if self.mesh.faces.has_attribute("barycenter"):
             bary = self.mesh.faces.get_attribute("barycenter")
         else:
@@ -80,7 +80,7 @@ class FaceSpanningTree(SpanningTree):
             output.vertices.append(bary[iF])
             if self.parent[iF] is not None:
                 output.edges.append([iF, self.parent[iF]])
-        return output
+        return output.instantiate(1)
 
 class FaceSpanningForest(SpanningForest):
     """A spanning forest that runs on dual edges.

@@ -1,7 +1,6 @@
-from ..mesh.mesh_data import RawMeshData
+import numpy as np
 from ..utils import cyclic_pairs
 from ..mesh.datatypes import *
-from ..mesh.mesh_attributes import SparseAttribute
 
 @allowed_mesh_types(SurfaceMesh)
 def extract_border_cycle(mesh : SurfaceMesh, starting_point : int = None):
@@ -71,29 +70,29 @@ def extract_boundary_of_surface(mesh : SurfaceMesh) -> PolyLine:
         PolyLine: boundary curves of the mesh  
         dict: maps a vertex id in the boundary to its corresponding id in the original mesh.
     """
-    bound = PolyLine()
-    visited = SparseAttribute(bool)
-    component = bound.vertices.create_attribute("component", int)
+    bound = RawMeshData()
+    visited = set()
+    bound.vertices_attr["component"] = []
     map_v2v = dict() # vertices have a new and different index in the boundary mesh (so that indexes are [0, n])
 
     ind_component = 0
     ind_vertex = 0
     for v in mesh.boundary_vertices:
-        if not visited[v]:
+        if v not in visited:
             cycle_v = extract_border_cycle(mesh, v)
             bound.edges += [_e for _e in cyclic_pairs(cycle_v)]
             for v2 in cycle_v:
-                visited[v2] = True
+                visited.add(v2)
                 map_v2v[v2] = ind_vertex
                 ind_vertex += 1
-                component[v2] = ind_component
                 bound.vertices.append(mesh.vertices[v2])
+                bound.vertices_attr["component"].append(ind_component)
             ind_component += 1
 
     # re order edge indexes
     for e,(A,B) in enumerate(bound.edges):
         bound.edges[e] = (map_v2v[A], map_v2v[B])
-    return bound, map_v2v
+    return bound.instantiate(), map_v2v
 
 @allowed_mesh_types(VolumeMesh)
 def extract_boundary_of_volume(mesh : VolumeMesh) -> SurfaceMesh :
@@ -124,5 +123,4 @@ def extract_boundary_of_volume(mesh : VolumeMesh) -> SurfaceMesh :
     # apply ordering to faces
     for i, iF in enumerate(bound.faces):
         bound.faces[i] = tuple(( map_m2b[v] for v in mesh.faces[iF]))
-    bound.prepare() # ordering will be propagated to edges
-    return SurfaceMesh(bound), map_m2b, map_b2m
+    return bound.instantiate(), map_m2b, map_b2m

@@ -1,12 +1,12 @@
 from .worker import Worker
 
-from ..mesh.mesh_attributes import SparseAttribute
+from ..mesh.mesh_attributes import Attribute, SparseAttribute
 from ..mesh.datatypes import *
-from ..mesh.mesh_data import RawMeshData
 from .. import geometry
 from ..attributes.attr_faces import face_normals
 from ..attributes.attr_corners import corner_angles
 from math import pi
+import numpy as np
 
 class FeatureEdgeDetector(Worker):
     """
@@ -45,7 +45,7 @@ class FeatureEdgeDetector(Worker):
         
         self.border_cycles : list = None # result of 'M.processing.extract_border_cycle_all'
 
-        self.fnormals : SparseAttribute = None # face normals
+        self.fnormals : Attribute = None # face normals
 
         # Following data structures will be filled
         self.feature_vertices : set = None # indexes of feature vertices
@@ -60,7 +60,7 @@ class FeatureEdgeDetector(Worker):
         """Clears the data structures"""
         self.feature_vertices = set()
         self.feature_edges = set()
-        self.feature_degrees = SparseAttribute(int)
+        self.feature_degrees = None
         self.local_feat_edges = dict() # vertex -> list of local indices of edges that are feature edges
 
 
@@ -93,15 +93,17 @@ class FeatureEdgeDetector(Worker):
         # Computes self._feature_mesh
         self._feature_graph = RawMeshData()
         fvert = list(self.feature_vertices)
-        fvert = dict([(fvert[i],i) for i in range(len(self.feature_vertices))])
-        degree_attr = self._feature_graph.vertices.create_attribute("degree", int)
-        self._feature_graph.vertices += [mesh.vertices[k] for k in fvert.keys()]
+        fvert = dict([(fvert[i],i) for i in range(len(fvert))])
+        degree = np.zeros(len(fvert))
         for v in self.feature_vertices:
-            degree_attr[fvert[v]] = self.feature_degrees[v]
+            degree[fvert[v]] = self.feature_degrees[v]
         for e in self.feature_edges:
             A, B = mesh.edges[e]
             self._feature_graph.edges.append((fvert[A],fvert[B]))
-        self._feature_graph = PolyLine(self._feature_graph)
+
+        self._feature_graph.vertices += [mesh.vertices[k] for k in fvert.keys()]
+        self._feature_graph.vertices_attr["degree"] = degree
+        self._feature_graph = self._feature_graph.instantiate(1)
  
     def _compute_corner_point_cloud(self, mesh : SurfaceMesh):
         # Computes self._corner_pc
@@ -109,7 +111,7 @@ class FeatureEdgeDetector(Worker):
         for v in self.feature_vertices:
             if self.corners[v] in (self.corner_order, self.corner_order/2) : continue
             self._corner_pc.vertices.append(mesh.vertices[v])
-        self._corner_pc = PointCloud(self._corner_pc)
+        self._corner_pc = self._corner_pc.instantiate(0)
 
 ##### Feature detection subfunctions #####
 
@@ -132,7 +134,9 @@ class FeatureEdgeDetector(Worker):
         if self.only_border : return feature_attr
         DOT_THRESHOLD = 0.2
         if mesh.edges.has_attribute("hard_edges"):
-            for e in mesh.edges.get_attribute("hard_edges"):
+            hard_edges = mesh.edges.get_attribute("hard_edges")
+            for e in mesh.id_edges:
+                if not hard_edges[e]: continue
                 A,B = mesh.edges[e]
                 T1,T2 = mesh.connectivity.edge_to_faces(A,B)
                 if T1 is None or T2 is None : continue
@@ -190,17 +194,8 @@ class FeatureEdgeDetector(Worker):
             self.fnormals = face_normals(mesh, persistent=False)
 
         # create the feature attribute
-        if mesh.vertices.has_attribute("feature"):
-            feat_v = mesh.vertices.get_attribute("feature")
-            feat_v.clear()
-        else:
-            feat_v = mesh.vertices.create_attribute("feature", bool)
-        
-        if mesh.edges.has_attribute("feature"):
-            feature = mesh.edges.get_attribute("feature")
-            feature.clear()
-        else:
-            feature = mesh.edges.create_attribute("feature", bool)
+        feat_v = mesh.vertices.create_attribute("feature", bool, sparse=True)
+        feature = mesh.edges.create_attribute("feature", bool, sparse=True)
 
         self.log("Detect Features")
         feature = self._add_hard_edges_to_features(mesh, feature)
@@ -221,6 +216,7 @@ class FeatureEdgeDetector(Worker):
                 if feature[ev] :
                     self.local_feat_edges[v].append(i)
 
+        self.feature_degrees = SparseAttribute(int, len(mesh.edges))
         for e in self.feature_edges:
             A,B = mesh.edges[e]
             self.feature_degrees[A] += 1

@@ -300,7 +300,7 @@ class SurfaceConnectionEdges(SurfaceConnection):
         self.enormals : Attribute = kwargs.get("enormals", None)
         self.fnormals : Attribute = attributes.face_normals(mesh)
         if self.enormals is None:
-            self.enormals = mesh.edges.create_attribute("normals", float, 3, dense=True)
+            self.enormals = mesh.edges.create_attribute("normals", float, 3)
         super().__init__(mesh)
 
     def _initialize(self):

@@ -102,9 +102,9 @@ class PrincipalDirectionsVertices(_BaseFrameField2DVertices):
         self.initialized = True
 
     def optimize(self):
-        confidence = self.mesh.vertices.create_attribute("confidence", float, dense=True)
-        # to_complete = self.mesh.vertices.create_attribute("to_complete", bool, dense=True)
-        # to_smooth = self.mesh.vertices.create_attribute("to_smooth", bool, dense=True)
+        confidence = self.mesh.vertices.create_attribute("confidence", float)
+        # to_complete = self.mesh.vertices.create_attribute("to_complete", bool)
+        # to_smooth = self.mesh.vertices.create_attribute("to_smooth", bool)
 
         self.log("Computing curvature via SVD")
         for v in self.mesh.id_vertices:

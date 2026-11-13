@@ -11,6 +11,7 @@ def as_tuples(elems, vmap=None):
 def compare_mesh(mesh1, mesh2, reorder_vertices=False, tol=1e-8):
     assert type(mesh1) == type(mesh2)
     V1, V2 = np.asarray(mesh1.vertices), np.asarray(mesh2.vertices)
+    print(V1, V2)
     assert V1.shape == V2.shape
     vmap = None
     if reorder_vertices: # format does not preserve vertex order (stl): match vertices by position

@@ -1,16 +1,38 @@
-from ..mesh_data import RawMeshData
+from ..data_container import DataContainer, CornerDataContainer
 from ..mesh_attributes import SparseAttribute
 from .base import Mesh
 from .surface import SurfaceMesh
 from ...geometry.geometry import det_3x3
 from ... import config
 
-import numpy as np
-
 class VolumeMesh(Mesh):
 
-    def __init__(self, data : RawMeshData = None):
-        Mesh.__init__(self, 3, data)
+    def __init__(self,
+        vertices : DataContainer,
+        edges : DataContainer,
+        faces : DataContainer,
+        face_corners : CornerDataContainer,
+        cells : DataContainer,
+        cell_corners : CornerDataContainer,
+        cell_faces : CornerDataContainer
+    ):
+        vertices = vertices or DataContainer(id="vertices")
+        edges = edges or DataContainer(id="edges")
+        faces = faces or DataContainer(id="faces")
+        face_corners = face_corners or CornerDataContainer(id="face_corners")
+        cells = cells or DataContainer(id="cells")
+        cell_corners = cell_corners or CornerDataContainer(id="cell_corners")
+        cell_faces = cell_faces or CornerDataContainer(id="cell_faces")
+
+        Mesh.__init__(self, 
+            vertices=vertices, 
+            edges=edges, 
+            faces=faces, 
+            face_corners=face_corners, 
+            cells=cells, 
+            cell_corners=cell_corners, 
+            cell_faces=cell_faces)
+        
         self.connectivity = VolumeMesh._Connectivity(self)
 
         # Boundary data
@@ -164,30 +186,12 @@ class VolumeMesh(Mesh):
             return self._is_edge_on_border[args[0]]
         return self._is_edge_on_border[self.connectivity.edge_id(args[0],args[1])]
 
-    def is_cell_tet(self, ic:int) -> bool:
-        """Returns `True if the cell given by id `ic` is a tetrahedron (i.e. has 4 vertices)
-        
-        Parameters:
-            ic (int): cell index
-            
-        Returns:
-            bool: len(self.cells[ic])==4 """
-        return len(self.cells[ic])==4
-    
-    # def is_cell_hex(self, ic) -> bool:
-    #     """Returns True if the cell given by id `ic` is a hexahedron (has 8 vertices) 
-        
-    #     Warning:
-    #         Having 8 vertices is not a sufficient condition for a cell to be a hexahedron, though it is a good enough test.
-    #     """
-    #     return len(self.cells[ic])==8
-
     def is_tetrahedral(self) -> bool:
         """
         Returns:
             bool: True if the mesh is tetrahedral (all cells are tetrahedra)
         """
-        return np.all([self.is_cell_tet(ic) for ic in self.id_cells])
+        return self.cells._data.shape[1]==4
 
     @property
     def boundary_faces(self):

@@ -9,8 +9,8 @@ class AttributeType(MultiValueEnum):
     Typing module for attributes. The main goal of this class is to prevent automatic casting that usually happens in python.
     """
     Bool = bool, np.bool_
-    Int = int, np.int32, np.uint8, np.int64
-    Float = float, np.float32, np.float64, np.float128
+    Int = int, np.int32, np.uint8, np.int64, np.dtype("int64")
+    Float = float, np.float32, np.float64, np.float128, np.dtype("float64"), np.dtype("float32")
     Complex = complex, np.complex64, np.complex128
 
     @classmethod
@@ -116,9 +116,17 @@ class _BaseAttribute(ABC):
     def is_sparse(self) -> bool:
         """
         Returns:
-            bool: whether the attribute is sparse (based on python dict) or dense (based on numpy array).
+            bool: whether the attribute is sparse (based on python dict) or dense (based on numpy array). Similar to `not self.is_dense()`
         """
         return self._is_sparse
+
+    @property
+    def is_dense(self) -> bool:
+        """
+        Returns:
+            bool: whether the attribute is dense (based on numpy array) or sparse (based on dict). Similar to `not self.is_sparse()`
+        """
+        return not self._is_sparse
     
     @property
     def default_value(self):
@@ -164,6 +172,9 @@ class _BaseAttribute(ABC):
     @abstractmethod
     def __iter__(self):
         pass
+
+    def empty(self) -> bool:
+        return len(self)==0
 
     def as_array(self, dtype=None, copy=None):
         """Returns a numpy array containing the data of the attribute. Similar to `np.asarray(attr)`
@@ -224,7 +235,7 @@ class Attribute(_BaseAttribute):
             if not AttributeType.can_be_casted(datatype, self.type):
                 raise self.TypeNotMatchingError(data, data.dtype, self.type)
             if data.shape[0]!= self.elem_size:
-                # provided number of element do not match elemsize
+                # provided number of element do not match elem_size
                 raise self.InvalidSizeError(data.shape[0], self.elem_size)
             self._data[key] = data
 
@@ -295,7 +306,7 @@ class SparseAttribute(_BaseAttribute):
             data = list(value)
             n = len(data)
             if not n==self.elem_size: 
-                # provided number of element do not match elemsize
+                # provided number of element do not match elem_size
                 raise self.InvalidSizeError(n,self.elem_size)
         
             datatype = type(data[0])
@@ -309,6 +320,10 @@ class SparseAttribute(_BaseAttribute):
             if not AttributeType.can_be_casted(data_attr_type, self.type):
                 raise self.TypeNotMatchingError(value, datatype, self.type)
             self._data[key] = value
+
+    @property
+    def n_non_default(self):
+        return len(self._data)
 
     def __delitem__(self, key):
         del self._data[key]

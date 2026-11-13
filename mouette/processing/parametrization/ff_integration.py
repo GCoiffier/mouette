@@ -1,6 +1,6 @@
 from .base import BaseParametrization
 
-from ...mesh.datatypes import SurfaceMesh,PolyLine
+from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import SparseAttribute, Attribute
 from ...mesh.mesh import copy, save
 
@@ -107,6 +107,7 @@ class FrameFieldIntegration(BaseParametrization):
         self.frame_field.run()
         self.frame_field.flag_singularities() # computes singularities
         self._singus = self.mesh.vertices.get_attribute("singuls")
+        assert self._singus.is_sparse
 
         self.log("Perform cuts between cones")
         ## Define a cut mesh along the shortest path towards the boundary
@@ -115,7 +116,7 @@ class FrameFieldIntegration(BaseParametrization):
         cutting_strategy = "shortest"
         if self._feat is not None and not self._feat.only_border: 
             cutting_strategy = "feature"
-        if len(self._singus)>200: 
+        if self._singus.n_non_default > 200: 
             cutting_strategy = "simple"
         self._cutter = SingularityCutter(self.mesh, self._singus, strategy=cutting_strategy, features=self._feat, verbose=self.verbose)
         self._cutter.run()
@@ -286,7 +287,7 @@ class FrameFieldIntegration(BaseParametrization):
                     eps_abs=1e-6, eps_rel=1e-6, max_iter=1000)
         result = instance.solve(raise_error=False)
         self._wm = result
-        self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
+        self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2)
         for cnr in self.mesh.id_corners:
             idc = id(cnr)
             self.uvs[cnr] = result.x[2*idc:2*idc+2]
@@ -298,9 +299,9 @@ class FrameFieldIntegration(BaseParametrization):
         if self._matching is None:
             return self.frame_field.export_as_mesh()
 
-        FFmesh = PolyLine()
+        FFmesh = RawMeshData()
         L = attributes.mean_edge_length(self.mesh)/3
-        match_attr = FFmesh.edges.create_attribute("matching", int, dense=True)
+        match_attr = FFmesh.edges.create_attribute("matching", int)
         for id_face, face in enumerate(self.mesh.faces):
             basis,Y = self._conn.base(id_face)
             normal = geom.cross(basis,Y)
@@ -313,7 +314,7 @@ class FrameFieldIntegration(BaseParametrization):
             FFmesh.edges += [(3*id_face, 3*id_face+k) for k in range(1,3)]
             match_attr[2*id_face]   = 0
             match_attr[2*id_face+1] = 1
-        return FFmesh  
+        return FFmesh.instantiate(1)
 
     @property
     def cut_mesh(self) -> SurfaceMesh:

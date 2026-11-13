@@ -8,8 +8,7 @@ import warnings
 
 from .base import FrameField
 
-from ...mesh.datatypes import PolyLine,SurfaceMesh,VolumeMesh
-from ...mesh.mesh_data import RawMeshData
+from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import SparseAttribute, Attribute
 
 from ... import attributes, utils, geometry as geom
@@ -265,7 +264,7 @@ class FrameField3DCells(FrameField):
         for e in self.singular_edges:
             A,B = self.mesh.edges[e]
             singu_graph.edges.append((indir[A], indir[B]))
-        return PolyLine(singu_graph)
+        return singu_graph.instantiate()
 
     def flag_singularities(self):
         self._check_init()
@@ -319,7 +318,7 @@ class FrameField3DCells(FrameField):
         self._check_init()
         L = attributes.mean_edge_length(self.mesh,100)
         FFMesh = RawMeshData()
-        col = FFMesh.faces.create_attribute("color", float, 3)
+        col = np.zeros((12*len(self.mesh.cells), 3), dtype=np.float64)
         RED,GREEN,BLUE = Vec(1.,0.,0), Vec(0.,1.,0.), Vec(0.,0.,1.)
         barycenters = attributes.cell_barycenter(self.mesh, persistent=False)
 
@@ -346,4 +345,5 @@ class FrameField3DCells(FrameField):
             col[12*iC+5] = BLUE
             col[12*iC+8] = BLUE
             col[12*iC+9] = BLUE
-        return SurfaceMesh(FFMesh)
+        FFMesh.faces_attr["color"] = col
+        return FFMesh.instantiate()

@@ -100,13 +100,13 @@ class EdgeSpanningTree(SpanningTree):
         Returns:
             PolyLine: the tree
         """
-        output = PolyLine()
+        output = RawMeshData()
         for v in self.mesh.vertices:
             output.vertices.append(v)
         for v,father in self.traverse():
             if father is None: continue
             output.edges.append(keyify(v, father))
-        return output
+        return output.instantiate(1)
 
 class EdgeMinimalSpanningTree(EdgeSpanningTree):
     """Same as EdgeSpanningTree but uses Kruskal's algorithm instead of a Breadth First Search.

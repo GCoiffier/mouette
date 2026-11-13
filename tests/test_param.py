@@ -6,7 +6,11 @@ from math import pi
 
 ########## LSCM ##########
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"]
+])
 def test_LSCM(m):
     lscm = PARAM.LSCM(m, verbose=False, eigen=True, save_on_corners=True, solver_verbose=False)
     lscm.run()
@@ -16,7 +20,11 @@ def test_LSCM(m):
     lscm.run()
     assert m.vertices.has_attribute("uv_coords")
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"]
+])
 def test_LSCM_no_eigen(m):
     lscm = PARAM.LSCM(m, verbose=False, eigen=False, save_on_corners=True, solver_verbose=False)
     lscm.run()
@@ -26,7 +34,7 @@ def test_LSCM_no_eigen(m):
     lscm.run()
     assert m.vertices.has_attribute("uv_coords")
 
-@pytest.mark.parametrize("m", [surf_cube()])
+@pytest.mark.parametrize("m", [ALL_SURFACES["cube_triangulated"], ALL_SURFACES["torus_quad"]])
 def test_LSCM_not_disk(m):
     try:
         _ = PARAM.LSCM(m,verbose=False, eigen=False, save_on_corners=False)()
@@ -34,8 +42,8 @@ def test_LSCM_not_disk(m):
     except:
         assert True
 
-@pytest.mark.parametrize("m", [surf_half_sphere()])
-def test_export_LSCM(m, tmp_path):
+def test_export_LSCM(tmp_path):
+    m = ALL_SURFACES["half_sphere"]
     _ = PARAM.LSCM(m, verbose=False, eigen=False, save_on_corners=True, solver_verbose=False)()
     build_test_io(m, tmp_path, "obj", 2)
     build_test_io(m, tmp_path, "geogram_ascii", 2)
@@ -43,12 +51,12 @@ def test_export_LSCM(m, tmp_path):
 ########## Tutte Embedding ##########
 
 @pytest.mark.parametrize("m,bnd", [
-    (surf_circle(), "square"), 
-    (surf_circle(), "circle"), 
-    (surf_spline(), "circle"), 
-    (surf_spline(), "xy"),
-    (surf_half_sphere(), "square"),
-    (surf_half_sphere(), "xz"),
+    (ALL_SURFACES["circle"], "square"), 
+    (ALL_SURFACES["circle"], "circle"), 
+    (ALL_SURFACES["spline"], "circle"), 
+    (ALL_SURFACES["spline"], "xy"),
+    (ALL_SURFACES["half_sphere"], "square"),
+    (ALL_SURFACES["half_sphere"], "xz"),
 ])
 def test_tutte_emd(m, bnd):
     tutte = PARAM.TutteEmbedding(m, verbose=False, save_on_corners=True, boundary_mode=bnd)
@@ -59,15 +67,15 @@ def test_tutte_emd(m, bnd):
         assert dist.summary["det_min"] > 0
 
 
-@pytest.mark.parametrize("m,bnd", [(surf_spline(), "circle"), (surf_half_sphere(), "square")])
+@pytest.mark.parametrize("m,bnd", [(ALL_SURFACES["spline"], "circle"), (ALL_SURFACES["half_sphere"], "square")])
 def test_tutte_save_on_vertices(m, bnd):
     tutte = PARAM.TutteEmbedding(m,verbose=False, save_on_corners=False, boundary_mode=bnd)
     tutte.run()
     assert m.vertices.has_attribute("uv_coords")
 
 
-@pytest.mark.parametrize("m", [surf_circle()])
-def test_tutte_invalid_boundary(m):
+def test_tutte_invalid_boundary():
+    m = ALL_SURFACES["circle"]
     try:
         tutte = PARAM.TutteEmbedding(m,verbose=False, save_on_corners=True, boundary_mode="foo")
         tutte.run()
@@ -78,14 +86,22 @@ def test_tutte_invalid_boundary(m):
 
 ########## Boudary First Flattenning ##########
 
-@pytest.mark.parametrize("mesh", [surf_circle(), surf_spline(), surf_half_sphere()])
+@pytest.mark.parametrize("mesh", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"]
+])
 def test_bff_boundary_scale(mesh : M.mesh.SurfaceMesh):
     bnd_scale = mesh.vertices.create_attribute("scale", float, default_value=1.)
     param = PARAM.BoundaryFirstFlattening(mesh, bnd_scale_fctr=bnd_scale, verbose=True, save_on_corners=False)
     mesh = param.run() # vertex ordering has changed
     assert mesh.vertices.has_attribute("uv_coords")
 
-@pytest.mark.parametrize("mesh", [surf_circle(), surf_spline(), surf_half_sphere()])
+@pytest.mark.parametrize("mesh", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"]
+])
 def test_bff_boundary_curv(mesh : M.mesh.SurfaceMesh):
     curv = 2*pi/len(mesh.boundary_vertices)
     bnd_curv = mesh.vertices.create_attribute("curv", float, default_value=curv)
@@ -95,8 +111,8 @@ def test_bff_boundary_curv(mesh : M.mesh.SurfaceMesh):
 
 ########## Param Distortion ##########
 
-@pytest.mark.parametrize("m", [surf_half_sphere()])
-def test_param_distortion(m):
+def test_param_distortion():
+    m = ALL_SURFACES["half_sphere"]
     _ = PARAM.LSCM(m, verbose=False, eigen=False, save_on_corners=True, solver_verbose=False)()
     disto = PARAM.ParamDistortion(m, "uv_coords", save_on_mesh=True, verbose=False)
     disto.run()
@@ -109,8 +125,8 @@ def test_param_distortion(m):
     for key in ("conformal", "iso", "shear", "scale", "stretch_mean", "stretch_max"):
         assert key in disto.summary
 
-@pytest.mark.parametrize("m", [surf_uv_sphere_quads()])
-def test_quad_quality(m):
+def test_quad_quality():
+    m = ALL_SURFACES["sphere_quad"]
     disto = PARAM.QuadQuality(m, save_on_mesh=True, verbose=False)
     disto.run()
     for attr_name in ("conformal_dist", "scale_dist", "stretch_dist", "det"):
@@ -123,7 +139,11 @@ def test_quad_quality(m):
 
 ########## FRAME FIELD INTEGRATION ##########
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_half_sphere(), surf_spot()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["spot"]
+])
 def test_FF_integrate(m):
     ff = M.framefield.SurfaceFrameField(m, "faces", verbose=True, features=False)
     ff_param = M.parametrization.FrameFieldIntegration(ff, scaling=10., verbose=True)
@@ -132,7 +152,11 @@ def test_FF_integrate(m):
     assert m.face_corners.has_attribute("uv_coords")
     assert isinstance(ff_param.flat_mesh, M.mesh.SurfaceMesh)
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_feat(), surf_cube_subdiv()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["feature"],
+    ALL_SURFACES["cube_subdiv"]
+])
 def test_FF_integrate_with_features(m):
     ff = M.framefield.SurfaceFrameField(m, "faces", verbose=True, features=True)()
     ff_param = M.parametrization.FrameFieldIntegration(ff, scaling=10., verbose=True)
@@ -141,7 +165,11 @@ def test_FF_integrate_with_features(m):
     assert m.face_corners.has_attribute("uv_coords")
     assert isinstance(ff_param.flat_mesh, M.mesh.SurfaceMesh)
 
-@pytest.mark.parametrize("m", [surf_half_sphere(), surf_torus(), surf_spot()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["torus_triangulated"],
+    ALL_SURFACES["spot"]
+])
 def test_FF_integrate_curvature(m):
     ff = M.framefield.PrincipalDirections(m, "faces", verbose=True, features=False)
     ff_param = M.parametrization.FrameFieldIntegration(ff, scaling=10., verbose=True)
@@ -154,12 +182,13 @@ def test_FF_integrate_curvature(m):
 ########## CONE PARAMETRIZATION ##########
 
 @pytest.mark.parametrize("mesh,cones", [
-    (surf_circle(), [(68, pi/2), (263,pi), (251, pi/2), (333, pi/2), (59, -pi/2)]),
-    (surf_spot(), [(702, pi/2),(957, pi/2), (895, pi/2), (995,pi/2), (553,pi/2), (769, pi/2), (752, pi/2), (640, pi/2)]),
-    (surf_torus(), [])
+    (ALL_SURFACES["circle"], [(68, pi/2), (263,pi), (251, pi/2), (333, pi/2), (59, -pi/2)]),
+    (ALL_SURFACES["spot"], [(702, pi/2),(957, pi/2), (895, pi/2), (995,pi/2), (553,pi/2), (769, pi/2), (752, pi/2), (640, pi/2)]),
+    (ALL_SURFACES["torus_triangulated"], [])
 ])
-def test_cone_param(mesh : M.mesh.SurfaceMesh, cones):
-    cones_attr = mesh.vertices.create_attribute("cones", float)
+@pytest.mark.parametrize("cone_sparse", [True, False])
+def test_cone_param(mesh : M.mesh.SurfaceMesh, cones, cone_sparse):
+    cones_attr = mesh.vertices.create_attribute("cones", float, sparse=cone_sparse)
     for (vid,val) in cones:
         cones_attr[vid] = val
     param = M.parametrization.ConformalConeParametrization(mesh, cones_attr, verbose=True)
@@ -168,8 +197,8 @@ def test_cone_param(mesh : M.mesh.SurfaceMesh, cones):
     assert isinstance(param.flat_mesh, M.mesh.SurfaceMesh)
 
 
-@pytest.mark.parametrize("mesh", [surf_spot()])
-def test_cone_param_invalid_cones(mesh : M.mesh.SurfaceMesh):
+def test_cone_param_invalid_cones():
+    mesh = ALL_SURFACES["spot"]
     cone_attr = mesh.vertices.create_attribute("cones", float)
     cone_attr[0] = 0.1 
     try:
@@ -184,8 +213,8 @@ def test_cone_param_invalid_cones(mesh : M.mesh.SurfaceMesh):
 ########## Orbifold Tutte Embedding ##########
 
 @pytest.mark.parametrize("mesh,cones,orbifold", [
-    (surf_spot(), [796, 978, 995], "square"),
-    (surf_spot(), [589, 995, 895, 560], "parallelogram")
+    (ALL_SURFACES["spot"], [796, 978, 995], "square"),
+    (ALL_SURFACES["spot"], [589, 995, 895, 560], "parallelogram")
 ])
 def test_orbifold_tutte(mesh, cones, orbifold):
     orbTutte = M.parametrization.OrbifoldTutteEmbedding(mesh, orbifold, cones, verbose=True)
@@ -196,8 +225,8 @@ def test_orbifold_tutte(mesh, cones, orbifold):
     assert dist.summary["det_min"] > 0
 
 
-@pytest.mark.parametrize("mesh", [surf_spot()])
-def test_orbifold_tutte_invalid_cones(mesh):
+def test_orbifold_tutte_invalid_cones():
+    mesh = ALL_SURFACES["spot"]
     try:
         orbTutte = M.parametrization.OrbifoldTutteEmbedding(mesh, "square", [0,1,2,3])
         assert False
@@ -219,7 +248,7 @@ def test_orbifold_tutte_invalid_cones(mesh):
 
 ########## Discrete Exponential Map ##########
 
-@pytest.mark.parametrize("mesh", [surf_circle(), surf_spot()])
+@pytest.mark.parametrize("mesh", [ALL_SURFACES["circle"], ALL_SURFACES["spot"]])
 def test_exp_map(mesh : M.mesh.SurfaceMesh):
     conn = M.processing.SurfaceConnectionVertices(mesh)
     param = M.processing.DiscreteExponentialMap(mesh,conn)

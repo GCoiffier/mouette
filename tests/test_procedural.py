@@ -38,8 +38,9 @@ def test_cylinder():
     cy2 = M.procedural.cylinder(M.Vec.random(3), M.Vec.random(3), N=20, fill_caps=False)
     assert len(cy2.vertices) == 2*20
 
-@pytest.mark.parametrize("p", polylines)
+@pytest.mark.parametrize("p", POLYLINES.items())
 def test_cylindrify(p):
+    name, p = p
     m = M.procedural.cylindrify_edges(p, N=10)
     assert isinstance(m, M.mesh.SurfaceMesh)
 
@@ -105,7 +106,8 @@ def test_sphere_fibonacci():
     sph = M.procedural.sphere_fibonacci(300, build_surface=True)
     assert len(sph.vertices) == 300
 
-@pytest.mark.parametrize("p", point_clouds)
+@pytest.mark.parametrize("p", POINT_CLOUDS.items())
 def test_spherify_vertices(p):
+    name, p = p
     sph = M.procedural.spherify_vertices(p)
-    assert True
+    assert isinstance(sph, M.mesh.SurfaceMesh)

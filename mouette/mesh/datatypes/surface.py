@@ -1,5 +1,6 @@
-from ..mesh_data import RawMeshData
-from ..mesh_attributes import SparseAttribute
+import numpy as np
+
+from ..data_container import DataContainer, CornerDataContainer
 from .base import Mesh
 from .linear import PolyLine
 from ... import utils
@@ -14,29 +15,26 @@ class SurfaceMesh(Mesh):
         faces (DataContainer): the container for all faces
         face_corners (DataContainer): the container for all corner of faces
 
-        boundary_edges (list): list of all edge indices on the boundary
-        interior_edges (list): list of all interior edge indices (all edges \\ boundary_edges)
-        boundary_vertices (list): list of all vertex indices on the boundary
-        interior_vertices (list): list of all interior verticex indices (all vertices \\ boundary_vertices)
+        boundary_edges (np.ndarray): array of all edge indices on the boundary
+        interior_edges (np.ndarray): array of all interior edge indices (all edges \\ boundary_edges)
+        boundary_vertices (np.ndarray): array of all vertex indices on the boundary
+        interior_vertices (np.ndarray): array of all interior vertices indices (all vertices \\ boundary_vertices)
 
         connectivity (_SurfaceConnectivity): the connectivity utility class
     """
 
-    def __init__(self, data : RawMeshData = None):
-        Mesh.__init__(self, 2, data)
+    def __init__(self, vertices : DataContainer, edges : DataContainer, faces : DataContainer, face_corners : CornerDataContainer):
+        vertices = vertices or DataContainer(id="vertices")
+        edges = edges or DataContainer(id="edges")
+        faces = faces or DataContainer(id="faces")
+        face_corners = face_corners or CornerDataContainer(id="face_corners")
+        Mesh.__init__(self, vertices=vertices, edges=edges, faces=faces, face_corners=face_corners)
 
         self.connectivity = SurfaceMesh._Connectivity(self)
 
         # Boundary data
-        self._boundary_edges : list = None
-        self._interior_edges : list = None
-
-        self._is_vertex_on_border : SparseAttribute = None
-        self._boundary_vertices : list = None
-        self._interior_vertices : list = None
-
-        self._is_triangular : bool = None
-        self._is_quad : bool = None
+        self._edge_on_border : np.ndarray = None
+        self._vertex_on_border : np.ndarray = None
 
     def __str__(self):
         out = "mouette.mesh.SurfaceMesh object\n"
@@ -94,16 +92,9 @@ class SurfaceMesh(Mesh):
             fid (int): face id
 
         Returns:
-            Iterable: iterator of Vec objects representing point coordinates of vertices
+            np.ndarray: an array of shape (K,3) where K is the number of vertices in the face
         """
-        return (self.vertices[_v] for _v in self.faces[fid])
-
-    def _compute_mesh_type(self):
-        self._is_triangular = True
-        self._is_quad = True
-        for f in self.faces:
-            self._is_triangular = self._is_triangular and len(f)==3
-            self._is_quad = self._is_quad and len(f)==4
+        return self.vertices[self.faces[fid]]
 
     def is_triangular(self) -> bool:
         """
@@ -112,9 +103,7 @@ class SurfaceMesh(Mesh):
         Returns:
             bool: True if the mesh is triangular (all faces are triangles)
         """
-        if self._is_triangular is None:
-            self._compute_mesh_type()
-        return self._is_triangular
+        return self.faces._data.shape[1] == 3
 
     def is_quad(self) -> bool:
         """
@@ -123,48 +112,22 @@ class SurfaceMesh(Mesh):
         Returns:
             bool: True if the mesh is quadrangular (all faces are quad)
         """
-        if self._is_quad is None:
-            self._compute_mesh_type()
-        return self._is_quad
+        return self.faces._data.shape[1] == 4
 
-    def clear_boundary_data(self):
-        """
-        Clear all boundary data.
-        Next call to a boundary/interior container or method will recompute everything
-        """
-        self._boundary_edges : list = None
-        self._interior_edges : list = None
-
-        self._is_vertex_on_border : SparseAttribute = None 
-        self._boundary_vertices : set = None
-        self._interior_vertices : set = None
 
     ##### Accessors for boundary and exterior ######
 
     def _compute_interior_boundary_edges(self):
-        self._interior_edges = []
-        self._boundary_edges = []
+        self._edge_on_border = np.zeros(len(self.edges), dtype=bool)
         for e,(u,v) in enumerate(self.edges):
-            if self.is_edge_on_border(u,v):
-                self._boundary_edges.append(e)
-            else:
-                self._interior_edges.append(e)
+            self._edge_on_border[e] = self.is_edge_on_border(u,v)
     
     def _compute_interior_boundary_vertices(self):
-        self._boundary_vertices = set()
-        self._is_vertex_on_border = self.vertices.create_attribute("border", bool)
+        self._vertex_on_border = np.zeros(len(self.vertices), dtype=bool)
         for e in self.boundary_edges:
             a,b = self.edges[e]
-            self._is_vertex_on_border[a] = True
-            self._is_vertex_on_border[b] = True
-            self._boundary_vertices.add(a)
-            self._boundary_vertices.add(b)
-        self._boundary_vertices = list(self.boundary_vertices)
-        
-        self._interior_vertices = []
-        for x in self.id_vertices:
-            if not self._is_vertex_on_border[x]:
-                self._interior_vertices.append(x)
+            self._vertex_on_border[a] = True
+            self._vertex_on_border[b] = True
 
     def is_edge_on_border(self, u:int, v:int) -> bool:
         """
@@ -190,33 +153,34 @@ class SurfaceMesh(Mesh):
         Returns:
             bool: whether vertex `u` is a boundary vertex or not.
         """
-        if self._is_vertex_on_border is None:
+        if self._vertex_on_border is None:
             self._compute_interior_boundary_vertices()
-        return self._is_vertex_on_border[u]
+        return self._vertex_on_border[u]
 
     @property
-    def interior_edges(self) -> list:
-        if self._interior_edges is None:
+    def interior_edges(self) -> np.ndarray:
+        if self._edge_on_border is None:
             self._compute_interior_boundary_edges()
-        return self._interior_edges
+        return np.arange(len(self.edges))[~self._edge_on_border]
 
     @property
-    def boundary_edges(self) -> list:
-        if self._boundary_edges is None:
+    def boundary_edges(self) -> np.ndarray:
+        if self._edge_on_border is None:
             self._compute_interior_boundary_edges()
-        return self._boundary_edges
+        return np.arange(len(self.edges))[self._edge_on_border]
 
     @property
-    def boundary_vertices(self) -> list:
-        if self._boundary_vertices is None:
+    def boundary_vertices(self) -> np.ndarray:
+        if self._vertex_on_border is None:
             self._compute_interior_boundary_vertices()
-        return self._boundary_vertices
+        return np.arange(len(self.vertices))[self._vertex_on_border]
     
     @property
-    def interior_vertices(self) -> list:
-        if self._interior_vertices is None:
+    def interior_vertices(self) -> np.ndarray:
+        if self._vertex_on_border is None:
             self._compute_interior_boundary_vertices()
-        return self._interior_vertices
+        return np.arange(len(self.vertices))[~self._vertex_on_border]
+
 
     ###### Connectivity ######
 

@@ -70,7 +70,7 @@ class CellSpanningTree(SpanningTree):
         Returns:
             PolyLine: the tree
         """
-        output = PolyLine()
+        output = RawMeshData()
         if self.mesh.faces.has_attribute("barycenter"):
             bary = self.mesh.cells.attribute("barycenter")
         else:
@@ -79,7 +79,7 @@ class CellSpanningTree(SpanningTree):
             output.vertices.append(bary[iC])
             if self.parent[iC] is not None:
                 output.edges.append([iC, self.parent[iC]])
-        return output
+        return output.instantiate(1)
 
 class CellSpanningForest(SpanningForest):
     """A spanning forest that runs between cells. 

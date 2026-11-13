@@ -1,7 +1,7 @@
 import numpy as np
 from ..mesh.datatypes import *
 from ..mesh.mesh import from_arrays, merge
-from ..mesh.mesh_data import RawMeshData, DataContainer
+from ..mesh.data_container import DataContainer
 from ..attributes import vertex_normals
 from ..geometry import Vec
 from .. import utils
@@ -17,11 +17,11 @@ class _PnTriangulation(ABC):
 
     @classmethod
     def from_P1_mesh(cls, mesh: SurfaceMesh):
-        return
+        raise NotImplementedError
     
     @abstractmethod
     def rasterize(self, res: int = 10):
-        return
+        raise NotImplementedError
     
     @property
     def id_nodes(self):

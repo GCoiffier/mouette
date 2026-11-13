@@ -1,3 +1,5 @@
+import numpy as np
+
 from .. import geometry as geom
 from ..mesh.datatypes import *
 from ..utils import PriorityQueue
@@ -5,7 +7,7 @@ from ..utils.argument_check import *
 from ..mesh.mesh_attributes import _BaseAttribute
 
 def build_path(mesh : Mesh, paths):
-    path_mesh = PolyLine()
+    path_mesh = RawMeshData()
     k = 0
     for l in paths.values():
         if len(l)>0:
@@ -14,12 +16,12 @@ def build_path(mesh : Mesh, paths):
             for i in range(1, len(l)):
                 path_mesh.vertices.append(mesh.vertices[l[i]])
                 path_mesh.edges.append((k+i-1,k+i))
-    return path_mesh
+    return path_mesh.instantiate(1)
 
 def _check_weight_argument(weights):
     if isinstance(weights, str):
         check_argument("weights", weights, str, ["one", "length"])
-    elif not (isinstance(weights,dict) or isinstance(weights, _BaseAttribute)):
+    elif not (isinstance(weights,dict) or isinstance(weights, _BaseAttribute) or isinstance(weights, np.ndarray)):
         raise InvalidArgumentTypeError("weights", type(weights), str, dict, _BaseAttribute)
 
 @forbidden_mesh_types(PointCloud)
@@ -56,9 +58,9 @@ def shortest_path(mesh : Mesh, start : int, targets : list, weights = "length", 
     _check_weight_argument(weights)
 
     # Initialize data
-    if weights=="one":
+    if isinstance(weights,str) and weights=="one":
         edge_length = lambda _ : 1.
-    elif weights== "length":
+    elif isinstance(weights, str) and weights== "length":
         if mesh.edges.has_attribute("length"):
             length_attr = mesh.edges.get_attribute("length")
             edge_length = lambda u,v : length_attr[mesh.connectivity.edge_id(u,v)]
@@ -146,12 +148,12 @@ def shortest_path_to_vertex_set(mesh : PolyLine, start : int, targets : list, we
     connectivity = dict([ (u, dict()) for u in mesh.id_vertices ])
     connectivity[TARGET] = dict()
     
-    if weights=="one":
+    if isinstance(weights, str) and weights=="one":
         for (u,v) in mesh.edges:
             connectivity[u][v] = 1
             connectivity[v][u] = 1
 
-    elif weights== "length":
+    elif isinstance(weights, str) and weights== "length":
         for (u,v) in mesh.edges:
             d = geom.distance(mesh.vertices[u], mesh.vertices[v])
             connectivity[u][v] = d
@@ -231,9 +233,9 @@ def closest_n_vertices(mesh : SurfaceMesh, start : int, n : int, targets : list,
     targets = set(targets)
 
     # Initialize data
-    if weights=="one":
+    if isinstance(weights, str) and weights=="one":
         edge_length = lambda _ : 1.
-    elif weights== "length":
+    elif isinstance(weights, str) and weights== "length":
         if mesh.edges.has_attribute("length"):
             length_attr = mesh.edges.get_attribute("length")
             edge_length = lambda u,v : length_attr[mesh.connectivity.edge_id(u,v)]

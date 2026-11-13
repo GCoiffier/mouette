@@ -117,7 +117,7 @@ class OrbifoldTutteEmbedding(BaseParametrization):
             raise Exception("Invalid Orbifold type. should not happen.")
         
         if UV is None: return
-        self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
+        self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2)
         for c,v in enumerate(self.cut_mesh.face_corners):
             self.uvs[c] = UV[2*v:2*v+2]
         

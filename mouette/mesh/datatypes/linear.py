@@ -1,4 +1,4 @@
-from ..mesh_data import RawMeshData
+from ..data_container import DataContainer
 from .base import Mesh
 from ... import utils
 
@@ -12,8 +12,10 @@ class PolyLine(Mesh):
         __str__: Representation of the object and its elements as a string.
     """
 
-    def __init__(self, data : RawMeshData = None):
-        Mesh.__init__(self, 1, data)
+    def __init__(self, vertices : DataContainer, edges : DataContainer):
+        vertices = vertices or DataContainer(id="vertices")
+        edges = edges or DataContainer(id="edges")
+        Mesh.__init__(self, vertices=vertices, edges=edges)
         self.connectivity = PolyLine._Connectivity(self) 
 
     def __str__(self):

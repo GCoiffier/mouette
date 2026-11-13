@@ -2,8 +2,6 @@ import numpy as np
 
 from ..geometry import Vec
 from ..mesh.datatypes import *
-from ..mesh.mesh import _instanciate_raw_mesh_data
-from ..mesh.mesh_data import RawMeshData
 
 def triangle(P0: Vec, P1: Vec, P2: Vec) -> SurfaceMesh:
     """Generates a triangle from three vertices
@@ -17,7 +15,7 @@ def triangle(P0: Vec, P1: Vec, P2: Vec) -> SurfaceMesh:
     out = RawMeshData()
     out.vertices += [P0, P1, P2]
     out.faces.append((0,1,2))
-    return _instanciate_raw_mesh_data(out, 2)
+    return out.instantiate()
 
 def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False) -> SurfaceMesh:
     """Generates a quad from three vertices
@@ -38,14 +36,13 @@ def quad(P0: Vec, P1: Vec, P2: Vec, triangulate: bool = False) -> SurfaceMesh:
     """
     P0, P1, P2 = Vec(P0), Vec(P1), Vec(P2)
     P3 = P2 + P1 - P0
-
     out = RawMeshData()
     out.vertices += [P0, P1, P3, P2]
     if triangulate:
         out.faces += [(0,1,2), (0,2,3)]
     else:
         out.faces += [(0,1,2,3)]
-    return _instanciate_raw_mesh_data(out,2)
+    return out.instantiate()
 
 def unit_grid(nu: int, nv: int, triangulate: bool = False, generate_uvs: bool=False) -> SurfaceMesh:
     """Generates a subdivided regular unit grid
@@ -63,7 +60,7 @@ def unit_grid(nu: int, nv: int, triangulate: bool = False, generate_uvs: bool=Fa
     U = np.linspace(0,1,nu)
     V = np.linspace(0,1,nv)
     if generate_uvs:
-        uv_attr = out.vertices.create_attribute("uv_coords",float,2)
+        uv_attr = np.zeros((nu*nv,2), dtype=np.float64)
     for i,u in enumerate(U):
         for j,v in enumerate(V):
             out.vertices.append(Vec(u,v,0))
@@ -76,7 +73,9 @@ def unit_grid(nu: int, nv: int, triangulate: bool = False, generate_uvs: bool=Fa
                     out.faces.append((i*nv+j+1, (i+1)*nv+j+1, (i+1)*nv+j))
                 else: # add a quad
                     out.faces.append((i*nv+j, i*nv+j+1, (i+1)*nv+j+1, (i+1)*nv+j))
-    return _instanciate_raw_mesh_data(out, 2)
+    if generate_uvs:
+        out.vertices_attr["uv_coords"] = uv_attr
+    return out.instantiate()
 
 
 def unit_triangle(nu:int, nv:int, generate_uvs:bool=False) -> SurfaceMesh:
@@ -94,19 +93,18 @@ def unit_triangle(nu:int, nv:int, generate_uvs:bool=False) -> SurfaceMesh:
     U = np.linspace(0,1,nu)
     V = np.linspace(1,0,nv)
     if generate_uvs:
-        uv_attr = out.vertices.create_attribute("uv_coords",float,2)
-    npt = 0
+        uv_attr = []
     for j,v in enumerate(V):
         for i,u in enumerate(U):
             if i>j: break
             out.vertices.append(Vec(u,v,0))
             if generate_uvs:
-                uv_attr[npt] = Vec(u,v)
-                npt += 1
-    for j,v in enumerate(V):
+                uv_attr.append(Vec(u,v))
         for i,u in enumerate(U):
             if i>j or j==nv-1: break
             kpt = j*(j+1)//2 + i
             if i<j: out.faces.append((kpt,kpt+j+2,kpt+1))
             out.faces.append((kpt,kpt+j+1,kpt+j+2))
-    return _instanciate_raw_mesh_data(out, 2)
+    if generate_uvs:
+        out.vertices_attr["uv_coords"] = uv_attr
+    return out.instantiate()

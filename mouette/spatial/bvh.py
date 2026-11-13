@@ -1,9 +1,10 @@
 import numpy as np
 import numba as nb
-import warnings
 from numba import njit, prange
 from collections import deque
 from .. import geometry as geom
+from ..mesh.datatypes import *
+from ..attributes.attr_faces import _face_normals
 
 @njit(inline="always", fastmath=True)
 def distance2_to_aabb(q, node_min, node_max):
@@ -144,10 +145,34 @@ class BoundingVolumeHierarchy:
         dim = self.V.shape[1]
 
         self._normals_computed = False
-        # empty arrays so that the numba query function keeps a unique signature
-        self.FN = np.empty((0, dim))
-        self.VN = np.empty((0, dim))
-        self.EN = np.empty((0, 3, dim))
+        self.FN = np.empty((0, dim)) # face normals
+        self.VN = np.empty((0, dim)) # vertex normals
+        self.EN = np.empty((0, 3, dim)) # edge normals
+
+    @classmethod
+    def from_mesh(cls, mesh_data : Mesh, **kwargs):
+        """Initializes a BVH from a mouette Mesh object. Three behaviors are expected depending on the provided data:
+            - PointCloud: returns a BVH on points (i.e. a kd-tree)
+            - PolyLine: returns a BVH on edges. /!\\ The method assumes that vertices are in the xy plane and extracts `vertices[:,:2]`.
+            - SurfaceMesh: returns a BVH on triangle faces. Fails if the mesh is not a triangulation.
+
+        Args:
+            mesh_data (Mesh): the input mesh data.
+
+        Raises:
+            Exception: Fails if the provided mesh is a non-triangulated surface mesh
+            Exception: Fails if the provided mesh is not a PointCloud, a PolyLine or a SurfaceMesh
+        """
+        if isinstance(mesh_data, PointCloud):
+            return cls(mesh_data.vertices._data, None, **kwargs)
+        elif isinstance(mesh_data, PolyLine):
+            return cls(mesh_data.vertices._data[:, :2], mesh_data.edges._data, **kwargs)
+        elif isinstance(mesh_data, SurfaceMesh):
+            if not mesh_data.is_triangular():
+                raise Exception("BVH only works with surface meshes that are triangulated.")
+            return cls(mesh_data.vertices._data, mesh_data.faces._data, **kwargs)
+        else:
+            raise Exception(f"Invalid mesh data of type {type(mesh_data)} received from BVH.")
 
     @property
     def n_nodes(self):
@@ -220,11 +245,14 @@ class BoundingVolumeHierarchy:
         return self.left[node_id] == -1
 
     def _compute_pseudonormals(self):
-        """Computes the pseudonormals of the simplices (Bærentzen and Aanæs, Signed distance computation using the angle weighted pseudonormal, 2005):
+        """Computes the pseudonormals of the simplices:
         - FN: unit normal of each simplex (normal of the triangle in 3D, normal of the edge in 2D).
         - VN: pseudonormal of each vertex, as the sum of the normals of the adjacent simplices weighted by their angle at the vertex (in 3D) or unweighted (in 2D).
         - EN: pseudonormal of the three edges of each triangle (AB, BC, CA), as the sum of the normals of its adjacent triangles (3D only).
         Pseudonormals other than FN are not normalized since only their direction matters.
+
+        References:
+            _Signed distance computation using the angle weighted pseudonormal_, Bærentzen and Aanæs (2005)
         """
         V, F = self.V, self.F
         dim = V.shape[1]
@@ -240,8 +268,8 @@ class BoundingVolumeHierarchy:
 
         # Triangles
         P = V[F] # (nF, 3, 3)
-        self.FN = np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0])
-        self.FN /= np.maximum(np.linalg.norm(self.FN, axis=1), 1e-30)[:, None]
+        self.FN = _face_normals(self.V, self.F)
+
         # vertex pseudonormals: weighted by the angles at the corners
         for k in range(3):
             u = P[:, (k+1)%3] - P[:, k]

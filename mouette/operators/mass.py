@@ -1,34 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
 from ..mesh.datatypes import *
-from ..attributes import face_area, cell_volume, cotangent
-
-@allowed_mesh_types(SurfaceMesh)
-def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = False, format: str = "csc") -> sp.csc_matrix:
-    """
-    Returns the diagonal matrix A of area weights on vertices.
-    
-    Args:
-        mesh (SurfaceMesh): input mesh
-        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
-        sqrt (bool, optional): whether to return A or A^{1/2}. Can be combined with `inverse` to return A^{-1/2}. Defaults to False.
-        format (str, optional): one of the sparse matrix format of scipy (csc, csr, coo, lil, ...). Defaults to csc.
-
-    Returns:
-        sp.csc_matrix: diagonal matrix of vertex areas
-    """
-    A = np.zeros(len(mesh.vertices))
-    if mesh.faces.has_attribute("area"):
-        area = mesh.faces.get_attribute("area")
-    else:
-        area = face_area(mesh)
-    for iT,T in enumerate(mesh.faces):
-        for u in T:
-            A[u] += area[iT]
-    if sqrt: A = np.sqrt(A)
-    if inverse : A = 1/A # /!\ perform inverse after sqrt
-    return sp.diags(A, format=format)
-
+from ..attributes import face_area, cell_volume, cotangent, interpolate_faces_to_vertices, interpolate_cells_to_vertices
 
 @allowed_mesh_types(SurfaceMesh)
 def cotan_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = False, format: str = "csc") -> sp.csc_matrix:
@@ -53,8 +26,31 @@ def cotan_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = Fa
         A[v] += cotan[c]
     if sqrt: A = np.sqrt(A)
     if inverse : A = 1/A # /!\ perform inverse after sqrt
-    return sp.diags(A, format=format)
+    return sp.diags(np.squeeze(A), format=format)
 
+
+@allowed_mesh_types(SurfaceMesh)
+def area_weight_matrix(mesh : SurfaceMesh, inverse:bool = False, sqrt:bool = False, format: str = "csc") -> sp.csc_matrix:
+    """
+    Returns the diagonal matrix A of area weights on vertices.
+    
+    Args:
+        mesh (SurfaceMesh): input mesh
+        inverse (bool, optional): whether to return A or A^-1. Defaults to False.
+        sqrt (bool, optional): whether to return A or A^{1/2}. Can be combined with `inverse` to return A^{-1/2}. Defaults to False.
+        format (str, optional): one of the sparse matrix format of scipy (csc, csr, coo, lil, ...). Defaults to csc.
+
+    Returns:
+        sp.csc_matrix: diagonal matrix of vertex areas
+    """
+    if mesh.faces.has_attribute("area"):
+        area = mesh.faces.get_attribute("area")
+    else:
+        area = face_area(mesh,persistent=True)
+    A = interpolate_faces_to_vertices(mesh, area, weight="sum", persistent=False)
+    if sqrt: A = np.sqrt(A)
+    if inverse : A = 1/A # /!\ perform inverse after sqrt
+    return sp.diags(np.squeeze(A), format=format)
 
 @allowed_mesh_types(SurfaceMesh)
 def area_weight_matrix_faces(mesh : SurfaceMesh, inverse : bool=False, format: str = "csc") -> sp.csc_matrix:
@@ -70,13 +66,12 @@ def area_weight_matrix_faces(mesh : SurfaceMesh, inverse : bool=False, format: s
         sp.csc_matrix
     """
     if mesh.faces.has_attribute("area"):
-        area = mesh.faces.get_attribute("area")
+        area = mesh.faces.get_attribute("area").as_array()
     else:
-        area = face_area(mesh)
-    area = area.as_array(len(mesh.faces))
+        area = face_area(mesh, persistent=False)
     if inverse:
         area = 1/area
-    return sp.diags(area, format=format)
+    return sp.diags(np.squeeze(area), format=format)
 
 
 @allowed_mesh_types(SurfaceMesh)
@@ -92,10 +87,9 @@ def area_weight_matrix_edges(mesh : SurfaceMesh, inverse : bool=False) -> sp.csc
         sp.csc_matrix
     """
     if mesh.faces.has_attribute("area"):
-        area = mesh.faces.get_attribute("area")
+        area = mesh.faces.get_attribute("area").as_array()
     else:
-        area = face_area(mesh)
-
+        area = face_area(mesh, persistent=False)
     area_edges = np.zeros(len(mesh.edges))
     for e,(A,B) in enumerate(mesh.edges):
         for T in mesh.connectivity.edge_to_faces(A,B):
@@ -123,10 +117,7 @@ def volume_weight_matrix(mesh: VolumeMesh, inverse: bool = False, sqrt: bool = F
         volume = mesh.cells.get_attribute("volume")
     else:
         volume = cell_volume(mesh)
-    V = np.zeros(len(mesh.vertices))
-    for iC,C in enumerate(mesh.cells):
-        for u in C:
-            V[u] += volume[iC] 
+    V = interpolate_cells_to_vertices(mesh, volume, weight="sum", persistent=False)
     if sqrt: V = np.sqrt(V)
     if inverse: V = 1/V
     return sp.diags(V, format=format)
@@ -146,10 +137,9 @@ def volume_weight_matrix_cells(mesh: VolumeMesh, inverse: bool = False, sqrt: bo
         sp.csc_matrix: diagonal matrix of vertices area
     """
     if mesh.cells.has_attribute("volume"):
-        volume = mesh.cells.get_attribute("volume")
+        volume = mesh.cells.get_attribute("volume").as_array()
     else:
-        volume = cell_volume(mesh)
-    V = volume.as_array(len(mesh.cells))
-    if sqrt: V = np.sqrt(V)
-    if inverse: V = 1/V
-    return sp.diags(V, format=format)
+        volume = cell_volume(mesh, persistent=False)
+    if sqrt: volume = np.sqrt(volume)
+    if inverse: volume = 1/volume
+    return sp.diags(volume, format=format)

@@ -1,5 +1,5 @@
 from .base import FrameField
-from ...mesh.mesh_data import RawMeshData
+from ...mesh.mesh import from_arrays
 from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import SparseAttribute, Attribute
 from ... import geometry as geom
@@ -120,8 +120,8 @@ class FrameField2DEdges(FrameField) :
             angles[c] = angles12[i_angle]
 
         # compute singularities 
-        singulsV = self.mesh.vertices.create_attribute(singul_attr_name, float)
-        defectsV = attributes.average_corners_to_vertices(self.mesh, angles, Attribute(float, len(self.mesh.vertices)), weight="sum")
+        singulsV = self.mesh.vertices.create_attribute(singul_attr_name, float, sparse=True)
+        defectsV = attributes.interpolate_corners_to_vertices(self.mesh, angles, "defects", weight="sum", persistent=False)
         angle_defect = attributes.angle_defects(self.mesh, persistent=False)
        
         for v in self.mesh.id_vertices:
@@ -130,8 +130,8 @@ class FrameField2DEdges(FrameField) :
             elif defectsV[v]+angle_defect[v] < -ZERO_THRESHOLD:
                 singulsV[v] = -1
         
-        defectsF = attributes.average_corners_to_faces(self.mesh, angles, Attribute(float, len(self.mesh.faces)) , weight="sum")
-        singulsF = self.mesh.faces.create_attribute(singul_attr_name, float)
+        defectsF = attributes.interpolate_corners_to_faces(self.mesh, angles, "defects" , weight="sum", persistent=False)
+        singulsF = self.mesh.faces.create_attribute(singul_attr_name, float, sparse=True)
         for F in self.mesh.id_faces:
             if defectsF[F]>ZERO_THRESHOLD:
                 singulsF[F] = -1 # sign is reversed from vertices
@@ -148,7 +148,7 @@ class FrameField2DEdges(FrameField) :
         Returns:
             PolyLine: representation of the frame field
         """
-        FFMesh = RawMeshData()
+        vertices, edges = [], []
         L = kwargs.get("length_mult", 1.) * mean_edge_length(self.mesh)/4
         n = self.order+1
         for id_edge, (A,B) in enumerate(self.mesh.edges):
@@ -158,10 +158,10 @@ class FrameField2DEdges(FrameField) :
             angle = cmath.phase(self.var[id_edge])/self.order
             cmplx = [geom.rotate_around_axis(basis, self.conn.enormals[id_edge], angle + 2*k*pi/self.order) for k in range(self.order)]
             pts = [bary + abs(self.var[id_edge])*L*r for r in cmplx]
-            FFMesh.vertices.append(bary)
-            FFMesh.vertices += pts
-            FFMesh.edges += [(n*id_edge, n*id_edge+k) for k in range(1,n)]
-        return PolyLine(FFMesh)
+            vertices.append(bary)
+            vertices += pts
+            edges += [(n*id_edge, n*id_edge+k) for k in range(1,n)]
+        return from_arrays(vertices, E=edges)
 
 
     def optimize(self):

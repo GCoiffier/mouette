@@ -19,7 +19,7 @@ if __name__ == "__main__":
     bnd = np.array([[mesh.vertices[p][0], mesh.vertices[p][2]] for p in mesh.boundary_vertices]) # recover the boundary
     tutte = M.parametrization.TutteEmbedding(mesh, use_cotan=True, verbose=True, custom_boundary=bnd, save_on_corners=False)()
     uv_init = tutte.uvs
-    uv_init_corners = mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
+    uv_init_corners = mesh.face_corners.create_attribute("uv_coords", float, 2)
     M.attributes.scatter_vertices_to_corners(mesh, uv_init, uv_init_corners)
 
     # Compute mapping's distortion and output initial state

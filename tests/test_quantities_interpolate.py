@@ -3,36 +3,45 @@ from data import *
 import numpy as np
 
 @pytest.mark.parametrize("weight", ["uniform", "area", "angle"])
-def test_vertex_to_face_to_vertex(weight):
-    mesh = surf_half_sphere()
-    vert_attr = mesh.vertices.register_array_as_attribute("test_in", np.ones(len(mesh.vertices)))
-    vert_attr2 = mesh.vertices.create_attribute("test_out", float)
-    face_attr = mesh.faces.create_attribute("test", float)
+@pytest.mark.parametrize("persistent_in", [True, False])
+@pytest.mark.parametrize("persistent_out", [True, False])
+@pytest.mark.parametrize("dim", [1,3])
+def test_vertex_to_face_to_vertex(weight, persistent_in, persistent_out, dim):
+    mesh = ALL_SURFACES["half_sphere"]
+    if persistent_in:
+        vert_attr = np.ones((len(mesh.vertices), dim), dtype=float)
+    else:
+        vert_attr = mesh.vertices.create_attribute("test_in", float, dim, sparse=False, default_value=1.)
+    face_attr = M.attributes.interpolate_vertices_to_faces(mesh, vert_attr, "face_attr", persistent=persistent_out)
+    vert_attr2 = M.attributes.interpolate_faces_to_vertices(mesh, face_attr, "test_out", weight=weight, persistent=persistent_out)
+    assert np.allclose(vert_attr, vert_attr2)
 
-    M.attributes.interpolate_vertices_to_faces(mesh, vert_attr, face_attr)
-    M.attributes.interpolate_faces_to_vertices(mesh, face_attr, vert_attr2, weight=weight)
-    assert np.all(np.isclose(vert_attr.as_array(len(mesh.vertices)), vert_attr2.as_array(len(mesh.vertices))))
+@pytest.mark.parametrize("weight", ["uniform", "angle"])
+@pytest.mark.parametrize("persistent_in", [True, False])
+@pytest.mark.parametrize("persistent_out", [True, False])
+@pytest.mark.parametrize("dim", [1,3])
+def test_vertex_to_corner_to_vertex(weight, persistent_in, persistent_out, dim):
+    mesh = ALL_SURFACES["half_sphere"]
+    if persistent_in:
+        vert_attr = np.ones((len(mesh.vertices), dim), dtype=float)
+    else:
+        vert_attr = mesh.vertices.create_attribute("test_in", float, dim, sparse=False, default_value=1.)
+    corner_attr = M.attributes.scatter_vertices_to_corners(mesh, vert_attr, "corner_attr", persistent=persistent_out)
+    vert_attr2 = M.attributes.interpolate_corners_to_vertices(mesh, corner_attr, "vert_attr2", weight=weight, persistent=persistent_out)
+    assert np.allclose(vert_attr, vert_attr2)
 
 
 @pytest.mark.parametrize("weight", ["uniform", "angle"])
-def test_vertex_to_corner_to_vertex(weight):
-    mesh = surf_half_sphere()
-    vert_attr = mesh.vertices.register_array_as_attribute("test_in", np.ones(len(mesh.vertices)))
-    vert_attr2 = mesh.vertices.create_attribute("test_out", float)
+@pytest.mark.parametrize("persistent_in", [True, False])
+@pytest.mark.parametrize("persistent_out", [True, False])
+@pytest.mark.parametrize("dim", [1,3])
+def test_face_to_corner_to_face(weight, persistent_in, persistent_out, dim):
+    mesh : M.mesh.SurfaceMesh = ALL_SURFACES["half_sphere"]
+    if persistent_in:
+        face_attr = np.ones((len(mesh.faces), dim), dtype=float)
+    else:
+        face_attr = mesh.faces.create_attribute("test_in", float, dim, sparse=False, default_value=1.)
     corner_attr = mesh.face_corners.create_attribute("test", float)
-
-    M.attributes.scatter_vertices_to_corners(mesh, vert_attr, corner_attr)
-    M.attributes.average_corners_to_vertices(mesh, corner_attr, vert_attr2, weight=weight)
-    assert np.all(np.isclose(vert_attr.as_array(len(mesh.vertices)), vert_attr2.as_array(len(mesh.vertices))))
-
-
-@pytest.mark.parametrize("weight", ["uniform", "angle"])
-def test_face_to_corner_to_face(weight):
-    mesh = surf_half_sphere()
-    face_attr = mesh.faces.register_array_as_attribute("test_in", np.ones(len(mesh.faces)))
-    face_attr2 = mesh.faces.create_attribute("test_out", float)
-    corner_attr = mesh.face_corners.create_attribute("test", float)
-
-    M.attributes.scatter_faces_to_corners(mesh, face_attr, corner_attr)
-    M.attributes.average_corners_to_faces(mesh, corner_attr, face_attr2, weight=weight)
-    assert np.all(np.isclose(face_attr.as_array(len(mesh.faces)), face_attr2.as_array(len(mesh.faces))))
+    corner_attr = M.attributes.scatter_faces_to_corners(mesh, face_attr, "corner_attr", persistent=persistent_out)
+    face_attr2 = M.attributes.interpolate_corners_to_faces(mesh, corner_attr, "face_attr2", weight=weight, persistent=persistent_out)
+    assert np.allclose(face_attr, face_attr2)

@@ -161,12 +161,12 @@ class ParamDistortion(Worker):
 
     def _init_containers(self):
         if self.save_on_mesh:
-            self._conformal = self.mesh.faces.create_attribute("conformal_dist", float, dense=True)
-            self._scale = self.mesh.faces.create_attribute("scale_dist", float, dense=True)
-            self._stretch = self.mesh.faces.create_attribute("stretch_dist", float, dense=True)
-            self._shear = self.mesh.faces.create_attribute("shear_dist", float, dense=True)
-            self._iso = self.mesh.faces.create_attribute("iso_dist", float, dense=True)
-            self._det = self.mesh.faces.create_attribute("det", float, dense=True)
+            self._conformal = self.mesh.faces.create_attribute("conformal_dist", float)
+            self._scale = self.mesh.faces.create_attribute("scale_dist", float)
+            self._stretch = self.mesh.faces.create_attribute("stretch_dist", float)
+            self._shear = self.mesh.faces.create_attribute("shear_dist", float)
+            self._iso = self.mesh.faces.create_attribute("iso_dist", float)
+            self._det = self.mesh.faces.create_attribute("det", float)
         else:
             N = len(self.mesh.faces)
             self._conformal = Attribute(float, N)
@@ -335,10 +335,10 @@ class QuadQuality(Worker):
 
     def _init_containers(self):
         if self.save_on_mesh:
-            self._conformal = self.mesh.faces.create_attribute("conformal_dist", float, dense=True)
-            self._scale = self.mesh.faces.create_attribute("scale_dist", float, dense=True)
-            self._stretch = self.mesh.faces.create_attribute("stretch_dist", float, dense=True)
-            self._det = self.mesh.faces.create_attribute("det", float, dense=True)
+            self._conformal = self.mesh.faces.create_attribute("conformal_dist", float)
+            self._scale = self.mesh.faces.create_attribute("scale_dist", float)
+            self._stretch = self.mesh.faces.create_attribute("stretch_dist", float)
+            self._det = self.mesh.faces.create_attribute("det", float)
         else:
             N = len(self.mesh.faces)
             self._conformal = Attribute(float, N)

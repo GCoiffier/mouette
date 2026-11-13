@@ -1,6 +1,6 @@
 from .base import BaseParametrization
 
-from ...mesh.datatypes import SurfaceMesh,PolyLine
+from ...mesh.datatypes import *
 from ...mesh.mesh_attributes import SparseAttribute
 from ...mesh.mesh import copy
 
@@ -50,7 +50,6 @@ class ConformalConeParametrization(BaseParametrization):
         self._debug = kwargs.get("debug", False)
         self.save_on_corners = True
         assert cones.elem_size == 1
-        assert cones.type == SparseAttribute.AttributeType.Float
         self._singus : SparseAttribute = cones
         self._check_singularity_validity()
 
@@ -61,8 +60,11 @@ class ConformalConeParametrization(BaseParametrization):
     
     def _check_singularity_validity(self):
         total_defect = 0
-        for v in self._singus:
-            total_defect += self._singus[v]
+        if self._singus.is_sparse:
+            for v in self._singus:
+                total_defect += self._singus[v]
+        else:
+            total_defect = np.sum(self._singus)
         charac = euler_characteristic(self.mesh)
         if not np.isclose(total_defect, 2*np.pi*charac):
             raise ConformalConeParametrization.InvalidConesException(total_defect,charac)
@@ -79,19 +81,19 @@ class ConformalConeParametrization(BaseParametrization):
 
         self.log("Compute scale factor on vertices")
         ## Solve Yamabe problem to retrieve scale factor
-        K = attributes.angle_defects(self.mesh, persistent=False).as_array(len(self.mesh.vertices))
-        hK = self._singus.as_array(len(self.mesh.vertices))
+        K = attributes.angle_defects(self.mesh, persistent=False)
+        hK = self._singus.as_array()
         lap = operators.laplacian(self.mesh, cotan=self._use_cotan)
         self._scale_factor = sp.linalg.spsolve(lap, hK - K) # one scale factor per vertex
         self._scale_factor -= np.median(self._scale_factor) # log scale factor is defined up to a global constant (<=> the parametrization is defined up to a global scale)
 
         if self._debug:
-            scale_fact_attr = self.mesh.vertices.create_attribute("scale", float, dense=True)
+            scale_fact_attr = self.mesh.vertices.create_attribute("scale", float)
             for v in self.mesh.id_vertices:
                 scale_fact_attr[v] = self._scale_factor[v]
 
         self.log("Integrate scale factor into local frames")
-        cot = attributes.cotan_weights(self.mesh, dense=True, persistent=False)
+        cot = attributes.cotan_weights(self.mesh, persistent=False)
         self._conn = SurfaceConnectionFaces(self.mesh)
         self._frames = np.zeros(len(self.mesh.faces), dtype=complex)
 
@@ -127,7 +129,7 @@ class ConformalConeParametrization(BaseParametrization):
 
         self.log("Compute scaled edges in parameter space")
         scale_edges = np.zeros(2*len(self.cut_mesh.edges), dtype=float)
-        cot = attributes.cotan_weights(self.cut_mesh, dense=True, persistent=False) # cotan of the cut mesh (previously cotan weights of the original mesh)
+        cot = attributes.cotan_weights(self.cut_mesh, persistent=False) # cotan of the cut mesh (previously cotan weights of the original mesh)
         for e,(A,B) in enumerate(self.cut_mesh.edges):
             rA,rB = self._cutter.ref_vertex(A), self._cutter.ref_vertex(B)
             E = self.mesh.vertices[rB] - self.mesh.vertices[rA]
@@ -166,7 +168,7 @@ class ConformalConeParametrization(BaseParametrization):
         scale = min(scale_x, scale_y)
 
         ## Write final result in attribute
-        self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2, dense=True)
+        self.uvs = self.mesh.face_corners.create_attribute("uv_coords", float, 2)
         for c in self.mesh.id_corners:
             v = self.cut_mesh.face_corners[c]
             self.uvs[c] = Vec(UVs[2*v], UVs[2*v+1])/scale
@@ -174,7 +176,7 @@ class ConformalConeParametrization(BaseParametrization):
     @property
     def frame_field(self) -> PolyLine:
         """Local frames of reference rendered as a polyline"""
-        FFmesh = PolyLine()
+        FFmesh = RawMeshData()
         L = attributes.mean_edge_length(self.mesh)/3
         for id_face, face in enumerate(self.mesh.faces):
             basis,Y = self._conn.base(id_face)
@@ -186,7 +188,7 @@ class ConformalConeParametrization(BaseParametrization):
             p1,p2,p3,p4 = (bary + abs(self._frames[id_face])*L*r for r in (r1,r2,r3,r4))
             FFmesh.vertices += [bary, p1, p2, p3, p4]
             FFmesh.edges += [(5*id_face, 5*id_face+k) for k in range(1,5)]
-        return FFmesh  
+        return FFmesh.instantiate(1)
 
     @property
     def cut_mesh(self) -> SurfaceMesh:

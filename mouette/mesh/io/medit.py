@@ -1,5 +1,5 @@
 from ..datatypes import *
-from ..mesh_data import RawMeshData
+from ..datatypes.raw import RawMeshData
 from collections import deque
 import warnings
 

@@ -1,5 +1,8 @@
+import numpy as np
+
 from ..mesh.datatypes import *
 from ..geometry import Vec
+from .attr_edges import edge_length
 from .attr_faces import face_area
 from .attr_cells import cell_volume
 
@@ -22,90 +25,56 @@ def euler_characteristic(mesh : SurfaceMesh) -> int:
     f = len(mesh.faces)
     return v-e+f
 
-# @allowed_mesh_types(SurfaceMesh)
-# def genus(mesh : SurfaceMesh) -> int:
-#     """Computes the genus g of a mesh.
-#     The genus is the number of "holes" a surface contains. It is linked to the euler characteristic X by
-#     X = 2 - 2g
-
-#     Parameters:
-#         mesh (Mesh): the mesh
-
-#     Returns:
-#         (int): the Euler characteristic
-#     """
-#     X = euler_characteristic(mesh)
-#     return 1 - X//2
 
 @forbidden_mesh_types(PointCloud)
-def mean_edge_length(mesh : Mesh, n : int = None) -> float:
+def mean_edge_length(mesh : Mesh) -> float:
     """
     Estimation of mean edge length
 
     Parameters:
         mesh (Mesh): input mesh
-        n (int, optional): 
-            Early stopping for number of edges to consider in mean computation. 
-            If set to None, considers all the edges.
-            Defaults to None.
 
     Returns:
         float: the computed mean edge length
     """
-    l = 0
-    if n is None: n = len(mesh.edges)
-    for k in range(min(n, len(mesh.edges))):
-        a,b = (Vec(mesh.vertices[u]) for u in mesh.edges[k])
-        l += (b-a).norm()
-    return l/n
+    if mesh.edges.has_attribute("length"):
+        length = mesh.edges.get_attribute("length").as_array()
+    else:
+        length = edge_length(mesh,persistent=False)
+    return np.mean(length)
+
 
 @allowed_mesh_types(SurfaceMesh,VolumeMesh)
-def mean_face_area(mesh : SurfaceMesh, n : int = None) -> float:
+def mean_face_area(mesh : SurfaceMesh) -> float:
     """Estimation of mean face area
 
     Parameters:
         mesh (Mesh): input mesh
-        n (int, optional): 
-            Early stopping for number of faces to consider in mean computation. 
-            If set to None, considers all the faces.
-            Defaults to None.
 
     Returns:
         float: the computed mean face area
     """
     if mesh.faces.has_attribute("area"):
-        farea = mesh.faces.get_attribute("area")
+        farea = mesh.faces.get_attribute("area").as_array()
     else:
-        farea = face_area(mesh)
-    if n is None: n = len(mesh.faces)
-    res = 0
-    for k in range(min(n, len(mesh.faces))):
-        res += farea[k]
-    return res/n
+        farea = face_area(mesh,persistent=False)
+    return np.mean(farea)
 
 @allowed_mesh_types(VolumeMesh)
-def mean_cell_volume(mesh : VolumeMesh, n : int = None) -> float:
+def mean_cell_volume(mesh : VolumeMesh) -> float:
     """Estimation of mean cell volume
 
     Parameters:
         mesh (VolumeMesh): input mesh
-        n (int, optional): 
-            Early stopping for number of cells to consider in mean computation. 
-            If set to None, considers all the cells.
-            Defaults to None.
 
     Returns:
         float: the computed mean cell volume
     """
     if mesh.cells.has_attribute("volume"):
-        cvol = mesh.cells.get_attribute("volume")
+        cvol = mesh.cells.get_attribute("volume").as_array()
     else:
-        cvol = cell_volume(mesh)
-    if n is None: n = len(mesh.cells)
-    res = 0
-    for k in range(min(n, len(mesh.cells))):
-        res += cvol[k]
-    return res/n
+        cvol = tetrahedra_volume(mesh, persistent=False)
+    return np.mean(cvol)
 
 @allowed_mesh_types(SurfaceMesh)
 def total_area(mesh : SurfaceMesh) -> float:
@@ -118,10 +87,10 @@ def total_area(mesh : SurfaceMesh) -> float:
         float: the computed mean face area
     """
     if mesh.faces.has_attribute("area"):
-        farea = mesh.faces.get_attribute("area")
+        farea = mesh.faces.get_attribute("area").as_array()
     else:
-        farea = face_area(mesh, persistent=False)
-    return sum([farea[iF] for iF in mesh.id_faces])
+        farea = face_area(mesh,persistent=False)
+    return np.sum(farea)
 
 def barycenter(mesh : Mesh) -> Vec:
     """Barycenter of the vertices of the mesh
@@ -132,4 +101,4 @@ def barycenter(mesh : Mesh) -> Vec:
     Returns:
         Vec: coordinates of the barycenter
     """
-    return sum(mesh.vertices)/len(mesh.vertices)
+    return np.mean(mesh.vertices._data)

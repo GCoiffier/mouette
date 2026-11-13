@@ -1,6 +1,5 @@
 from .base import FrameField
 from ...mesh.mesh_attributes import Attribute, SparseAttribute, SparseAttribute
-from ...mesh.mesh_data import RawMeshData
 from ...mesh.datatypes import *
 from ... import operators, utils, attributes, processing
 from ...utils import maths
@@ -138,10 +137,7 @@ class _BaseFrameField2DVertices(FrameField):
             edge_rot[(B,A)] = -angles[i_angle]
             edge_rot_attr[ie] = -angles[i_angle]
 
-        if self.mesh.faces.has_attribute(singul_attr_name):
-            singuls = self.mesh.faces.get_attribute(singul_attr_name)
-        else:
-            singuls = self.mesh.faces.create_attribute(singul_attr_name, int)
+        singuls = self.mesh.faces.create_attribute(singul_attr_name, int, sparse=True)
         for id_face,(A,B,C) in enumerate(self.mesh.faces):
             angle = 0
             for u,v in [(A,B), (B,C), (C,A)]:
@@ -160,7 +156,7 @@ class _BaseFrameField2DVertices(FrameField):
             PolyLine: the frame field as a mesh object
         """
         self._check_init()
-        FFMesh = RawMeshData()
+        raw = RawMeshData()
         L = attributes.mean_edge_length(self.mesh)/3
         n = self.order + 1
         for id_vertex, P in enumerate(self.mesh.vertices):
@@ -171,17 +167,18 @@ class _BaseFrameField2DVertices(FrameField):
                 angle = cmath.phase(self.var[id_vertex])
                 r = geom.rotate_around_axis(E, N, angle)
                 p = P + L*r
-                FFMesh.vertices += [P, p]
-                FFMesh.edges.append((2*id_vertex, 2*id_vertex+1))
+                raw.vertices += [P, p]
+                raw.edges.append((2*id_vertex, 2*id_vertex+1))
             else:
                 # Representation of the whole frame
                 angle = cmath.phase(self.var[id_vertex])/self.order
                 cmplx = [geom.rotate_around_axis(E, N, angle + 2*k*pi/self.order) for k in range(self.order)]
                 pts = [P + abs(self.var[id_vertex])*L*r for r in cmplx]
-                FFMesh.vertices.append(P)
-                FFMesh.vertices += pts
-                FFMesh.edges += [(n*id_vertex, n*id_vertex+k) for k in range(1,n)]
-        return PolyLine(FFMesh)
+                raw.vertices.append(P)
+                raw.vertices += pts
+                raw.edges += [(n*id_vertex, n*id_vertex+k) for k in range(1,n)]
+        return raw.instantiate()
+
 
 class FrameField2DVertices(_BaseFrameField2DVertices):
     """

@@ -5,24 +5,33 @@ from mouette.mesh.datatypes.type_checks import BadMeshTypeException
 from mouette.utils.argument_check import InvalidArgumentTypeError,InvalidArgumentValueError, InvalidRangeArgumentError
 from data import *
 
-@pytest.mark.parametrize("m",[surf_spline(), surf_half_sphere()])
+@pytest.mark.parametrize("m",[
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"]
+])
 def test_connection_faces(m):
     conn = SurfaceConnectionFaces(m)
     assert True
 
-@pytest.mark.parametrize("m",[surf_spline(), surf_half_sphere()])
+@pytest.mark.parametrize("m",[
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"]
+])
 def test_connection_vertices(m):
     conn = SurfaceConnectionVertices(m)
     assert True
 
 
-@pytest.mark.parametrize("m",[surf_spline(), surf_half_sphere()])
+@pytest.mark.parametrize("m",[
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"]
+])
 def test_connection_edges(m):
     conn = SurfaceConnectionEdges(m)
     assert True
 
 def test_surface_framefield_wrong_mesh():
-    m = M.mesh.PolyLine()
+    m = POLYLINES["one_edge"]
     try:
         _ = ff.SurfaceFrameField(m, "vertices")
         assert False
@@ -30,7 +39,7 @@ def test_surface_framefield_wrong_mesh():
         assert True
 
 def test_surface_framefield_wrong_elements():
-    m = M.mesh.SurfaceMesh()
+    m = M.mesh.RawMeshData().instantiate(2)
     try:
         _ = ff.SurfaceFrameField(m, 42)
         assert False
@@ -45,7 +54,7 @@ def test_surface_framefield_wrong_elements():
 
 
 def test_surface_frame_field_bad_numerical_values():
-    m = M.mesh.SurfaceMesh()
+    m = M.mesh.RawMeshData().instantiate(2)
     try:
         _ = ff.SurfaceFrameField(m, "vertices", n_smooth="pouet")
         assert False
@@ -58,63 +67,93 @@ def test_surface_frame_field_bad_numerical_values():
     except InvalidRangeArgumentError as e:
         assert True
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["pointy"]
+])
 def test_surface_framefield_vertices(m):
     framefield = ff.SurfaceFrameField(m, "vertices")()
     framefield.flag_singularities()
     assert m.faces.has_attribute("singuls")
 
-@pytest.mark.parametrize("m", [surf_pointy()])
-def test_CADFF(m):
+def test_CADFF():
+    m = ALL_SURFACES["pointy"]
     framefield = ff.SurfaceFrameField(m, "vertices", cad_correction=True)()
     framefield.flag_singularities()
     assert m.faces.has_attribute("singuls")
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["pointy"]
+])
 def test_surface_framefield_faces(m):
     framefield = ff.SurfaceFrameField(m, "faces")()
     framefield.flag_singularities()
     assert m.vertices.has_attribute("singuls")
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["pointy"]
+])
 def test_CurvatureVertices(m):
     framefield = ff.PrincipalDirections(m, "vertices")()
     framefield.flag_singularities()
     assert m.faces.has_attribute("singuls")
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["pointy"]
+])
 def test_CurvatureFaces(m):
     framefield = ff.PrincipalDirections(m, "faces")()
     framefield.flag_singularities()
     assert m.vertices.has_attribute("singuls")
 
-@pytest.mark.parametrize("m", [surf_circle()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["pointy"]
+])
 def test_surface_framefield_custom_connection_vertices(m):
     conn = SurfaceConnectionVertices(m)
     _ = ff.SurfaceFrameField(m, "vertices", custom_connection=conn)()
     assert True
 
-@pytest.mark.parametrize("m", [surf_circle()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["pointy"]
+])
 def test_surface_framefield_custom_connection_faces(m):
     conn = SurfaceConnectionFaces(m)
     _ = ff.SurfaceFrameField(m, "faces", custom_connection=conn)()
     assert True
 
-@pytest.mark.parametrize("m", [surf_feat()])
-def test_surface_framefield_custom_features_vertices(m):
+def test_surface_framefield_custom_features_vertices():
+    m = ALL_SURFACES["feature"]
     feat = FeatureEdgeDetector().run(m)
     _ = ff.SurfaceFrameField(m, "vertices", custom_features=feat)()
     assert True
 
-@pytest.mark.parametrize("m", [surf_feat()])
-def test_surface_framefield_custom_features_faces(m):
+def test_surface_framefield_custom_features_faces():
+    m = ALL_SURFACES["feature"]
     feat = FeatureEdgeDetector().run(m)
     _ = ff.SurfaceFrameField(m, "faces", custom_features=feat)()
     assert True
 
-@pytest.mark.parametrize("m", [surf_circle()])
-def test_surface_framefield_custom_singus_vertices(m):
-    singus = m.faces.create_attribute("singuls", float)
+def test_surface_framefield_custom_singus_vertices():
+    m = ALL_SURFACES["circle"]
+    singus = m.faces.create_attribute("singuls", float, sparse=True)
     singus[0] = 1
     singus[10] = 1
     singus[45] = 1
@@ -122,9 +161,10 @@ def test_surface_framefield_custom_singus_vertices(m):
     _ = ff.SurfaceFrameField(m, "vertices", singularity_indices=singus)()
     assert True
 
-@pytest.mark.parametrize("m", [surf_circle()])
-def test_surface_framefield_custom_singus_faces(m):
-    singus = m.vertices.create_attribute("singuls", float)
+
+def test_surface_framefield_custom_singus_faces():
+    m = ALL_SURFACES["circle"]
+    singus = m.vertices.create_attribute("singuls", float, sparse=True)
     singus[64] = 1
     singus[80] = 1
     singus[142] = 1
@@ -132,9 +172,9 @@ def test_surface_framefield_custom_singus_faces(m):
     _ = ff.SurfaceFrameField(m, "faces", singularity_indices=singus)()
     assert True
 
-@pytest.mark.parametrize("m", [surf_circle()])
-def test_surface_framefield_custom_singus_faces_invalid_topo(m):
-    singus = m.vertices.create_attribute("singuls", float)
+def test_surface_framefield_custom_singus_faces_invalid_topo():
+    m = ALL_SURFACES["circle"]
+    singus = m.vertices.create_attribute("singuls", float, sparse=True)
     singus[64] = 1
     singus[80] = -1 # singus do not verify Poincarré-Hopf
     try:
@@ -144,7 +184,12 @@ def test_surface_framefield_custom_singus_faces_invalid_topo(m):
         assert True
 
 
-@pytest.mark.parametrize("m", [surf_circle(), surf_spline(), surf_half_sphere(), surf_pointy()])
+@pytest.mark.parametrize("m", [
+    ALL_SURFACES["circle"],
+    ALL_SURFACES["spline"],
+    ALL_SURFACES["half_sphere"],
+    ALL_SURFACES["pointy"]
+])
 def test_surface_framefield_edges(m):
     framefield = ff.SurfaceFrameField(m, "edges")()
     assert True

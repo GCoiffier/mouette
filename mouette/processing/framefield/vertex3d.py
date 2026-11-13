@@ -1,7 +1,6 @@
 from .base import FrameField
 
 from ...mesh.datatypes import *
-from ...mesh.mesh_data import RawMeshData
 from ...mesh.mesh_attributes import SparseAttribute
 
 from ... import attributes
@@ -234,7 +233,7 @@ class FrameField3DVertices(FrameField):
 
     @property
     def singularity_graph(self):
-        singu_graph = PolyLine()
+        singu_graph = RawMeshData()
         singuls_on_graph = singu_graph.edges.create_attribute("singus", float)
         bary_tet = attributes.cell_barycenter(self.mesh, persistent=False)
         bary_tri = attributes.face_barycenter(self.mesh, persistent=False)
@@ -252,7 +251,7 @@ class FrameField3DVertices(FrameField):
                 singu_graph.edges.append((2*n, 2*n+1))
                 singuls_on_graph[n] = self.singuls[Tri]
                 n += 1
-        return singu_graph
+        return singu_graph.instantiate(1)
 
     def export_as_mesh(self) -> SurfaceMesh:
         """
@@ -264,7 +263,8 @@ class FrameField3DVertices(FrameField):
         self._check_init()
         L = attributes.mean_edge_length(self.mesh,50)
         FFMesh = RawMeshData()
-        col = FFMesh.faces.create_attribute("color", float, 3)
+        col = np.zeros((12*len(self.mesh.vertices), 3), dtype=np.float64)
+        col = FFMesh.faces_attr.create_attribute("color", float, 3)
         RED,GREEN,BLUE = Vec(1.,0.,0), Vec(0.,1.,0.), Vec(0.,0.1,1.)
         
         for i,pV in enumerate(self.mesh.vertices):
@@ -290,4 +290,5 @@ class FrameField3DVertices(FrameField):
             col[12*i+5] = BLUE
             col[12*i+8] = BLUE
             col[12*i+9] = BLUE
-        return SurfaceMesh(FFMesh)
+        FFMesh.faces_attr["color"] = col
+        return FFMesh.instantiate()

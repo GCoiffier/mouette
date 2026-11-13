@@ -228,7 +228,7 @@ class WinslowInjectiveEmbedding(BaseParametrization):
         final_points /= scale
 
         # Retrieve uvs and write them in attribute
-        self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2, dense=True)
+        self.uvs = self.mesh.vertices.create_attribute("uv_coords", float, 2)
         for v in self.mesh.id_vertices:
             self.uvs[v] = final_points[2*v:2*v+2]
 
