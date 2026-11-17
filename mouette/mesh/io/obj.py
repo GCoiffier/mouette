@@ -55,8 +55,11 @@ def parse_obj_data(data):
 
 def export_obj(mesh, path):
     has_texcoords_vert = mesh.vertices.has_attribute("uv_coords") and not mesh.vertices.get_attribute("uv_coords").empty()
-    has_texcoords_corners = mesh.face_corners.has_attribute("uv_coords") and not mesh.face_corners.get_attribute("uv_coords").empty()
     has_normals = mesh.vertices.has_attribute("normals") and not mesh.vertices.get_attribute("normals").empty()
+    if hasattr(mesh, "face_corners"):
+        has_texcoords_corners = mesh.face_corners.has_attribute("uv_coords") and not mesh.face_corners.get_attribute("uv_coords").empty()
+    else:
+        has_texcoords_corners = False
 
     with open( path, 'w' ) as ofile:
         for vtx in mesh.vertices:
@@ -78,7 +81,7 @@ def export_obj(mesh, path):
                 nrm = normals[i]
                 ofile.write('vn '+' '.join(['{}'.format(vn) for vn in nrm])+'\n')
 
-        if config.export_edges_in_obj:
+        if config.export_edges_in_obj and hasattr(mesh, "edges"):
             if not config.complete_edges_from_faces or isinstance(mesh, PolyLine):
                 for a,b in mesh.edges:
                     ofile.write(f'l {a+1} {b+1}\n')
@@ -89,6 +92,7 @@ def export_obj(mesh, path):
                         ofile.write(f'l {A+1} {B+1}\n')
 
         cnr_id = 1
+        if not hasattr(mesh, "faces"): return
         for face in mesh.faces:
             str_face = ""
             for vid in face:

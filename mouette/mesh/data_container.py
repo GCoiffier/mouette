@@ -164,6 +164,9 @@ class DataContainer(_BaseDataContainer):
         return self._data.size==0
 
     def __getitem__(self, key):
+        if isinstance(key, DataContainer):
+            # so we can write `mesh.vertices[mesh.faces]` for instance
+            return self._data[key._data]
         return self._data[key]
 
     def __setitem__(self, key, value):
@@ -175,6 +178,7 @@ class DataContainer(_BaseDataContainer):
 
     def __iter__(self):
         return self._data.__iter__()
+        # return self._data.tolist().__iter__()
 
     def __repr__(self):
         return self._data.__repr__()
@@ -186,9 +190,11 @@ class DataContainer(_BaseDataContainer):
         return self._data.shape[0]
 
     def __array__(self, dtype=None, copy=None):
-        if copy:
-            return self._data.copy().astype(dtype)
-        return self._data.astype(dtype)
+        if dtype is None or np.dtype(dtype) == self._data.dtype:
+            return self._data.copy() if copy else self._data
+        if copy is False:
+            raise ValueError(f"Unable to avoid copy while casting from {self._data.dtype} to {np.dtype(dtype)}")
+        return self._data.astype(dtype) # astype already returns a new array
 
     @property
     def size(self) -> int:
@@ -260,6 +266,7 @@ class CornerDataContainer(_BaseDataContainer):
         return self._adj[key]
 
     def __iter__(self):
+        # return self._elem.tolist().__iter__()
         return self._elem.__iter__()
 
     def __repr__(self):
@@ -269,9 +276,11 @@ class CornerDataContainer(_BaseDataContainer):
         return str([x for x in zip(self._elem, self._adj)]) + "\nAttributes: "+str(self._attr.keys())
 
     def __array__(self, dtype=None, copy=None):
-        if copy:
-            return self._elem.copy().astype(dtype)
-        return self._elem.astype(dtype)
+        if dtype is None or np.dtype(dtype) == self._elem.dtype:
+            return self._elem.copy() if copy else self._elem
+        if copy is False:
+            raise ValueError(f"Unable to avoid copy while casting from {self._elem.dtype} to {np.dtype(dtype)}")
+        return self._elem.astype(dtype) # astype already returns a new array
 
     @property
     def size(self):

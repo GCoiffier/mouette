@@ -37,7 +37,7 @@ class CellSpanningTree(SpanningTree):
         queue = deque()
 
         def put_neighbours_in_queue(c):
-            for F in self.mesh.connectivity.cell_to_face(c):
+            for F in self.mesh.connectivity.cell_to_faces(c):
                 if F in self.forbidden_faces: continue
                 c2 = self.mesh.connectivity.other_face_side(c,F)
                 if c2 is not None and not seen[c2]:

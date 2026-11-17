@@ -1,6 +1,44 @@
 from ..data_container import DataContainer
 from .base import Mesh
 from ... import utils
+import numpy as np
+from numba import njit
+
+@njit(cache=True)
+def _polyline_csr_kernel(E, nV):
+    """Builds the vertex -> vertex adjacency of a polyline in CSR format.
+
+    Args:
+        E (np.ndarray): edges, int64 array of shape (nE,2)
+        nV (int): number of vertices
+
+    Returns:
+        v2v, v2v_off, v2e: neighbors of vertex i are v2v[v2v_off[i]:v2v_off[i+1]], and v2e holds the matching edge ids.
+    """
+    nE = E.shape[0]
+    ### Count the number of neighbors of each vertex
+    counter = np.zeros(nV, dtype=np.int64)
+    for iE in range(nE):
+        counter[E[iE,0]] += 1
+        counter[E[iE,1]] += 1
+    ### Offsets are the cumulative sum of degrees
+    v2v_off = np.zeros(nV+1, dtype=np.int64)
+    v2v_off[1:] = np.cumsum(counter)
+    ### Fill CSR arrays (total size is the sum of degrees = 2*nE)
+    v2v = np.zeros(2*nE, dtype=np.int64)
+    v2e = np.zeros(2*nE, dtype=np.int64)
+    counter[:] = 0
+    for iE in range(nE):
+        A,B = E[iE,0], E[iE,1]
+        iA = v2v_off[A] + counter[A]
+        v2v[iA] = B
+        v2e[iA] = iE
+        counter[A] += 1
+        iB = v2v_off[B] + counter[B]
+        v2v[iB] = A
+        v2e[iB] = iE
+        counter[B] += 1
+    return v2v, v2v_off, v2e
 
 class PolyLine(Mesh): 
     """
@@ -48,8 +86,8 @@ class PolyLine(Mesh):
         def __init__(self, master):
             self.mesh = master
 
-            self._edge_id : dict = None # (v1, v2) -> edge | None
-            self._adjV2V : dict = None # vertex -> vertex
+            self._edge_id : dict = None # (v1, v2) -> edge
+            self._adjV2V : list = None # vertex -> vertex
 
         def clear(self):
             """
@@ -60,23 +98,20 @@ class PolyLine(Mesh):
             self._adjV2V = None
 
         def _compute_connectivity(self):
-            self._adjV2V = dict([(i,set()) for i in self.mesh.id_vertices ])
+            self._adjV2V = [[] for _ in self.mesh.id_vertices]
 
             for (A,B) in self.mesh.edges:
                 assert A != B # should not be possible
-                self._adjV2V[A].add(B)
-                self._adjV2V[B].add(A)
-                    
-            for U in self.mesh.id_vertices:
-                self._adjV2V[U] = list(self._adjV2V[U])
+                self._adjV2V[A].append(int(B))
+                self._adjV2V[B].append(int(A))
 
         def _compute_edge_id(self):
             self._edge_id = dict()
-            for iE,E in enumerate(self.mesh.edges):
-                key = utils.keyify(E)
+            for iE,(A,B) in enumerate(self.mesh.edges):
+                key = max(A,B) + len(self.mesh.vertices)*min(A,B)
                 self._edge_id[key] = iE
 
-        def edge_id(self, V1:int, V2:int)->int:
+        def edge_id(self, V1:int, V2:int)->int|None:
             """
             Identifier of an edge. If `self.edges[i]` contains edges `(A,B)`, then `edge_id(A,B)=edge_id(B,A)=i`
             
@@ -91,7 +126,7 @@ class PolyLine(Mesh):
             """
             if self._edge_id is None:
                 self._compute_edge_id()
-            key = utils.keyify(V1,V2)
+            key = max(V1,V2) + len(self.mesh.vertices)*min(V1,V2)
             return self._edge_id.get(key, None)
 
         def other_edge_end(self, E:int, V:int) -> int:
@@ -122,7 +157,7 @@ class PolyLine(Mesh):
                 V (int): vertex id
 
             Returns:
-                list: list of vertices `W` such that `(V,W)` is a valid edge in the polyline.
+                list: list of vertices `W` such that `(V,W)` is a valid edge in the mesh.
             """
             if self._adjV2V is None : 
                 self._compute_connectivity()

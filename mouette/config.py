@@ -28,3 +28,8 @@ display_duplicate_attribute_warning = False
 When creating an attribute that already exists on a mesh, mouette prints a warning in the console and returns the attribute currently carrying this name.
 If this flag is set to True, no warning is printed.
 """
+
+persistent_intermediate_attributes = True
+"""
+Some algorithms require attributes to be computed on the input mesh (face areas, cotangent weights, etc.). If this option is set to True, these attributes will be stored in the mesh to avoid computing them several times.
+"""

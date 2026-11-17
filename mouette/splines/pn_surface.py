@@ -349,4 +349,4 @@ class P3Triangulation(_PnTriangulation):
                     out.faces.append([f_ind+x for x in (ij_to_p(i,j), ij_to_p(i+1,j), ij_to_p(i,j+1))])
                     if j<res-2-i:
                         out.faces.append([f_ind+x for x in (ij_to_p(i+1,j), ij_to_p(i+1,j+1), ij_to_p(i,j+1))])
-        return SurfaceMesh(out)
+        return out.instantiate(2)

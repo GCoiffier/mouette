@@ -11,7 +11,8 @@ conn = M.processing.SurfaceConnectionVertices(mesh)
 expmap = M.processing.DiscreteExponentialMap(mesh, conn, radius=10)
 
 ### Take an origin vertex at random
-Vorig = mesh.boundary_vertices[0] # randint(0, len(mesh.vertices)-1)
+# Vorig = randint(0, len(mesh.vertices)-1)
+Vorig = 0
 selected = mesh.vertices.create_attribute("selection", bool)
 selected[Vorig] = True
 

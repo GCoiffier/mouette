@@ -1,9 +1,12 @@
 from ..data_container import DataContainer, CornerDataContainer
-from ..mesh_attributes import SparseAttribute
 from .base import Mesh
+from .linear import PolyLine
 from .surface import SurfaceMesh
-from ...geometry.geometry import det_3x3
+from ... import geometry as geom
 from ... import config
+from ... import utils
+
+import numpy as np
 
 class VolumeMesh(Mesh):
 
@@ -36,16 +39,9 @@ class VolumeMesh(Mesh):
         self.connectivity = VolumeMesh._Connectivity(self)
 
         # Boundary data
-        self._boundary_faces : list = None
-        self._interior_faces : list = None
-
-        self._is_vertex_on_border : SparseAttribute = None 
-        self._boundary_vertices : list = None
-        self._interior_vertices : list = None
-
-        self._is_edge_on_border : SparseAttribute = None
-        self._boundary_edges : list = None
-        self._interior_edges : list = None
+        self._faces_on_border : np.ndarray[bool] = None
+        self._edge_on_border : np.ndarray[bool] = None
+        self._vertex_on_border : np.ndarray[bool] = None
 
         self.boundary_connectivity : VolumeMesh._BoundaryConnectivity = None
 
@@ -115,41 +111,20 @@ class VolumeMesh(Mesh):
             return None
 
     def _compute_interior_boundary_faces(self):
-        self._interior_faces = []
-        self._boundary_faces = []
+        self._faces_on_border = np.empty(len(self.faces), dtype=bool)
         for F in self.id_faces:
-            if self.is_face_on_border(F):
-                self._boundary_faces.append(F)
-            else:
-                self._interior_faces.append(F)
+            self._faces_on_border[F] = self.is_face_on_border(F)
 
     def _compute_interior_boundary_vertices(self):
-        self._is_vertex_on_border = self.vertices.create_attribute("border",bool)
+        self._vertex_on_border = np.zeros(len(self.vertices), dtype=bool)
         for iF in self.boundary_faces:
-            for v in self.faces[iF]:
-                self._is_vertex_on_border[v] = True
-        self._interior_vertices = []
-        self._boundary_vertices = []
-        for v in self.id_vertices:
-            if self._is_vertex_on_border[v]:
-                self._boundary_vertices.append(v)
-            else:
-                self._interior_vertices.append(v)
+            self._vertex_on_border[self.faces[iF]] = True
 
     def _compute_interior_boundary_edges(self):
-        self._is_edge_on_border = self.edges.create_attribute("border", bool)
+        self._edge_on_border = np.zeros(len(self.edges), dtype=bool)
         for iF in self.boundary_faces:
-            n = len(self.faces[iF])
-            for i in range(n):
-                u,v = self.faces[iF][i], self.faces[iF][(i+1)%n]
-                self._is_edge_on_border[self.connectivity.edge_id(u,v)] = True
-        self._interior_edges = []
-        self._boundary_edges = []
-        for e in self.id_edges:
-            if self._is_edge_on_border[e]:
-                self._boundary_edges.append(e)
-            else:
-                self._interior_edges.append(e)
+            for e in self.connectivity.face_to_edges(iF):
+                self._edge_on_border[e] = True
 
     def is_face_on_border(self, *args) -> bool:
         """Simple test to determine if a given face is on the boundary of the mesh.
@@ -161,15 +136,24 @@ class VolumeMesh(Mesh):
             bool: Returns True is the given face exists and is on the boundary of the mesh
         """
         if len(args)==1:
-            n = len(self.connectivity.face_to_cells(args[0]))
+            n = len(self.connectivity.face_to_cellfaces(args[0]))
         else:
-            n = len(self.connectivity.face_to_cells(self.connectivity.face_id(*args)))
+            n = len(self.connectivity.face_to_cellfaces(self.connectivity.face_id(*args)))
         return n<2
     
-    def is_vertex_on_border(self, V) -> bool:
+    def is_vertex_on_border(self, u) -> bool:
+        """
+        whether vertex `u` is a boundary vertex or not.
+
+        Args:
+            u (int): vertex id
+
+        Returns:
+            bool: whether vertex `u` is a boundary vertex or not.
+        """
         if self._is_vertex_on_border is None:
             self._compute_interior_boundary_vertices()
-        return self._is_vertex_on_border[V]
+        return self._is_vertex_on_border[u]
     
     def is_edge_on_border(self, *args) -> bool:
         """Simple test to determine if a given edge is on the boundary of the mesh.
@@ -180,11 +164,11 @@ class VolumeMesh(Mesh):
         Returns:
             bool: Returns True if the given edge is on the boundary of the mesh.
         """
-        if self._is_edge_on_border is None:
+        if self._edge_on_border is None:
             self._compute_interior_boundary_edges()
         if len(args)==1:
-            return self._is_edge_on_border[args[0]]
-        return self._is_edge_on_border[self.connectivity.edge_id(args[0],args[1])]
+            return self._edge_on_border[args[0]]
+        return self._edge_on_border[self.connectivity.edge_id(args[0],args[1])]
 
     def is_tetrahedral(self) -> bool:
         """
@@ -193,148 +177,164 @@ class VolumeMesh(Mesh):
         """
         return self.cells._data.shape[1]==4
 
+
     @property
-    def boundary_faces(self):
-        if self._boundary_faces is None:
+    def boundary_faces(self) -> np.ndarray:
+        """Array of indices of all faces that are on the boundary
+        """
+        if self._faces_on_border is None:
             self._compute_interior_boundary_faces() 
-        return self._boundary_faces
+        return np.arange(len(self.faces))[self._faces_on_border]
 
     @property
-    def interior_faces(self):
-        if self._interior_faces is None :
+    def interior_faces(self) -> np.ndarray:
+        """Array of indices of all faces that are **not** on the boundary
+        """
+        if self._faces_on_border is None :
             self._compute_interior_boundary_faces() 
-        return self._interior_faces
+        return np.arange(len(self.faces))[~self._faces_on_border]
 
     @property
-    def interior_edges(self):
-        if self._interior_edges is None :
+    def interior_edges(self) -> np.ndarray:
+        """Array of indices of all edges that are **not** on the boundary
+        """
+        if self._edge_on_border is None:
             self._compute_interior_boundary_edges()
-        return self._interior_edges
+        return np.arange(len(self.edges))[~self._edge_on_border]
 
     @property
-    def boundary_edges(self):
-        if self._boundary_edges is None:
+    def boundary_edges(self) -> np.ndarray:
+        """Array of indices of all edges that are on the boundary
+        """
+        if self._edge_on_border is None:
             self._compute_interior_boundary_edges()
-        return self._boundary_edges
+        return np.arange(len(self.edges))[self._edge_on_border]
 
     @property
-    def boundary_vertices(self):
-        if self._boundary_vertices is None :
+    def boundary_vertices(self) -> np.ndarray:
+        """Array of indices of all vertices that are on the boundary
+        """
+        if self._vertex_on_border is None:
             self._compute_interior_boundary_vertices()
-        return self._boundary_vertices
-
+        return np.arange(len(self.vertices))[self._vertex_on_border]
+    
     @property
-    def interior_vertices(self):
-        if self._interior_vertices is None:
+    def interior_vertices(self) -> np.ndarray:
+        """Array of indices of all vertices that are **not** on the boundary
+        """
+        if self._vertex_on_border is None:
             self._compute_interior_boundary_vertices()
-        return self._interior_vertices
+        return np.arange(len(self.vertices))[~self._vertex_on_border]
 
-    class _Connectivity(SurfaceMesh._Connectivity): 
+
+
+    class _Connectivity(PolyLine._Connectivity): 
 
         def __init__(self, master):
             super().__init__(master)
-            self._adjC2C : SparseAttribute = None
-            self._adjV2C : dict = None
-
-            self._adjC2F : dict = None
-            self._adjF2C : dict = None
+            self._face_id : dict = None
+            self._cell_id : dict = None
+            #self._edge_id is inherited
             
-            self._adjC2E : dict = None
-            self._adjE2C : dict = None
+            self._adjC2C : list = None # cell -> cell
+
+            self._adjV2C : list = None # vertex -> cells
+            self._adjV2F : list = None # vertex -> faces
+            # self._adjV2V is inherited
+
+            self._adjE2F : list = None # edge -> faces 
+            self._adjE2C : list = None # edge -> cells
+
+            self._adjF2Cfn : list = None # face -> cell facets
+
         
         def clear(self):
+            """
+            Resets connectivity. 
+            The next query in the code will regenerate internal arrays.
+            """
             super().clear()
-            self._adjC2C : SparseAttribute = None
-            self._adjV2C : dict = None
-            
-            self._adjC2F : dict = None
-            self._adjF2C : dict = None
+            self._face_id : dict = None
+            self._cell_id : dict = None            
+            self._adjC2C : list = None
+            self._adjV2C : list = None
+            self._adjV2F : list = None
+            self._adjE2F : list = None
+            self._adjE2C : list = None
+            self._adjF2Cfn : list = None
 
-            self._adjE2F : dict = None
-            self._adjE2C : dict = None
-            self._adjC2E : dict = None
+        ##### Ids #####
 
-        def _compute_connectivity(self):
-            super()._compute_connectivity()
+        def _compute_cell_ids(self):
+            self._cell_id = dict()
+            for iC, C in enumerate(self.mesh.cells):
+                self._cell_id[utils.keyify(C)] = iC
+
+        def cell_id(self, *args) -> int|None:
+            """The identifier of a cell.
+
+            Args:
+                int*: integers representing indices of the vertices of the cell (not necessarily in the correct order)
+
+            Returns:
+                int|None: A cell index or None if the given indices do not correspond to a valid cell
+            """
+            if self._cell_id is None:
+                self._compute_cell_ids()
+            key = utils.keyify(*args)
+            return self._cell_id.get(key, None)
+        
+        def _compute_face_ids(self):
+            self._face_id = dict()
+            for iF, F in enumerate(self.mesh.faces):
+                self._face_id[utils.keyify(F)] = iF
+
+        def face_id(self, *args) -> int|None:
+            """ The identifier of a face.
             
-            self._adjV2C = dict([(i,set()) for i in self.mesh.id_vertices ])
+            Args:
+                int*: integers representing indices of vertices of the face (not necessarily in the correct order)
+
+            Returns:
+                int: A face index or None if the given indices do not correspond to a valid face
+            """
+            if self._face_id is None:
+                self._compute_face_ids()
+            key = utils.keyify(*args)
+            return self._face_id.get(key, None)
+
+        # inherits edge_id from Polyline._Connectivity
+
+        ##### Connectivity #####
+        def _compute_vertex_adj(self):
+            self._adjV2C = [[] for _ in self.mesh.id_vertices]
+            self._adjV2F = [[] for _ in self.mesh.id_vertices]
             for iC,C in enumerate(self.mesh.cells):
-                for V in C:
-                    self._adjV2C[V].add(iC)
+                for V in C: self._adjV2C[V].append(iC)
+            for iF,F in enumerate(self.mesh.cells):
+                for V in F: self._adjV2F[V].append(iF)
 
-            for U in self.mesh.id_vertices:
-                self._adjV2C[U] = list(self._adjV2C[U])
-
-        def _compute_adjacent_cell(self):
-            # GEOGRAM_API CellDescriptor tet_descriptor = {
-            #     4,         // nb_vertices
-            #     4,         // nb_faces
-            #     {3,3,3,3}, // nb_vertices in face
-            #     {          // faces
-            #         {1,3,2},
-            #         {0,2,3},
-            #         {3,1,0},
-            #         {0,1,2}
-            #     },
-            #     6,         // nb_edges
-            #     {          // edges
-            #         {1,2}, {2,3}, {3,1}, {0,1}, {0,2}, {0,3}
-            #     },
-            #     {          // edges adjacent faces
-            #         {0,3}, {0,1}, {0,2}, {2,3}, {3,1}, {1,2}
-            #     }
-            # };
-            if self.mesh.cell_faces.has_attribute("adjacent_cell"):
-                self._adjC2C = self.mesh.cell_faces.get_attribute("adjacent_cell")
-            else:
-                self._adjC2C = self.mesh.cell_faces.create_attribute("adjacent_cell", int, 1, default_value= config.NOT_AN_ID)
-                for iC, cell in enumerate(self.mesh.cells):
-                    v0,v1,v2,v3 = cell
-                    # face fi does not contain vertex vi
-                    f0,f1,f2,f3 = self.face_id(v1,v3,v2), self.face_id(v0,v2,v3), self.face_id(v3,v1,v0), self.face_id(v0,v1,v2)
-                    for iF, F in enumerate((f0,f1,f2,f3)):
-                        for iC2 in self.face_to_cells(F):
-                            if iC2 != iC: self._adjC2C[(iC,iF)] = iC2
-                            
+        def _compute_face_adj(self):
+            self._adjF2Cfn = [[] for _ in self.mesh.id_faces]
+            for iCn,F in enumerate(self.mesh.cell_faces):
+                self._adjF2Cfn[F].append(iCn)
 
         def _compute_cell_adj(self):
-            self._adjC2F = dict([(i,[]) for i in self.mesh.id_cells ])
-            self._adjF2C = dict([(i,[]) for i in self.mesh.id_faces ])
-
-            for iC,C in enumerate(self.mesh.cells):
-                if len(C)==4: # tetrahedra : every subset of 3 elements is a face
-                    for i in range(4):
-                        # By convention, ith adjacent face does not contain vertex i of the tet
-                        F = [C[j] for j in range(4) if j!=i]
-                        iF = self.face_id(*F)
-                        self._adjC2F[iC].append(iF)
-                        self._adjF2C[iF].append(iC)                        
-                else: # not all subsets are faces -> more complicated
-                    self._adjC2F[iC] = set()
-                    for iF,F in enumerate(self.mesh.faces):
-                            sF = set(F)
-                            sC = set(C)
-                            if sC.issuperset(sF):
-                                self._adjC2F[iC].add(iF)
-                                self._adjF2C[iF].append(iC)
-            for iC in self.mesh.id_cells:
-                self._adjC2F[iC] = list(self._adjC2F[iC])
+            self._adjC2C = [[] for _ in self.mesh.id_cells]
             for iF in self.mesh.id_faces:
-                self._adjF2C[iF] = list(self._adjF2C[iF])
+                cell_faces_iF = self.face_to_cellfaces(iF)
+                if len(cell_faces_iF)!=2: continue
+                cf1,cf2 = cell_faces_iF
+                adjcf1, adjcf2 = self.mesh.cell_faces.adj(cf1), self.mesh.cell_faces.adj(cf2)
+                self._adjC2C[adjcf1].append(adjcf2)
+                self._adjC2C[adjcf2].append(adjcf1)
 
-        def _compute_edge_id(self):
-            super()._compute_edge_id() # for edge_id computation
-            self._adjE2F = dict([(e, []) for e in self.mesh.id_edges])
-            self._adjE2C = dict([(e, set()) for e in self.mesh.id_edges])
+        def _compute_edge_adj(self):
+            if self._edge_id is None:
+                self._compute_edge_id()
+            self._adjE2F = [[] for _ in self.mesh.id_edges]
+            self._adjE2C = [[] for _ in self.mesh.id_edges]
 
-            for f in self.mesh.id_faces:
-                c = set(self.face_to_cells(f))
-                for e in self.face_to_edges(f):
-                    self._adjE2F[e].append(f)
-                    self._adjE2C[e] |= c
-            for e in self.mesh.id_edges:
-                self._adjE2C[e] = list(self._adjE2C[e])
-            
             if config.sort_neighborhoods:
                 self._sort_edge_neighborhoods()
 
@@ -342,7 +342,7 @@ class VolumeMesh(Mesh):
             """
             Sorts cells adjacent to an edge so that they are in direct order
             """
-            if not self.mesh.is_tetrahedral(): return # only makes sense for tet meshes
+            if not self.mesh.is_tetrahedral(): return # TODO
             for e,(A,B) in enumerate(self.mesh.edges):
                 keys_cell = dict()
                 keys_face = dict()
@@ -378,107 +378,221 @@ class VolumeMesh(Mesh):
                 self._adjE2C[e].sort(key= lambda c : keys_cell[c])
                 self._adjE2F[e].sort(key= lambda f : keys_face[f])
 
-        ##### Faces - Cells #####
 
-        def n_F2C(self, F):
-            return len(self.face_to_cells(F))
+        ##### Cells to elements #####
 
-        def face_to_cells(self, iF):
-            if self._adjF2C is None:
-                self._compute_cell_adj()
-            return self._adjF2C[iF]
+        def cell_to_cells(self, iC:int) -> list:
+            """
+            Lists all tje cells that share a common face with face `iC`.
 
-        def cell_to_face(self, iC):
-            if self._adjC2F is None:
-                self._compute_cell_adj()
-            return self._adjC2F[iC]
+            Args:
+                iC (int): cell id
 
-        ##### Cell - Cell #####
-
-        def cell_to_cell(self, iC):
+            Returns:
+                list: list of adjacent cells.
+            """
             if self._adjC2C is None:
-                self._compute_adjacent_cell()
-            return [ self._adjC2C[(iC,i)] for i in range(len(self.mesh.cells[iC])) if self._adjC2C[(iC,i)] != config.NOT_AN_ID]
+                self._compute_cell_adj()
+            return [int(x) for x in self._adjC2C[iC,:] if x!=-1]
 
-        def other_face_side(self, C, F):
-            if len(self.face_to_cells(F)) != 2 : return None
-            C1,C2 = self.face_to_cells(F)
-            if C==C1: return C2
-            if C==C2 : return C1
+        def cell_to_faces(self, iC:int) -> list:
+            """
+            Lists all the faces of cell `iC`.
+
+            Args:
+                iC (int): cell id
+
+            Returns:
+                list: face ids
+            """
+            cell_size = 4 if self.mesh.is_tetrahedral() else 6
+            return [self.mesh.cell_faces[c] for c in range(iC*cell_size, (iC+1)*cell_size)]
+
+        def cell_to_edges(self, iC):
+            raise NotImplementedError
+
+
+        ##### Face to elements #####
+        def face_to_cells(self, iF: int) -> list:
+            """Returns the list of cells that are on either side of face `iF` (length 1 if F is a boundary face and 2 otherwise)
+
+            Args:
+                iF (int): face id
+
+            Returns:
+                list: cell ids
+            """
+            if self._adjF2Cfn is None:
+                self._compute_cell_adj()
+            return [int(self.mesh.cell_faces.adj(x)) for x in self._adjF2Cfn[iF]]
+
+        def face_to_cellfaces(self, iF: int) -> list:
+            """Returns the list of cell_faces the face `iF` is associated to (length 1 if F is a boundary face and 2 otherwise)
+
+            Args:
+                iF (int): face id
+
+            Returns:
+                list: cell_faces ids
+            """
+            if self._adjF2Cfn is None:
+                self._compute_face_adj()
+            return self._adjF2Cfn[iF]
+        
+        def face_to_edges(self, iF: int) -> list:
+            """Lists the edges adjacent to face `iF`.
+
+            Args:
+                iF (int): cell id
+
+            Returns:
+                list: edge ids
+            """
+            F = self.mesh.faces[iF].tolist()
+            return [self.edge_id(A,B) for A,B in utils.cyclic_pairs(F)]
+
+        ##### Edge to elements #####
+        def edge_to_cells(self, iE: int) -> list:
+            """
+            Lists the cells that are adjacent to an edge `iE`.  
+            If `config.sort_neighborhoods` is set to True, the list is in consecutive order, i.e. consecutive cells are adjacent.
+
+            Args:
+                iE (int): edge id
+
+            Returns:
+                list: cell ids
+            """
+            if self._adjE2C is None:
+                self._compute_edge_adj()
+            return self._adjE2C[iE]
+
+        def edge_to_faces(self, iE: int) -> list:
+            """Lists the faces that are adjacent to an edge `iE`.
+            If `config.sort_neighborhoods` is set to True, the list is in consecutive order consistent with the cell ordering (see `edges_to_cells`).
+
+            Args:
+                iE (int): edge id
+
+            Returns:
+                list: list of face ids
+            """
+            if self._adjE2F is None:
+                self._compute_edge_adj()
+            return self._adjE2F[iE]
+
+
+        ##### Vertex to elements #####
+        def vertex_to_cells(self, iV: int) -> list:
+            """
+            Neighborhood of vertex `V` in terms of cells.
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                list: list of cells C such that V belongs to C.
+            """
+            if self._adjV2C is None:
+                self._compute_vertex_adj()
+            return self._adjV2C[iV]
+
+        def vertex_to_faces(self, iV: int) -> list:
+            """
+            Neighborhood of vertex `V` in terms of faces.
+
+            Args:
+                V (int): vertex id
+
+            Returns:
+                list: list of faces F such that V belongs to F.
+            """
+            if self._adjV2F is None:
+                self._compute_vertex_adj()
+            return self._adjV2F[iV]
+
+        # vertex_to_edges is inherited
+
+        ##### Misc #####
+
+        def other_face_side(self, C: int, F: int) -> int|None:
+            """Given a cell C and a face F in C, returns the index of the cell C' that is on the other side of F.
+            Returns None if C' does not exist (F is a boundary face) or if F is not a valid face of C.
+
+            Args:
+                C (int): cell id
+                F (int): face id
+
+            Returns:
+                int|None: cell id
+            """
+            F2C = self.face_to_cells(F)
+            if len(F2C) != 2 : return None
+            if C==F2C[0]: return F2C[1]
+            elif C==F2C[1]: return F2C[0]
             return None
         
-        def common_face(self, C1, C2):
-            common_vert = set(self.mesh.cells[C1]).intersection(self.mesh.cells[C2])
-            if len(common_vert) != 3: return None
-            return self.face_id(*common_vert)
+        def common_face(self, C1: int, C2: int) -> int|None:
+            """Given two cells C1 and C2, returns the index of their common face, or None if they do not share any face.
 
-        ##### Vertex - Cell #####
-        def vertex_to_cell(self, V):
-            if self._adjV2C is None:
-                self._compute_connectivity()
-            return self._adjV2C[V]
-        
-        def cell_to_vertex(self, C):
-            return self.mesh.cells[C]
-        
-        def in_cell_index(self, C, V):
+            Args:
+                C1 (int): cell id
+                C2 (int): cell id
+
+            Returns:
+                int|None: face id
+            """
+            common = np.intersect1d(self.cells[C1], self.cells[C2])
+            if len(common) != self.cells._data.shape[1]: return None
+            return self.face_id(*common)
+
+
+        def in_cell_index(self, C: int, V: int) -> int:
             """Index of vertex V in cell C. None if V is not in cell C
 
             Parameters:
-                C (int): cell index
-                V (int): vertex index
+                C (int): cell id
+                V (int): vertex id
 
             Returns:
-                int
+                int: index of V in C (in terms of cell corners).
             """
-            for (i,v) in enumerate(self.mesh.cells[C]):
-                if v==V: return i
-            return None
-
-        def in_cell_face_index(self,C,F):
-            face_set = set(self.mesh.faces[F])
-            for i,_ in enumerate(self.mesh.cells[C]):
-                cell_set_i = set(self.mesh.cells[C][:i] + self.mesh.cells[C][(i+1):])
-                if face_set == cell_set_i:
+            if self.mesh.is_tetrahedral():
+                i_start, i_len = 4*C, 4
+            else:
+                i_start, i_len = 8*C, 8
+            for i in range(i_len):
+                if self.mesh.cell_corners[i_start+i] == V:
                     return i
             return None
 
-        ##### Edge - face #####
+        def in_cell_face_index(self,C: int, F: int) -> int:
+            """Index of face F in cell C. None if F is not a valid face of C.
 
-        # face_to_edge already defined in parent class SurfaceMesh.connectivity
-        # edge_to_face is not since SurfaceMesh takes advantage of the half edge structure
-        
-        def edge_to_face(self, e):
-            if self._adjE2F is None:
-                self._compute_edge_id()
-            return self._adjE2F[e]
+            Args:
+                C (int): cell id
+                F (int): face id
 
-        ##### Edge - Cells #####
+            Returns:
+                int: index of F in C (in terms of cell faces)
+            """
+            if self.mesh.is_tetrahedral():
+                i_start, i_len = 4*C, 4
+            else:
+                i_start, i_len = 6*C, 6
+            for i in range(i_len):
+                if self.mesh.cell_faces[i_start+i] == F:
+                    return i
+            return None
 
-        def cell_to_edge(self, c):
-            if self._adjC2E is None:
-                self._adjC2E = dict()
-            if self._adjC2E.get(c, None) is None:
-                # build connectivity for cell C
-                self._adjC2E[c] = []
-                verts = self.mesh.cells[c]
-                for i in range(len(verts)):
-                    for j in range(i):
-                        A,B = verts[i], verts[j]
-                        e = self.edge_id(A,B)
-                        if e is not None:
-                            self._adjC2E[c].append(e)
-            return self._adjC2E[c]
 
-        def edge_to_cell(self,e):
-            if self._adjE2C is None:
-                self._compute_edge_id()
-            return self._adjE2C[e]
-
+      
     class _BoundaryConnectivity(SurfaceMesh._Connectivity):
 
         def __init__(self, master):
             """
+            Special version of the SurfaceMesh Connectivity object, where everything goes through the indirection boundary id -> complete mesh id.
+
             Attributes:
                 m2b_vertex (dict): volume mesh -> boundary indirection for vertices
                 m2b_edge (dict): volume mesh -> boundary indirection for edges
@@ -501,20 +615,14 @@ class VolumeMesh(Mesh):
             self.b2m_face : dict = None
 
             mesh = self._extract_surface_boundary() # builds indirection maps for vertices and faces
-            super().__init__(mesh) # the boundary mesh can be accessed using the .master attribute
-
-            # build indirection map for edges
-            for e in self.complete_mesh.boundary_edges:
-                u,v = self.complete_mesh.edges[e]
-                bu,bv = self.m2b_vertex[u], self.m2b_vertex[v]
-                be = self.edge_id(bu,bv)
-                self.m2b_edge[e] = be
-                self.b2m_edge[be] = e            
+            super().__init__(mesh) # the boundary mesh can be accessed using the .mesh attribute
+                    
 
         def _extract_surface_boundary(self):
             """
             Builds indirection maps. This is performed automatically upon first connectivity request.
             """
+            from .raw import RawMeshData
             boundary = RawMeshData()
             # indirection maps
             self.m2b_vertex, self.b2m_vertex = dict(), dict()
@@ -542,11 +650,19 @@ class VolumeMesh(Mesh):
                 bA,bB,bC = (self.m2b_vertex[v] for v in self.complete_mesh.faces[iF])
                 D = [x for x in self.complete_mesh.cells[iC] if x not in self.complete_mesh.faces[iF]][0] # fourth point in cell but not on face
                 pD = self.complete_mesh.vertices[D]
-                if det_3x3(pA-pD,pB-pD,pC-pD)>0:
+                if geom.det_3x3(pA-pD,pB-pD,pC-pD)>0:
                     boundary.faces.append((bA,bB,bC))
                 else:
                     boundary.faces.append((bA,bC,bB))
-            return SurfaceMesh(boundary)
+
+            # build indirection map for edges
+            for e in self.complete_mesh.boundary_edges:
+                u,v = self.complete_mesh.edges[e]
+                bu,bv = self.m2b_vertex[u], self.m2b_vertex[v]
+                be = self.edge_id(bu,bv)
+                self.m2b_edge[e] = be
+                self.b2m_edge[be] = e
+            return boundary.instantiate(2)
         
         ##### Vertex to elements #####
 
@@ -565,9 +681,6 @@ class VolumeMesh(Mesh):
             Vb = self.m2b_vertex.get(V,None)
             if Vb is None: return
             return [self.b2m_face[f] for f in super().vertex_to_faces(Vb)]
-
-        def vertex_to_face_quad(self, V):
-            raise NotImplementedError
             
         ##### Faces to elements #####
 

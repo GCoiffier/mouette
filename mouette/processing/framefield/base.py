@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from ..worker import Worker
+import numpy as np
 
 class FrameField(Worker):
     """
@@ -48,9 +49,7 @@ class FrameField(Worker):
 
     def normalize(self):
         if self.var is None: return
-        for i in range(self.var.size):
-            if abs(self.var[i])>1e-10: 
-                self.var[i] /= abs(self.var[i])
+        self.var /= np.maximum(np.abs(self.var), 1e-20)
 
     @abstractmethod
     def export_as_mesh(self, *args, **kwargs):

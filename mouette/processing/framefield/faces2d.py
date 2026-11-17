@@ -1,6 +1,6 @@
 from .base import FrameField
 from ...mesh.datatypes import *
-from ...mesh.mesh_attributes import SparseAttribute
+from ...mesh.mesh_attributes import Attribute, SparseAttribute
 from ... import geometry as geom
 from ... import operators
 
@@ -11,6 +11,7 @@ from ...attributes import cotangent, angle_defects, mean_edge_length
 from ..features import FeatureEdgeDetector
 from ..connection import SurfaceConnectionFaces
 from .. import trees
+from ...config import persistent_intermediate_attributes
 
 import numpy as np
 from math import pi, atan2
@@ -40,16 +41,16 @@ class _BaseFrameField2DFaces(FrameField) :
         self.n_smooth = kwargs.get("n_smooth", 10)
         self.smooth_attach_weight = kwargs.get("smooth_attach_weight", None)
 
-        self.cot : SparseAttribute = None
-        self.defect : SparseAttribute = None
+        self.cot : Attribute = None
+        self.defect : Attribute = None
         self.conn : SurfaceConnectionFaces = kwargs.get("custom_connection", None)
         self.feat : FeatureEdgeDetector = kwargs.get("custom_features", None)
         
         self.initialized = False
 
     def _initialize_attributes(self):
-        self.cot = cotangent(self.mesh, persistent=False)
-        self.defect = angle_defects(self.mesh,persistent=False)
+        self.cot = cotangent(self.mesh, persistent=persistent_intermediate_attributes)
+        self.defect = angle_defects(self.mesh,persistent=persistent_intermediate_attributes)
         if self.feat is None:
             self.feat = FeatureEdgeDetector(only_border = not self.features, verbose=self.verbose)(self.mesh)
         if self.conn is None:
@@ -123,8 +124,7 @@ class _BaseFrameField2DFaces(FrameField) :
             # matching
             u2 = utils.maths.roots(f2, self.order)[0]
             angles = [utils.maths.angle_diff( cmath.phase(u2) - a2, cmath.phase(u1) - a1) for u1 in utils.maths.roots(f1, self.order)]
-            abs_angles = [abs(_a) for _a in angles]
-            i_angle = np.argmin(abs_angles)
+            i_angle = np.argmin([abs(_a) for _a in angles])
             edge_rot[ie] = angles[i_angle]
 
         singuls = self.mesh.vertices.create_attribute(singul_attr_name, int, sparse=True)
@@ -186,7 +186,7 @@ class FrameField2DFaces(_BaseFrameField2DFaces) :
             cotan=self.use_cotan, 
             connection=self.conn, 
             order=self.order).tocsc()
-        A = operators.area_weight_matrix_faces(self.mesh).tocsc()
+        A = operators.area_weight_matrix_faces(self.mesh)
 
         ###### Border ######
         if len(self.feat.feature_vertices)>0: # We have a border / feature elements -> linear solve

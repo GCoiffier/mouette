@@ -23,7 +23,7 @@ def tetrahedron(P1: Vec, P2: Vec, P3: Vec, P4: Vec, volume: bool=False) -> Surfa
         SurfaceMesh: _description_
     """
     V = np.concatenate((P1, P2, P3, P4)).reshape((4,3))
-    F = [[1,2,3], [0,2,3], [0,1,3], [0,1,2]]
+    F = [[1,3,2], [0,2,3], [0,3,1], [0,1,2]]
     C = [[0,1,2,3]] if volume else None
     return mesh.from_arrays(V, F=F, C=C)
 

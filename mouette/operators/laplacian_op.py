@@ -5,6 +5,8 @@ import cmath
 from ..geometry import *
 from ..mesh.datatypes import *
 from ..attributes import cotangent
+from ..config import persistent_intermediate_attributes
+from .adjacency import adjacency_matrix
 
 ##### For Surface, on vertices #####
 
@@ -16,27 +18,10 @@ def graph_laplacian(mesh : Mesh) -> sp.csc_matrix:
         mesh (Mesh): the input mesh
 
     Returns:
-        (scipy.sparse.coo_matrix) : the laplacian operator as a sparse matrix
+        (scipy.sparse.csc_matrix) : the laplacian operator as a sparse matrix
     """
-    n = len(mesh.vertices)
-    m = len(mesh.edges)
-    ncoeffs = 2*m+n
-    data, rows, cols = np.zeros(ncoeffs),np.zeros(ncoeffs, dtype=int),np.zeros(ncoeffs, dtype=int)
-    
-    def add(k, i, j, x):
-        data[k] = x
-        rows[k] = i
-        cols[k] = j
-        return k+1
-
-    k = 0
-    for l in mesh.id_vertices:
-        adj = mesh.connectivity.vertex_to_vertices(l)
-        k = add(k,l,l,len(adj))
-        for b in adj:
-            k = add(k, l, b, -1)
-    return sp.csc_matrix((data, (rows,cols)), shape=(n,n))
-
+    return sp.eye(len(mesh.vertices), format="csc") - adjacency_matrix(mesh)
+  
 
 @allowed_mesh_types(SurfaceMesh)
 def laplacian(
@@ -99,6 +84,9 @@ def cotan_edge_diagonal(mesh : SurfaceMesh, inverse:bool=True) -> sp.csc_matrix:
 
     where a_e and b_e are the opposite angles in adjacent triangles of edge e.
 
+    Raises:
+        Exception: fails if the mesh is not triangular
+
     Args:
         mesh (SurfaceMesh): input mesh
         inverse (bool): whether to compute M or M^-1 (all coefficients on the diagonal inverted)
@@ -108,9 +96,9 @@ def cotan_edge_diagonal(mesh : SurfaceMesh, inverse:bool=True) -> sp.csc_matrix:
     """
     m = len(mesh.edges)
     if mesh.face_corners.has_attribute("cotan"):
-        cotan = mesh.face_corners.get_attribute("cotan")
+        cotan = mesh.face_corners.get_attribute("cotan").as_array()
     else:
-        cotan = cotangent(mesh)
+        cotan = cotangent(mesh, persistent=persistent_intermediate_attributes)
     coeffs = np.zeros(m)
     for ie,(u,v) in enumerate(mesh.edges):
         T1,uT1,vT1 = mesh.connectivity.direct_face(u,v,True)

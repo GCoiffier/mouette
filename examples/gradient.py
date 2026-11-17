@@ -9,9 +9,9 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input_mesh", type=str, help="path to the input mesh")
+    parser.add_argument("signal", type=str, choices=["eigen", "z"])
     parser.add_argument("-outp", "--outp", default="output.geogram_ascii")
     parser.add_argument("-l", "--eigen", type=float, default=100., help="eigenvalue")
-    parser.add_argument("-signal", type=str, choices=["eigen", "z"])
 
     args = parser.parse_args()
 
@@ -33,13 +33,10 @@ if __name__ == "__main__":
         print("Found eigenvalue:", eigvalue[0])
 
     elif args.signal =="z":
-        signal = np.zeros(len(mesh.vertices))
-        for iV,V in enumerate(mesh.vertices):
-            signal[iV] = V.z
-        signal = signal[:,np.newaxis]
+        signal = mesh.vertices[:,2]
 
     print("Compute gradient")
-    grad = M.operators.gradient_op(mesh, connection)
+    grad = M.operators.gradient(mesh, connection)
     signal_G = grad @ signal
 
     print("Output results")
@@ -58,6 +55,7 @@ if __name__ == "__main__":
         pt = bary + abs(signal_G[id_face])*L*direction
         grad_mesh.vertices += [bary, pt]
         grad_mesh.edges.append((2*id_face, 2*id_face+1))
+    grad_mesh = grad_mesh.instantiate(2)
 
     M.mesh.save(mesh, OUTPUT_FILE)
     M.mesh.save(grad_mesh, OUTPUT_GRAD)

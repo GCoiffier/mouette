@@ -11,10 +11,10 @@ from .interpolate import interpolate_faces_to_vertices
 from .. import geometry as geom
 from ..geometry import Vec
 
-@njit(cache=True, parallel=True)
+@njit(cache=True)
 def _degree(V,E):
     deg = np.zeros(V.shape[0], dtype=int)
-    for i in prange(E.shape[0]):
+    for i in range(E.shape[0]):
         deg[E[i,0]] += 1
         deg[E[i,1]] += 1
     return deg
@@ -37,9 +37,9 @@ def degree(mesh : Mesh, name : str = "degree", persistent:bool = True) -> Attrib
     else:
         return deg
 
-@njit(cache=True, parallel=True)
+@njit(cache=True)
 def _angle_defects(C, angles, defects):
-    for i in prange(C.shape[0]):
+    for i in range(C.shape[0]):
         defects[C[i]] -= angles[i]
     return defects
 
@@ -61,13 +61,7 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
 
     Returns:
         Attribute(float) on vertices
-
-    Raises:
-        Exception: fails if the mesh is not triangulated
     """
-    if not mesh.is_triangular():
-        raise Exception("Tried to compute angle defects on a non-triangulated mesh")
-
     if mesh.face_corners.has_attribute("angles"):
         angles = mesh.face_corners.get_attribute("angles").as_array()
     elif persistent:
@@ -76,7 +70,6 @@ def angle_defects(mesh : SurfaceMesh, zero_border=False, name = "angleDefect", p
         angles = corner_angles(mesh, persistent=False)
 
     defects = np.full(len(mesh.vertices), 2*pi)
-
     defects[mesh.boundary_vertices] = 0 if zero_border else pi
     defects = _angle_defects(mesh.face_corners._elem, angles, defects)
 
@@ -155,8 +148,10 @@ def border_normals(mesh : SurfaceMesh, name="borderNormals", persistent: bool = 
         if T0 is None: T0 = mesh.connectivity.direct_face(v,v0)
         T1 = mesh.connectivity.direct_face(v,v1)
         if T1 is None: T1 = mesh.connectivity.direct_face(v1,v)
-        _,_,N0 = geom.face_basis(*mesh.pt_of_face(T0))
-        _,_,N1 = geom.face_basis(*mesh.pt_of_face(T1))
+        VT0 = mesh.vertices[mesh.faces[T0]]
+        VT1 = mesh.vertices[mesh.faces[T1]]
+        _,_,N0 = geom.face_basis(VT0[0,:], VT0[1,:], VT0[2,:])
+        _,_,N1 = geom.face_basis(VT1[0,:], VT1[1,:], VT1[2,:])
         bnormals[v] = geom.cross(E0,N0) + geom.cross(E1,N1)
         bnormals[v] = Vec.normalized(bnormals[v])
     return bnormals

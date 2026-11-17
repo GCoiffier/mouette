@@ -5,6 +5,7 @@ from .features import FeatureEdgeDetector
 from ..geometry import Vec
 from .. import geometry as geom
 from .. import utils
+from ..config import persistent_intermediate_attributes
 
 import numpy as np
 import math
@@ -298,7 +299,7 @@ class SurfaceConnectionEdges(SurfaceConnection):
     def __init__(self, mesh : SurfaceMesh, **kwargs):
         assert mesh.is_triangular()
         self.enormals : Attribute = kwargs.get("enormals", None)
-        self.fnormals : Attribute = attributes.face_normals(mesh)
+        self.fnormals : Attribute = attributes.face_normals(mesh, persistent=persistent_intermediate_attributes)
         if self.enormals is None:
             self.enormals = mesh.edges.create_attribute("normals", float, 3)
         super().__init__(mesh)

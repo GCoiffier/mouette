@@ -47,7 +47,7 @@ def test_triangulated_surface_compatible_attributes(s, attr_fun):
 
 @pytest.mark.parametrize("s", VOLUMES.items())
 @pytest.mark.parametrize("attr_fun", [
-    M.attributes.tetrahedra_volume,
+    M.attributes.cell_volume,
     M.attributes.cell_barycenter,
     M.attributes.cell_faces_on_boundary
 ])
@@ -67,6 +67,16 @@ def test_surface_compatible_attributes(s, attr_fun):
     ])
 def test_euler_characteristic(mesh, char):
     assert M.attributes.euler_characteristic(mesh) == char
+
+@pytest.mark.parametrize("s", TRI_SURFACES.items())
+def test_gauss_bonnet_theorem(s):
+    # sum of angle defects is equal to 2*pi times the euler characteristic 
+    name,mesh = s
+    ang = M.attributes.angle_defects(mesh, persistent=False)
+    sum_ang = np.sum(ang)
+    print(ang, sum_ang)
+    charac = 2*np.pi*M.attributes.euler_characteristic(mesh)
+    assert np.isclose(sum_ang, charac)
 
 @pytest.mark.parametrize("s", ALL_SURFACES.items())
 def test_mean_edge_length(s):

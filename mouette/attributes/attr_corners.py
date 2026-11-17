@@ -12,10 +12,10 @@ def _corner_angles(V, F):
     nf = F.shape[1]
     angles = np.empty(n*nf, dtype=float)
     for i in prange(n):
-        for j in prange(nf):
+        for j in range(nf):
             iPrev,iV,iNext = F[i, (j-1)%nf], F[i, j], F[i, (j+1)%nf]
             pPrev, pV, pNext = V[iPrev], V[iV], V[iNext]
-            angles[i*nf+j] = geom.angle_3pts(pPrev, pV, pNext)
+            angles[i*nf+j] = geom.angle_3pts(pPrev, pV, pNext)%(2*np.pi)
     return angles
 
 @allowed_mesh_types(SurfaceMesh)

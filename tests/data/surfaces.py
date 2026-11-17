@@ -32,19 +32,13 @@ def surf_square_triangulated():
     ]), F = np.array([[0,1,3], [1,2,3]]))
 
 def surf_tetrahedron():
-    return M.mesh.from_arrays(
-        np.array([
+    return M.mesh.from_arrays([
             [0., 0., 0.],
             [1., 0., 0.],
             [0., 1., 0.],
             [0., 0., 1.]
-        ]),
-        F=np.array([
-            [0,1,2],
-            [0,1,3],
-            [1,2,3],
-            [2,0,3]
-        ])
+        ],
+        F=[[1,3,2], [0,2,3], [0,3,1], [0,1,2]]
     )
 
 CLOSED_TRI_SURFACES = {
@@ -66,7 +60,7 @@ TRI_SURFACES = {
     "two_pieces"          : M.mesh.load("tests/data/two_pieces.obj"),
     "pointy"              : M.mesh.load("tests/data/pointy.obj")
 }
-TRI_SURFACES.update(CLOSED_TRI_SURFACES)
+TRI_SURFACES = {**CLOSED_TRI_SURFACES, **TRI_SURFACES}
 
 QUAD_SURFACES = {
     "cube_quad"        : M.procedural.axis_aligned_cube(),
@@ -79,8 +73,4 @@ QUAD_SURFACES = {
 #     "square_irregular" : M.mesh.load("tests/data/quad_irregular.geogram_ascii")
 # }
     
-ALL_SURFACES = {}
-ALL_SURFACES.update(TRI_SURFACES)
-ALL_SURFACES.update(QUAD_SURFACES)
-# ALL_SURFACES.update(IRREG_SURFACES)
-
+ALL_SURFACES = {**TRI_SURFACES, **QUAD_SURFACES}

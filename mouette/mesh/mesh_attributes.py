@@ -2,7 +2,6 @@ import numpy as np
 from abc import abstractmethod, ABC
 from aenum import MultiValueEnum
 
-
 ################ Typing ################
 class AttributeType(MultiValueEnum):
     """
@@ -12,6 +11,15 @@ class AttributeType(MultiValueEnum):
     Int = int, np.int32, np.uint8, np.int64, np.dtype("int64")
     Float = float, np.float32, np.float64, np.float128, np.dtype("float64"), np.dtype("float32")
     Complex = complex, np.complex64, np.complex128
+
+    @classmethod
+    def _missing_(cls, value):
+        # Fallback for any numpy dtype / scalar type not listed above (e.g. dtype('uint8'), np.int16), classified by kind
+        try:
+            kind = np.dtype(value).kind
+        except TypeError:
+            return None
+        return {"b": cls.Bool, "i": cls.Int, "u": cls.Int, "f": cls.Float, "c": cls.Complex}.get(kind, None)
 
     @classmethod
     def from_string(cls, txt : str):
@@ -213,9 +221,11 @@ class Attribute(_BaseAttribute):
             self._data = np.full((n_elem, elem_size), self.default_value, dtype=self.type.dtype)
 
     def __array__(self, dtype=None, copy=None):
-        if copy:
-            return self._data.copy().astype(dtype)
-        return self._data.astype(dtype)
+        if dtype is None or np.dtype(dtype) == self._data.dtype:
+            return self._data.copy() if copy else self._data
+        if copy is False:
+            raise ValueError(f"Unable to avoid copy while casting from {self._data.dtype} to {np.dtype(dtype)}")
+        return self._data.astype(dtype) # astype already returns a new array
 
     def __getitem__(self, key):
         self._check_out_of_bounds(key) #check because key=-1 returns a correct result with numpy while we want to avoid this.

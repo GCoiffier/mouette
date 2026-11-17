@@ -76,7 +76,6 @@ def is_chunk_header(line : str) -> bool:
 def import_attribute(chk : Chunk, attr: dict, default=0):
     n_elem = len(chk.data)//chk.n_data
     elem_size = chk.n_data
-    print(n_elem, elem_size)
     attr_data = np.full((n_elem, elem_size),  fill_value=default)
     for i in range(n_elem):
         val = []
@@ -86,7 +85,6 @@ def import_attribute(chk : Chunk, attr: dict, default=0):
             attr_data[i] = val[0]
         elif chk.n_data>1:
             attr_data[i] = val
-    print(attr_data.shape)
     attr[chk.name.split("\"")[1]] = attr_data
 
 

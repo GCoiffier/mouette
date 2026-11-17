@@ -213,7 +213,7 @@ class RawMeshData:
             corners_elem = np.array([x[0] for x in self.face_corners])
             corners_adj = np.array([x[1] for x in self.face_corners])
         else:
-            corners_elem = F.copy().reshape(-1)
+            corners_elem = F.copy().ravel()
             corners_adj = np.repeat(np.arange(F.shape[0]), F.shape[1])
         return CornerDataContainer(corners_elem, corners_adj, id="face_corners")
 
@@ -223,7 +223,7 @@ class RawMeshData:
             corners_elem = np.array([x[0] for x in self.cell_corners])
             corners_adj = np.array([x[1] for x in self.cell_corners])
         else:
-            corners_elem = C.copy().reshape(-1)
+            corners_elem = C.copy().ravel()
             corners_adj = np.repeat(np.arange(C.shape[0]), C.shape[1])
         return CornerDataContainer(corners_elem, corners_adj, id="cell_corners")
 

@@ -44,8 +44,8 @@ def adjacency_matrix(mesh : Mesh, weights="one") -> sp.coo_matrix:
             vals[2*e+1] = weights[e]
     
     # build row and cols indices
-    rows = mesh.edges._data.reshape(-1)
-    cols = mesh.edges._data[:,::-1].reshape(-1)
+    rows = mesh.edges._data.ravel()
+    cols = mesh.edges._data[:,::-1].ravel()
     return sp.coo_matrix( (vals, (rows,cols)), shape=(n,n))
 
 @forbidden_mesh_types(PointCloud)

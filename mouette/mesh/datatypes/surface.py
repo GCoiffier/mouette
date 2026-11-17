@@ -33,8 +33,8 @@ class SurfaceMesh(Mesh):
         self.connectivity = SurfaceMesh._Connectivity(self)
 
         # Boundary data
-        self._edge_on_border : np.ndarray = None
-        self._vertex_on_border : np.ndarray = None
+        self._edge_on_border : np.ndarray[bool] = None
+        self._vertex_on_border : np.ndarray[bool] = None
 
     def __str__(self):
         out = "mouette.mesh.SurfaceMesh object\n"
@@ -70,31 +70,6 @@ class SurfaceMesh(Mesh):
         Shortcut for `range(len(self.face_corners))`
         """
         return range(len(self.face_corners))
-
-    def ith_vertex_of_face(self, fid: int, i: int) -> int:
-        """
-        helper function to get the i-th vertex of a face, i.e. `self.faces[fid][i]`
-
-        Args:
-            fid (int): face id
-            i (int): vertex id in face. Should be 0 <= vid < len(face)
-
-        Returns:
-            int: the id of the i-th vertex in face `fid` (`self.faces[fid][i]`)
-        """
-        return self.faces[fid][i]
-
-    def pt_of_face(self, fid:int):
-        """
-        point coordinates of vertices of face `fid`
-
-        Args:
-            fid (int): face id
-
-        Returns:
-            np.ndarray: an array of shape (K,3) where K is the number of vertices in the face
-        """
-        return self.vertices[self.faces[fid]]
 
     def is_triangular(self) -> bool:
         """
@@ -159,24 +134,32 @@ class SurfaceMesh(Mesh):
 
     @property
     def interior_edges(self) -> np.ndarray:
+        """Array of indices of all edges that are **not** on the boundary
+        """
         if self._edge_on_border is None:
             self._compute_interior_boundary_edges()
         return np.arange(len(self.edges))[~self._edge_on_border]
 
     @property
     def boundary_edges(self) -> np.ndarray:
+        """Array of indices of all edges that are on the boundary
+        """
         if self._edge_on_border is None:
             self._compute_interior_boundary_edges()
         return np.arange(len(self.edges))[self._edge_on_border]
 
     @property
     def boundary_vertices(self) -> np.ndarray:
+        """Array of indices of all vertices that are on the boundary
+        """
         if self._vertex_on_border is None:
             self._compute_interior_boundary_vertices()
         return np.arange(len(self.vertices))[self._vertex_on_border]
     
     @property
     def interior_vertices(self) -> np.ndarray:
+        """Array of indices of all vertices that are **not** on the boundary
+        """
         if self._vertex_on_border is None:
             self._compute_interior_boundary_vertices()
         return np.arange(len(self.vertices))[~self._vertex_on_border]
@@ -197,8 +180,8 @@ class SurfaceMesh(Mesh):
             self._half_edges : dict = None # (v1,v2) -> (corner, previous, next, opposite, face, i1, i2)
             self._Cn2he      : dict = None # corner -> (v1,v2)
             self._adjVF2Cn   : dict = None # vertex,face -> corner
-            self._adjV2Cn    : dict = None # vertex -> corners
-            self._adjF2Cn    : dict = None # face -> corners
+            self._adjV2Cn    : list = None # vertex -> corners
+            self._adjF2Cn    : list = None # face -> corners
             self._face_id    : dict = None # (list of vertices) -> face
         
         def clear(self):
@@ -210,10 +193,10 @@ class SurfaceMesh(Mesh):
             self._half_edges : dict = None # (v1,v2) -> (corner, previous, next, opposite, face, i1, i2)
             self._Cn2he      : dict = None # corner -> (v1,v2)
             self._adjVF2Cn   : dict = None # vertex,face -> corner
-            self._adjV2Cn    : dict = None # vertex -> corners
-            self._adjF2Cn    : dict = None # face -> first corner
+            self._adjV2Cn    : list = None # vertex -> corners
+            self._adjF2Cn    : list = None # face -> first corner
             self._face_id    : dict = None # (list of vertices) -> face
-
+        
         def _compute_face_ids(self):
             self._face_id = dict()
             for iF, F in enumerate(self.mesh.faces):
@@ -236,19 +219,16 @@ class SurfaceMesh(Mesh):
         def _compute_connectivity(self):
             super()._compute_connectivity()
 
-            ### Compute corner connectivity dictionnaries
-            self._adjV2Cn = dict([(i,set()) for i in self.mesh.id_vertices])
+            ### Compute corner connectivity dictionaries
+            self._adjV2Cn = [[] for _ in self.mesh.id_vertices]
             self._adjVF2Cn = dict()
-            self._adjF2Cn = dict()
+            self._adjF2Cn = [-1 for _ in self.mesh.id_faces]
             for iC in self.mesh.id_corners:
                 v,f = self.mesh.face_corners.element(iC), self.mesh.face_corners.adj(iC)
-                self._adjV2Cn[v].add(iC)
+                self._adjV2Cn[v].append(iC)
                 self._adjVF2Cn[(v,f)] = iC
-                if f not in self._adjF2Cn:
+                if self._adjF2Cn[f] == -1:
                     self._adjF2Cn[f] = iC
-            for v in self.mesh.id_vertices:
-                # recast sets as list for indexing and sorting
-                self._adjV2Cn[v] = list(self._adjV2Cn[v])
                 
             ### Compute half edges
             self._half_edges = dict()
@@ -269,9 +249,8 @@ class SurfaceMesh(Mesh):
                     self._half_edges[(B,A)][3] = iC1
 
             ### Sorting vertex neighborhoods
-            if config.sort_neighborhoods and isinstance(self.mesh, SurfaceMesh):
+            if config.sort_neighborhoods:
                 # Neighborhood should be sorted to have a clockwise order
-                # Ignore sorting for volume meshes
                 self._sort_vertex_neighborhoods()
             
         def _sort_vertex_neighborhoods(self):
@@ -300,11 +279,11 @@ class SurfaceMesh(Mesh):
                         if Cn is None : break
                         Cn = self.next_corner(Cn)
                 self._adjV2Cn[A].sort(key = lambda c : sort_index[c])
-                sort_indexV = dict()
-                for v in self._adjV2V[A]:
-                    # all vertices have an associated corner except the last one (opposite half edge does not exist on boundary)
-                    sort_indexV[v] = sort_index.get(self.half_edge_to_corner(A,v), -float("inf"))
-                self._adjV2V[A].sort(key = lambda v : sort_indexV[v])
+                adjV = self._adjV2V[A]
+                # all vertices have an associated corner except the last one (opposite half edge does not exist on boundary)
+                keys = [sort_index.get(self.half_edge_to_corner(A,v), -float("inf")) for v in adjV]
+                order = sorted(range(len(adjV)), key = lambda i : keys[i])
+                self._adjV2V[A] = [adjV[i] for i in order]
 
         ##### Vertices to elements
 
@@ -332,8 +311,8 @@ class SurfaceMesh(Mesh):
             """
             if self._adjV2Cn is None :
                 self._compute_connectivity()
-            return self._adjV2Cn.get(V, None)
-        
+            return self._adjV2Cn[V]
+                
         def vertex_to_corner_in_face(self, V: int, F: int) -> int:
             """
             The corner `C` corresponding to vertex `V` in face `F`.
@@ -494,13 +473,10 @@ class SurfaceMesh(Mesh):
             Returns:
                 (int,int): (u,v) pair of vertex indices, or (None,None)
             """
-            F1 = self.mesh.faces[iF1]
-            n = len(F1)
-            for i in range(n):
-                A,B = F1[i], F1[(i+1)%n]
-                if self.opposite_face(A,B,iF1)==iF2:
-                    return utils.keyify(A,B)
-            return None,None
+            common = np.intersect1d(self.mesh.faces[iF1], self.mesh.faces[iF2])
+            if common.shape != (2,):
+                return None, None
+            return utils.keyify(int(common[0]), int(common[1]))
 
         ##### Face to element
 
